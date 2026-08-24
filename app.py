@@ -310,7 +310,7 @@ def generate_comprehensive_report(results_dict, dplk_dict, paid_dict, discount, 
 
 
 # ==========================================
-# 3. STREAMLIT WEB INTERFACE (DENGAN PILIHAN METODE INPUT)
+# 3. STREAMLIT WEB INTERFACE (DENGAN PILIHAN METODE INPUT 2021-2026)
 # ==========================================
 st.set_page_config(page_title="Valuasi Aktuaria Multi-Tahun", layout="wide")
 st.title("📄 Generator Laporan Aktuaria (Upload Excel / Input Manual Interaktif)")
@@ -350,9 +350,13 @@ if metode_input == "Upload File Excel Multi-Tahun":
         except Exception as e:
             st.error(f"Gagal membaca file: {e}")
 
-else: # Input & Editor Data Langsung di Website
+else: # Input & Editor Data Langsung di Website (Rentang 2021 - 2026)
     st.info("Masukkan data karyawan langsung per tahun menggunakan tabel interaktif di bawah.")
-    selected_years = st.multiselect("Pilih Tahun Valuasi yang Ingin Dibuat", [2023, 2024, 2025, 2026], default=[2024, 2025])
+    selected_years = st.multiselect(
+        "Pilih Tahun Valuasi yang Ingin Dibuat", 
+        [2021, 2022, 2023, 2024, 2025, 2026], 
+        default=[2024, 2025]
+    )
     
     if "manual_datasets" not in st.session_state:
         st.session_state.manual_datasets = {}
@@ -362,7 +366,6 @@ else: # Input & Editor Data Langsung di Website
     for idx, yr in enumerate(selected_years):
         with tab_years[idx]:
             if yr not in st.session_state.manual_datasets:
-                # Buat DataFrame default kosong/contoh
                 st.session_state.manual_datasets[yr] = pd.DataFrame([
                     {"NIK": "001", "Nama": "Karyawan Contoh 1", "Tanggal Lahir": "1985-05-12", "Tgl. Mulai Bekerja": "2010-01-01", "Total Upah Bulanan (Gross)": 5000000.0, "Saldo DPLK": 0.0}
                 ])
