@@ -24,28 +24,51 @@ def fmt_num(num, decimals=0):
         return formatted.replace(",", "X").replace(".", ",").replace("X", ".")
 
 # ==========================================
-# UNIVERSAL PARSER EXCEL (MENDETEKSI FORMAT LAMA & BARU)
+# PARSER EXCEL CERDAS (AUTO-DETECT TAHUN & KONTEN)
 # ==========================================
 def parse_excel_universal(file_or_buffer, sheet_name=0):
-    df = pd.read_excel(file_or_buffer, sheet_name=sheet_name, header=None)
+    df_raw = pd.read_excel(file_or_buffer, sheet_name=sheet_name, header=None)
     
-    # Deteksi baris awal tabel (mencari angka 1 pada kolom pertama atau baris data NIK)
+    # Deteksi tahun dari nama sheet atau baris header/konten atas
+    detected_year = 2025 # Default fallback
+    match_sheet = re.search(r'(20\d{2})', str(sheet_name))
+    if match_sheet:
+        detected_year = int(match_sheet.group(1))
+    else:
+        # Cek dua digit tahun seperti '23' di '31 Dec 23'
+        match_2dig = re.search(r'31\s+Dec\s+(\d{2})', str(sheet_name), re.IGNORECASE)
+        if match_2dig:
+            detected_year = 2000 + int(match_2dig.group(1))
+        else:
+            # Cari di baris atas sheet (misal baris 'Data Per :')
+            for r in range(min(3, len(df_raw))):
+                for c in range(len(df_raw.columns)):
+                    val = df_raw.iloc[r, c]
+                    if isinstance(val, (datetime.datetime, pd.Timestamp)):
+                        detected_year = val.year
+                        break
+                    elif isinstance(val, str):
+                        m = re.search(r'(20\d{2})', val)
+                        if m:
+                            detected_year = int(m.group(1))
+                            break
+                            
+    # Deteksi baris awal tabel data
     data_start_idx = 7
-    for idx, val in enumerate(df.iloc[:, 0]):
+    for idx, val in enumerate(df_raw.iloc[:, 0]):
         if isinstance(val, (int, float)) and val == 1:
             data_start_idx = idx
             break
-        if idx > 3 and not pd.isna(df.iloc[idx, 1]) and str(df.iloc[idx, 1]).strip().isdigit():
+        if idx > 3 and not pd.isna(df_raw.iloc[idx, 1]) and str(df_raw.iloc[idx, 1]).strip().isdigit():
             data_start_idx = idx
             break
             
     clean_data = []
     total_benefit_paid = 0.0
     
-    for idx in range(data_start_idx, len(df)):
-        row = df.iloc[idx]
+    for idx in range(data_start_idx, len(df_raw)):
+        row = df_raw.iloc[idx]
         
-        # Ekstraksi kolom standar template (NIK, Nama, Lahir, Mulai Bekerja, Gaji, Saldo DPLK)
         nik = row.iloc[1] if len(row) > 1 else None
         nama = row.iloc[2] if len(row) > 2 else None
         dob = row.iloc[3] if len(row) > 3 else None
@@ -75,7 +98,6 @@ def parse_excel_universal(file_or_buffer, sheet_name=0):
             'Saldo DPLK': dplk_val
         })
         
-        # Deteksi tabel Benefit Paid / Pembayaran Pesangon di sebelah kanan (jika ada)
         if len(row) > 11:
             val_paid = row.iloc[11]
             try:
@@ -84,7 +106,7 @@ def parse_excel_universal(file_or_buffer, sheet_name=0):
             except:
                 pass
                 
-    return pd.DataFrame(clean_data), total_benefit_paid
+    return detected_year, pd.DataFrame(clean_data), total_benefit_paid
 
 
 # ==========================================
@@ -202,7 +224,6 @@ def generate_comprehensive_report(results_dict, dplk_dict, paid_dict, discount, 
     title_style = ParagraphStyle('CoverTitle', parent=styles['Heading1'], fontSize=16, textColor=colors.black, alignment=1, spaceBefore=20, spaceAfter=10)
     sub_style = ParagraphStyle('CoverSub', parent=styles['Normal'], fontSize=12, textColor=colors.black, alignment=1, spaceAfter=20)
     
-    # Filter kunci yang berupa tahun numerik untuk laporan utama
     numeric_years = [k for k in val_years if isinstance(k, int)]
     sorted_years = sorted(numeric_years, reverse=True) if numeric_years else [2025]
     cur_yr = sorted_years[0]
@@ -236,7 +257,6 @@ def generate_comprehensive_report(results_dict, dplk_dict, paid_dict, discount, 
         ('VALIGN', (0,0), (-1,-1), 'MIDDLE')
     ])
     
-    # --- COVER ---
     if os.path.exists("logo.png"):
         logo = Image("logo.png", width=3*inch, height=3*inch)
         logo.hAlign = 'CENTER'
@@ -247,7 +267,6 @@ def generate_comprehensive_report(results_dict, dplk_dict, paid_dict, discount, 
     elements.append(Paragraph(f"<b>ACTUARIAL VALUATION REPORT BASED ON<br/>PSAK 219 EMPLOYEE BENEFIT</b><br/><br/>Valuation Period Ended December 31, {cur_yr}<br/><br/><b>FINAL REPORT NO. {report_no}</b>", sub_style))
     elements.append(PageBreak())
     
-    # --- HALAMAN 1: EXECUTIVE SUMMARY & ASUMSI ---
     elements.append(Paragraph("<b>I. Executive Summary & Actuarial Assumptions</b>", h_style))
     assumption_data = [
         ["Parameter Asumsi", "Nilai / Tingkat"],
@@ -262,7 +281,6 @@ def generate_comprehensive_report(results_dict, dplk_dict, paid_dict, discount, 
     elements.append(t_assump)
     elements.append(Spacer(1, 15))
     
-    # --- HALAMAN 1 LANJUTAN: DATA SENSUS ---
     elements.append(Paragraph(f"<b>II. Employee Data Information (Valuation Year {cur_yr})</b>", h_style))
     data_info = [
         ["No.", "Description", f"Dec 31, {cur_yr}"],
@@ -279,7 +297,6 @@ def generate_comprehensive_report(results_dict, dplk_dict, paid_dict, discount, 
     elements.append(t_info)
     elements.append(PageBreak())
     
-    # --- HALAMAN 2: LAPORAN KEUANGAN (NERACA & LABA RUGI) ---
     elements.append(Paragraph("<b>III. Accounting Disclosures (PSAK 219)</b>", h_style))
     
     elements.append(Paragraph("<b>1. Liabilities Recognized in Balance Sheet</b>", h_style))
@@ -324,7 +341,6 @@ def generate_comprehensive_report(results_dict, dplk_dict, paid_dict, discount, 
     elements.append(t_rec)
     elements.append(PageBreak())
     
-    # --- HALAMAN 3: KOMPARASI MULTI-TAHUN ---
     if len(sorted_years) > 1:
         elements.append(Paragraph("<b>IV. Multi-Year Historical Comparison Summary</b>", h_style))
         header_info = ["Description"] + [f"Dec 31, {yr}" for yr in sorted_years]
@@ -367,7 +383,6 @@ asumsi_diskonto = st.sidebar.number_input("Tingkat Diskonto (%)", value=6.7942, 
 asumsi_gaji = st.sidebar.number_input("Kenaikan Gaji (%)", value=5.0, step=0.1) / 100
 usia_pensiun = st.sidebar.number_input("Usia Pensiun Normal", value=56, step=1)
 
-# Pilihan metode masukan: Upload Excel atau Input Manual
 metode_utama = st.radio(
     "Pilih Metode Masukan Data:", 
     ["Upload Excel (Auto-Detect Format Lama / Baru / Multi-Sheet)", "Input / Edit Manual Langsung di Web (Multi-Tab Tahun)"]
@@ -387,22 +402,21 @@ if metode_utama == "Upload Excel (Auto-Detect Format Lama / Baru / Multi-Sheet)"
             st.success(f"Berhasil mendeteksi {len(sheet_names)} sheet: {sheet_names}")
             
             for sh in sheet_names:
-                match = re.search(r'(20\d{2})', sh)
-                if match:
-                    yr = int(match.group(1))
-                    df_emp, total_paid = parse_excel_universal(uploaded_file, sheet_name=sh)
-                    datasets_to_process[yr] = df_emp
-                    benefit_paid_dict[yr] = total_paid
-                elif 'kontrak' in sh.lower() or 'cuti' in sh.lower():
-                    df_emp, total_paid = parse_excel_universal(uploaded_file, sheet_name=sh)
+                # Lewati sheet non-data seperti 'Asumsi dari Klien'
+                if 'asumsi' in sh.lower():
+                    continue
+                    
+                detected_yr, df_emp, total_paid = parse_excel_universal(uploaded_file, sheet_name=sh)
+                
+                # Jika sheet khusus kontrak atau lainnya disimpan berdasarkan nama sheet atau tahun terdeteksi
+                if 'kontrak' in sh.lower() or 'cuti' in sh.lower():
                     datasets_to_process[sh] = df_emp
                     benefit_paid_dict[sh] = total_paid
+                else:
+                    datasets_to_process[detected_yr] = df_emp
+                    benefit_paid_dict[detected_yr] = total_paid
                     
-            if not datasets_to_process:
-                # Fallback ke sheet pertama jika tidak ada nama tahun
-                df_emp, total_paid = parse_excel_universal(uploaded_file, sheet_name=0)
-                datasets_to_process[2025] = df_emp
-                benefit_paid_dict[2025] = total_paid
+            st.info(f"Tahun / Kategori Sheet yang Berhasil Dideteksi & Diproses: {list(datasets_to_process.keys())}")
         except Exception as e:
             st.error(f"Gagal membaca file Excel: {e}")
 else:
@@ -487,7 +501,6 @@ if st.session_state.get("calculated_results"):
     for key in act_keys:
         df_y = res_dict[key]
         pbo_y = df_y['PBO'].sum() if not df_y.empty else 0
-        csc_y = df_y['CSC'].sum() if not df_y.empty else 0
         payroll_y = df_y['Gross Salary'].sum() if not df_y.empty else 0
         dplk_y = dp_dict[key]
         summary_data.append({
