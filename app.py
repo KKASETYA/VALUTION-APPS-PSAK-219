@@ -169,7 +169,7 @@ class ProfessionalActuarialEngine:
 
 
 # ==========================================
-# 4. GENERATOR PDF LENGKAP & SURAT PERNYATAAN
+# 4. GENERATOR PDF RESMI LENGKAP & UTUH
 # ==========================================
 def draw_page_decorations(canvas, doc):
     canvas.saveState()
@@ -181,7 +181,7 @@ def draw_page_decorations(canvas, doc):
     canvas.drawRightString(576, 32, f"{doc.page}")
     canvas.restoreState()
 
-def generate_full_official_pdf(results_dict, dplk_dict, paid_dict, discount, salary_inc, ret_age, company_name, report_no, bop_obligation, override_pbo, override_csc):
+def generate_comprehensive_pdf(results_dict, dplk_dict, paid_dict, discount, salary_inc, ret_age, company_name, report_no, bop_obligation, override_pbo, override_csc):
     pdf_buffer = io.BytesIO()
     doc = SimpleDocTemplate(pdf_buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=60)
     elements = []
@@ -260,7 +260,37 @@ def generate_full_official_pdf(results_dict, dplk_dict, paid_dict, discount, sal
     ], colWidths=[260, 260]))
     elements.append(PageBreak())
 
-    # 5. SURAT PERNYATAAN MANAJEMEN (MANAGEMENT STATEMENT LETTER)
+    # 5. TABEL UTAMA PENGUNGKAPAN (TABEL 4)
+    elements.append(Table([[Paragraph("<b>TABLE 4 / TABEL 4</b>", h_eng), Paragraph("<b>FUNDED STATUS & RECONCILIATION</b>", h_ind)]], colWidths=[260, 260]))
+    elements.append(Spacer(1, 8))
+
+    t_t4_1 = Table([
+        ["E X P L A N A T I O N", "Des 31, 2024", "Des 31, 2025", "U R A I A N"],
+        ["FUNDED STATUS", "", "", "STATUS PENDANAAN"],
+        ["Assets and Obligation", "", "", "Kekayaan dan Kewajiban"],
+        ["Present Value of Obligation at EOP", fmt_num(6431037297.0), fmt_num(total_pbo), "Nilai Kini Kewajiban"],
+        ["Fair Value of Plan Assets", "-", "-", "Nilai Wajar Aktiva Program"],
+        ["Funded Status", fmt_num(6431037297.0), fmt_num(funded_status), "Posisi Pendanaan"],
+        ["Liability/(Assets) Recognized", fmt_num(6431037297.0), fmt_num(funded_status), "Kewajiban Diakui di Neraca"]
+    ], colWidths=[150, 65, 65, 140])
+    t_t4_1.setStyle(std_tbl_style)
+    elements.append(t_t4_1)
+    elements.append(Spacer(1, 10))
+
+    t_t4_2 = Table([
+        ["E X P L A N A T I O N", "Des 31, 2024", "Des 31, 2025", "U R A I A N"],
+        ["Reconciliation of liability/(Asset)", "", "", "Perubahan Kewajiban/(Kekayaan)"],
+        ["Liability/(Assets) at BoP", fmt_num(7202205556), fmt_num(bop_obligation), "Kewajiban pada Awal Periode"],
+        ["Expense/(Income)", fmt_num(223045131), fmt_num(net_expense), "Beban/(Pendapatan)"],
+        ["Benefit Payment - Actual", f"({fmt_num(391618631)})", f"({fmt_num(total_benefit_paid)})", "Realisasi Pembayaran Manfaat"],
+        ["Other Comprehensive Income", f"({fmt_num(602594759)})", f"({fmt_num(abs(actuarial_gain_loss))})", "Pendapatan Komprehensif Lainnya"],
+        ["Liability/(Assets) at EoP", fmt_num(6431037297.0), fmt_num(funded_status), "Kewajiban pada Akhir Periode"]
+    ], colWidths=[150, 65, 65, 140])
+    t_t4_2.setStyle(std_tbl_style)
+    elements.append(t_t4_2)
+    elements.append(PageBreak())
+
+    # 6. SURAT PERNYATAAN MANAJEMEN
     elements.append(Paragraph("<b>SURAT PERNYATAAN KEBENARAN DATA & PERSETUJUAN ASUMSI PT. ASURANSI UMUM VIDEI</b>", ParagraphStyle('Stmt', parent=styles['Heading2'], fontSize=10, alignment=1)))
     elements.append(Spacer(1, 10))
     elements.append(Paragraph("Dalam rangka Perhitungan Aktuaria Program Imbalan Pasca Kerja berdasarkan PSAK 219 periode 31 Desember 2025 untuk PT. ASURANSI UMUM VIDEI, kami sebagai Manajemen menyatakan bahwa data dan informasi yang kami sampaikan kepada Aktuaris adalah <b>TELENGKAP DAN BENAR</b>.", body_ind))
@@ -282,7 +312,7 @@ def generate_full_official_pdf(results_dict, dplk_dict, paid_dict, discount, sal
     elements.append(Paragraph("Demikian surat pernyataan ini kami buat dengan sebenarnya, dan kami siap mempertanggungjawabkan perihal kelengkapan data dan kebenaran data pada posisi periode 31 Desember 2025.", body_ind))
     elements.append(PageBreak())
 
-    # 6. ACTUARIAL STATEMENT & CLOSING
+    # 7. ACTUARIAL STATEMENT & CLOSING
     elements.append(Table([
         [Paragraph("<b>ACTUARIAL STATEMENT</b>", h_eng), Paragraph("<b>PERNYATAAN AKTUARIS</b>", h_ind)],
         [Paragraph("We have calculated actuarial valuation for PT. ASURANSI UMUM VIDEI pertaining to Severance Payment, Service Pay and Compensation Payment...", body_eng),
@@ -300,7 +330,7 @@ def generate_full_official_pdf(results_dict, dplk_dict, paid_dict, discount, sal
 # 5. STREAMLIT INTERFACE
 # ==========================================
 st.set_page_config(page_title="Valuasi Aktuaria Presisi Profesional", layout="wide")
-st.title("📄 Generator Laporan PDF Dwibahasa Resmi Aktuaria (Lengkap dengan Surat Pernyataan)")
+st.title("📄 Generator Laporan PDF Dwibahasa Resmi Aktuaria (Fitur Lengkap Terjaga)")
 
 st.sidebar.header("⚙️ Parameter Rekonsiliasi")
 input_perusahaan = st.sidebar.text_input("Nama Perusahaan Klien", "PT. ASURANSI UMUM VIDEI")
@@ -334,7 +364,7 @@ if uploaded_file is not None:
         st.error(f"Gagal membaca file: {e}")
 
 st.markdown("---")
-if st.button("Jalankan Valuasi & Generate PDF Resmi Lengkap 🚀") and datasets_to_process:
+if st.button("Jalankan Valuasi & Generate PDF Komprehensif 🚀") and datasets_to_process:
     with st.spinner("Memproses perhitungan aktuaria..."):
         results_dict = {}
         dplk_dict = {}
@@ -404,14 +434,14 @@ if st.session_state.get("calculated"):
         })
     st.dataframe(pd.DataFrame(summary_data), use_container_width=True)
     
-    pdf_file = generate_full_official_pdf(
+    pdf_file = generate_comprehensive_pdf(
         res_dict, dp_dict, pd_dict, asumsi_diskonto, asumsi_gaji, usia_pensiun, 
         input_perusahaan, nomor_laporan, bop_input, override_pbo_input, override_csc_input
     )
     
     st.download_button(
-        label="📥 Download Laporan PDF Resmi Lengkap (Termasuk Surat Pernyataan)",
+        label="📥 Download Laporan PDF Komprehensif Resmi",
         data=pdf_file,
-        file_name=f"FULL_OFFICIAL_REPORT_{input_perusahaan.replace(' ', '_')}.pdf",
+        file_name=f"COMPREHENSIVE_OFFICIAL_REPORT_{input_perusahaan.replace(' ', '_')}.pdf",
         mime="application/pdf"
     )
