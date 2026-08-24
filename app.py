@@ -13,6 +13,67 @@ from reportlab.lib import colors
 from reportlab.lib.units import inch
 
 # ==========================================
+# KONFIGURASI HALAMAN (HARUS DI ATAS)
+# ==========================================
+st.set_page_config(
+    page_title="KKA Setya Gunawan - Konsultan Aktuaria",
+    page_icon="📊",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# ==========================================
+# CUSTOM CSS UNTUK UI LEBIH MENARIK
+# ==========================================
+st.markdown("""
+<style>
+    /* Mengubah warna latar belakang header dan teks */
+    .main-header {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #1E3A8A;
+        margin-bottom: 0px;
+    }
+    .sub-header {
+        font-size: 1.2rem;
+        font-weight: 400;
+        color: #4B5563;
+        margin-bottom: 2rem;
+    }
+    .card {
+        background-color: #F3F4F6;
+        padding: 1.5rem;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+    .card-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #1F2937;
+        margin-bottom: 0.5rem;
+    }
+    .card-text {
+        font-size: 0.95rem;
+        color: #4B5563;
+    }
+    .stButton>button {
+        background-color: #1E3A8A;
+        color: white;
+        border-radius: 8px;
+        padding: 0.5rem 2rem;
+        font-weight: 600;
+    }
+    .stButton>button:hover {
+        background-color: #1D4ED8;
+        color: white;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+
+# ==========================================
 # 1. REFERENSI KURVA YIELD PHEI IGSYC (RESMI)
 # ==========================================
 PHEI_IGSYC_YIELD_CURVE = {
@@ -62,10 +123,10 @@ def parse_excel_dataset(file_or_buffer, sheet_name=0):
         if isinstance(val, (int, float)) and val == 1:
             data_start_idx = idx
             break
-
+            
     clean_data = []
     total_benefit_paid = 0.0
-
+    
     for idx in range(data_start_idx, len(df)):
         row = df.iloc[idx]
         nik = row.iloc[1] if len(row) > 1 else None
@@ -74,18 +135,13 @@ def parse_excel_dataset(file_or_buffer, sheet_name=0):
         doe = row.iloc[4] if len(row) > 4 else None
         salary = row.iloc[5] if len(row) > 5 else 0.0
         dplk = row.iloc[6] if len(row) > 6 else 0.0
-
+        
         if not pd.isna(nik) or not pd.isna(nama):
-            try:
-                salary_val = float(salary) if not pd.isna(salary) else 0.0
-            except:
-                salary_val = 0.0
-
-            try:
-                dplk_val = float(dplk) if not pd.isna(dplk) else 0.0
-            except:
-                dplk_val = 0.0
-
+            try: salary_val = float(salary) if not pd.isna(salary) else 0.0
+            except: salary_val = 0.0
+            try: dplk_val = float(dplk) if not pd.isna(dplk) else 0.0
+            except: dplk_val = 0.0
+                
             clean_data.append({
                 'NIK': str(nik).strip() if not pd.isna(nik) else '',
                 'Nama': str(nama).strip() if not pd.isna(nama) else '',
@@ -94,15 +150,14 @@ def parse_excel_dataset(file_or_buffer, sheet_name=0):
                 'Total Upah Bulanan (Gross)': salary_val,
                 'Saldo DPLK': dplk_val
             })
-
+            
         if len(row) > 11:
             val_paid = row.iloc[11]
             try:
                 if not pd.isna(val_paid) and isinstance(val_paid, (int, float)):
                     total_benefit_paid += float(val_paid)
-            except:
-                pass
-
+            except: pass
+                
     return pd.DataFrame(clean_data), total_benefit_paid
 
 # ==========================================
@@ -113,7 +168,7 @@ class PSAK219Engine:
         self.discount_rate = discount_rate
         self.salary_inc = salary_increase
         self.ret_age = retirement_age
-
+        
     def get_benefit_pp35(self, service_years):
         if service_years < 1: up = 1
         elif service_years < 2: up = 2
@@ -124,7 +179,7 @@ class PSAK219Engine:
         elif service_years < 7: up = 7
         elif service_years < 8: up = 8
         else: up = 9
-
+            
         if service_years < 3: upmk = 0
         elif service_years < 6: upmk = 2
         elif service_years < 9: upmk = 3
@@ -150,38 +205,38 @@ class PSAK219Engine:
         years_to_retire = self.ret_age - current_age
         if pd.isna(current_age) or pd.isna(past_service) or pd.isna(current_salary) or years_to_retire <= 0:
             return {'PBO': 0, 'CSC': 0, 'Duration': 0}
-
+            
         total_service = past_service + years_to_retire
         weighted_time_pv = 0
         Parser_pvfb = 0
-        p_survival = 1.0
-
+        p_survival = 1.0 
+        
         for t in range(int(years_to_retire)):
             age_t = current_age + t
             service_t = past_service + t
             salary_t = current_salary * ((1 + self.salary_inc) ** t)
             q_m, q_d, q_w = self.get_decrement_rates(age_t)
             up_t, upmk_t = self.get_benefit_pp35(service_t)
-
+            
             b_death = salary_t * ((2 * up_t) + upmk_t)
             b_disab = salary_t * ((2 * up_t) + upmk_t)
             v = 1 / ((1 + self.discount_rate) ** (t + 1))
-
+            
             cf = (b_death * (p_survival * q_m)) + (b_disab * (p_survival * q_d))
             pv = cf * v
             weighted_time_pv += (t + 1) * pv
             Parser_pvfb += pv
             p_survival *= (1 - (q_m + q_d + q_w))
-
+            
         salary_ret = current_salary * ((1 + self.salary_inc) ** years_to_retire)
         up_ret, upmk_ret = self.get_benefit_pp35(total_service)
         b_ret = salary_ret * ((1.75 * up_ret) + upmk_ret)
         v_ret = 1 / ((1 + self.discount_rate) ** years_to_retire)
         pv_ret = b_ret * v_ret * p_survival
-
+        
         weighted_time_pv += years_to_retire * pv_ret
         Parser_pvfb += pv_ret
-
+        
         duration = (weighted_time_pv / Parser_pvfb) if Parser_pvfb > 0 else years_to_retire / 2.0
         pbo = Parser_pvfb * (past_service / total_service)
         csc = Parser_pvfb / total_service
@@ -199,7 +254,7 @@ def draw_footer(canvas, doc):
     canvas.drawCentredString(letter[0]/2.0, 50, "Konsultan Aktuaria Setya Gunawan")
     canvas.setFont('Helvetica', 8)
     canvas.drawCentredString(letter[0]/2.0, 40, "Izin Perusahaan No. 4.21.0007 | Keputusan Menteri Keuangan RI No. 590/KM.1/2021 | AKAI - 21043")
-    canvas.drawCentredString(letter[0]/2.0, 30, "Cilandak 88 Condominium UNIT D-1, Jl. Margasatwa Barat No.88, Cilandak Timur, Pasar Minggu, Jakarta Selatan")
+    canvas.drawCentredString(letter[0]/2.0, 30, "Cilandak 88 Condominium UNIT D-1, Jl. Margasatwa Barat No.88, Cilandak Timur, Jakarta Selatan")
     canvas.drawCentredString(letter[0]/2.0, 20, "HP/WA (0812) 9090 9019 | Email: kka_setyagunawan@yahoo.com")
     canvas.restoreState()
 
@@ -208,22 +263,22 @@ def generate_comprehensive_report(results_dict, dplk_dict, paid_dict, applied_di
     doc = SimpleDocTemplate(pdf_buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=80)
     elements = []
     styles = getSampleStyleSheet()
-
+    
     h_style = ParagraphStyle('SecH', parent=styles['Heading2'], fontSize=11, textColor=colors.black, spaceBefore=15, spaceAfter=8)
     title_style = ParagraphStyle('CoverTitle', parent=styles['Heading1'], fontSize=16, textColor=colors.black, alignment=1, spaceBefore=20, spaceAfter=10)
     sub_style = ParagraphStyle('CoverSub', parent=styles['Normal'], fontSize=12, textColor=colors.black, alignment=1, spaceAfter=20)
-
+    
     sorted_years = sorted(val_years, reverse=True)
     cur_yr = sorted_years[0]
     df_cur = results_dict[cur_yr]
-
+    
     total_pbo = df_cur['PBO'].sum() if not df_cur.empty else 0
     total_csc = df_cur['CSC'].sum() if not df_cur.empty else 0
     total_payroll = df_cur['Gross Salary'].sum() if not df_cur.empty else 0
     total_participants = len(df_cur)
     total_dplk = dplk_dict.get(cur_yr, 0.0)
     total_benefit_paid = paid_dict.get(cur_yr, 0.0)
-
+    
     int_cost = total_pbo * applied_discount
     past_service_cost = - (total_pbo * 0.03)
     pbo_bop = total_pbo * 0.93
@@ -231,7 +286,7 @@ def generate_comprehensive_report(results_dict, dplk_dict, paid_dict, applied_di
     funded_status = total_pbo - total_dplk
     pbo_expected = pbo_bop + net_expense - total_benefit_paid
     actuarial_gain_loss = total_pbo - pbo_expected
-
+    
     std_tbl_style = TableStyle([
         ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#F2F2F2')),
         ('TEXTCOLOR', (0,0), (-1,0), colors.black),
@@ -243,17 +298,17 @@ def generate_comprehensive_report(results_dict, dplk_dict, paid_dict, applied_di
         ('FONTSIZE', (0,0), (-1,-1), 9),
         ('VALIGN', (0,0), (-1,-1), 'MIDDLE')
     ])
-
+    
     if os.path.exists("logo.png"):
         logo = Image("logo.png", width=3*inch, height=3*inch)
         logo.hAlign = 'CENTER'
         elements.append(logo)
-
+    
     elements.append(Spacer(1, 20))
     elements.append(Paragraph(f"<b>PT. {company_name.upper()}</b>", title_style))
     elements.append(Paragraph(f"<b>ACTUARIAL VALUATION REPORT BASED ON<br/>PSAK 219 EMPLOYEE BENEFIT</b><br/><br/>Valuation Period Ended December 31, {cur_yr}<br/><br/><b>FINAL REPORT NO. {report_no}</b>", sub_style))
     elements.append(PageBreak())
-
+    
     elements.append(Paragraph("<b>I. Executive Summary & Employee Data Information (PHEI IGSYC Yield Matched)</b>", h_style))
     data_info = [
         ["No.", "Description", f"Dec 31, {cur_yr}", f"Dec 31, {cur_yr-1}"],
@@ -270,7 +325,7 @@ def generate_comprehensive_report(results_dict, dplk_dict, paid_dict, applied_di
     t_info.setStyle(TableStyle([('ALIGN', (1,1), (1,-1), 'LEFT'), ('ALIGN', (0,1), (0,-1), 'CENTER')]))
     elements.append(t_info)
     elements.append(Spacer(1, 15))
-
+    
     elements.append(Paragraph("<b>II. Accounting Disclosures (PSAK 219)</b>", h_style))
     elements.append(Paragraph("<b>1. Liabilities Recognized in Balance Sheet</b>", h_style))
     bs_data = [
@@ -284,8 +339,8 @@ def generate_comprehensive_report(results_dict, dplk_dict, paid_dict, applied_di
     t_bs.setStyle(TableStyle([('ALIGN', (0,1), (0,-1), 'LEFT'), ('FONTNAME', (0,-1), (-1,-1), 'Helvetica-Bold')]))
     elements.append(t_bs)
     elements.append(Spacer(1, 15))
-
-    elements.append(Paragraph("<b>2. Reconciliation Recognized in Balance Sheet (Mencakup Benefit Paid)</b>", h_style))
+    
+    elements.append(Paragraph("<b>2. Reconciliation Recognized in Balance Sheet</b>", h_style))
     rec_data = [
         ["DESCRIPTION", f"Dec 31, {cur_yr}", f"Dec 31, {cur_yr-1}"],
         ["Liability at beginning of the year", fmt_num(pbo_bop), "-"],
@@ -299,7 +354,7 @@ def generate_comprehensive_report(results_dict, dplk_dict, paid_dict, applied_di
     t_rec.setStyle(TableStyle([('ALIGN', (0,1), (0,-1), 'LEFT'), ('FONTNAME', (0,-1), (-1,-1), 'Helvetica-Bold')]))
     elements.append(t_rec)
     elements.append(PageBreak())
-
+    
     elements.append(Paragraph("<b>III. Multi-Year Historical Comparison Summary</b>", h_style))
     header_info = ["Description"] + [f"Dec 31, {yr}" for yr in sorted_years]
     multi_rows = [
@@ -316,510 +371,135 @@ def generate_comprehensive_report(results_dict, dplk_dict, paid_dict, applied_di
     t_multi.setStyle(std_tbl_style)
     t_multi.setStyle(TableStyle([('ALIGN', (0,1), (0,-1), 'LEFT'), ('FONTNAME', (0,-1), (-1,-1), 'Helvetica-Bold')]))
     elements.append(t_multi)
-
+    
     doc.build(elements, onFirstPage=draw_footer, onLaterPages=draw_footer)
     pdf_buffer.seek(0)
     return pdf_buffer
 
+
 # ==========================================
-# 6. KONFIGURASI HALAMAN & TEMA VISUAL
+# 6. ARSITEKTUR WEBSITE (SIDEBAR & NAVIGASI)
 # ==========================================
-st.set_page_config(
-    page_title="Setya Gunawan | Konsultan Aktuaria",
-    page_icon="📐",
-    layout="wide",
-    initial_sidebar_state="expanded"
+st.sidebar.image("https://cdn-icons-png.flaticon.com/512/2830/2830305.png", width=100) # Placeholder Logo
+st.sidebar.markdown("### KKA Setya Gunawan")
+st.sidebar.markdown("Konsultan Aktuaria Profesional & Terpercaya")
+st.sidebar.markdown("---")
+
+menu = st.sidebar.radio(
+    "📌 Navigasi Menu:",
+    ["🏠 Beranda", "🏢 Tentang Kami", "💼 Layanan", "🧮 Kalkulator Valuasi PSAK 219", "📞 Hubungi Kami"]
 )
 
-COMPANY_LEGAL_NAME = "Kantor Konsultan Aktuaria Setya Gunawan"
-COMPANY_LICENSE = "Izin Perusahaan No. 4.21.0007"
-COMPANY_MENKEU = "Keputusan Menteri Keuangan RI No. 590/KM.1/2021"
-COMPANY_AKAI = "AKAI - 21043"
-COMPANY_ADDRESS = "Cilandak 88 Condominium UNIT D-1, Jl. Margasatwa Barat No.88, Cilandak Timur, Pasar Minggu, Jakarta Selatan"
-COMPANY_PHONE = "(0812) 9090 9019"
-COMPANY_EMAIL = "kka_setyagunawan@yahoo.com"
-
-st.markdown("""
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
-
-html, body, [class*="css"]  { font-family: 'Inter', sans-serif; }
-h1, h2, h3, h4, h5 { font-family: 'Poppins', sans-serif !important; }
-
-#MainMenu {visibility: hidden;}
-footer {visibility: hidden;}
-header[data-testid="stHeader"] { background: transparent; }
-
-.main .block-container { padding-top: 1.5rem; padding-bottom: 3rem; max-width: 1180px; }
-
-/* ---------- Sidebar ---------- */
-[data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #0B1F3A 0%, #123056 60%, #14315C 100%);
-}
-[data-testid="stSidebar"] * { color: #EAF0FA !important; }
-[data-testid="stSidebar"] .stRadio > label { font-weight: 600; }
-[data-testid="stSidebar"] hr { border-color: rgba(255,255,255,0.15); }
-.sidebar-brand {
-    text-align:center;
-    padding: 6px 0 18px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.15);
-    margin-bottom: 14px;
-}
-.sidebar-brand-title { font-family:'Poppins',sans-serif; font-weight:800; font-size:1.05rem; line-height:1.3; }
-.sidebar-brand-sub { font-size:0.72rem; opacity:0.75; letter-spacing:0.5px; text-transform:uppercase; }
-.sidebar-contact-box {
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.12);
-    border-radius: 12px;
-    padding: 12px 14px;
-    font-size: 0.78rem;
-    line-height: 1.6;
-    margin-top: 18px;
-}
-
-/* ---------- Hero ---------- */
-.hero-section {
-    background: linear-gradient(135deg, #0B1F3A 0%, #14315C 45%, #1E4B8F 100%);
-    padding: 56px 44px;
-    border-radius: 26px;
-    color: #ffffff;
-    margin-bottom: 36px;
-    box-shadow: 0 24px 48px rgba(11,31,58,0.28);
-    position: relative;
-    overflow: hidden;
-}
-.hero-title { font-size: 2.5rem; font-weight: 800; margin-bottom: 14px; line-height:1.2; }
-.hero-sub { font-size: 1.08rem; font-weight: 400; opacity: 0.92; max-width: 680px; line-height:1.7; margin-bottom: 6px;}
-.badge-gold {
-    display:inline-block;
-    background: linear-gradient(135deg,#D4AF37,#F1D67A);
-    color:#1a1a1a;
-    padding:6px 18px;
-    border-radius:30px;
-    font-weight:700;
-    font-size:0.78rem;
-    letter-spacing:0.4px;
-    margin-bottom:18px;
-}
-.badge-soft {
-    display:inline-block;
-    background: rgba(255,255,255,0.12);
-    border: 1px solid rgba(255,255,255,0.25);
-    color:#fff;
-    padding:5px 14px;
-    border-radius:30px;
-    font-weight:600;
-    font-size:0.74rem;
-    margin: 4px 6px 4px 0;
-}
-
-/* ---------- Cards ---------- */
-.service-card {
-    background: #ffffff;
-    border-radius: 18px;
-    padding: 26px 22px;
-    box-shadow: 0 6px 20px rgba(15,30,60,0.06);
-    border: 1px solid #eef1f6;
-    transition: all 0.25s ease;
-    height: 100%;
-    margin-bottom: 6px;
-}
-.service-card:hover {
-    transform: translateY(-6px);
-    box-shadow: 0 18px 34px rgba(11,31,58,0.14);
-    border-color:#1E4B8F;
-}
-.service-icon { font-size: 2rem; margin-bottom: 10px; }
-.service-title { font-size: 1.08rem; font-weight: 700; color:#0B1F3A; margin-bottom: 6px; }
-.service-desc { color:#5a6472; font-size: 0.88rem; line-height:1.6; }
-
-.flagship-card {
-    background: linear-gradient(135deg, #0B1F3A 0%, #1E4B8F 100%);
-    border-radius: 22px;
-    padding: 34px 34px;
-    color: white;
-    box-shadow: 0 20px 40px rgba(11,31,58,0.32);
-    margin-bottom: 10px;
-}
-.flagship-title { font-size:1.5rem; font-weight:800; margin-bottom:10px; }
-.flagship-desc { opacity:0.92; line-height:1.7; font-size:0.95rem; }
-.flagship-point { font-size:0.86rem; opacity:0.95; margin-bottom:6px; }
-
-.stat-box { text-align:center; padding: 10px 6px; }
-.stat-num { font-size: 1.9rem; font-weight: 800; color:#1E4B8F; font-family:'Poppins',sans-serif;}
-.stat-label { color:#5a6472; font-size: 0.8rem; margin-top:2px;}
-
-.section-title { font-size: 1.7rem; font-weight: 800; color:#0B1F3A; margin-bottom: 4px;}
-.section-sub { color:#5a6472; margin-bottom: 26px; font-size:0.95rem;}
-
-.info-box {
-    background:#F7F9FC;
-    border-radius: 16px;
-    padding: 22px 24px;
-    border: 1px solid #eef1f6;
-    margin-bottom: 14px;
-}
-.info-box b { color:#0B1F3A; }
-
-.contact-box {
-    background:#F7F9FC;
-    border-radius: 18px;
-    padding: 26px;
-    border: 1px solid #eef1f6;
-}
-
-.divider-soft { border: none; border-top: 1px solid #eef1f6; margin: 30px 0; }
-
-/* ---------- Buttons ---------- */
-.stButton>button {
-    background: linear-gradient(135deg, #1E4B8F, #0B1F3A);
-    color: white !important;
-    border: none;
-    border-radius: 12px;
-    padding: 10px 26px;
-    font-weight: 600;
-    transition: all 0.2s ease;
-}
-.stButton>button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 20px rgba(30,75,143,0.32);
-}
-.stButton>button p { color: white !important; }
-
-.stDownloadButton>button {
-    background: linear-gradient(135deg, #D4AF37, #B8912A);
-    color: #1a1a1a !important;
-    border: none;
-    border-radius: 12px;
-    font-weight: 700;
-}
-
-/* Calculator header banner (smaller, inline) */
-.calc-header {
-    background: linear-gradient(135deg, #0B1F3A 0%, #1E4B8F 100%);
-    border-radius: 20px;
-    padding: 30px 34px;
-    color: white;
-    margin-bottom: 28px;
-}
-</style>
-""", unsafe_allow_html=True)
-
-# ==========================================
-# 7. NAVIGASI STATE
-# ==========================================
-MENU_OPTIONS = [
-    "🏠 Beranda",
-    "🏢 Tentang Kami",
-    "💼 Layanan Kami",
-    "🧮 Kalkulator Valuasi Aktuaria",
-    "📞 Kontak Kami",
-]
-
-if "menu" not in st.session_state:
-    st.session_state["menu"] = MENU_OPTIONS[0]
-
-def go_to(page_name):
-    st.session_state["menu"] = page_name
-    st.rerun()
-
-with st.sidebar:
-    st.markdown(f"""
-    <div class="sidebar-brand">
-        <div class="sidebar-brand-title">📐 Setya Gunawan</div>
-        <div class="sidebar-brand-sub">Konsultan Aktuaria</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.radio("Navigasi", MENU_OPTIONS, key="menu", label_visibility="collapsed")
-
-    st.markdown(f"""
-    <div class="sidebar-contact-box">
-        📍 Cilandak 88 Condominium, Jakarta Selatan<br/>
-        📱 {COMPANY_PHONE}<br/>
-        ✉️ {COMPANY_EMAIL}<br/><br/>
-        <span style="opacity:0.75; font-size:0.7rem;">{COMPANY_LICENSE}<br/>{COMPANY_AKAI}</span>
-    </div>
-    """, unsafe_allow_html=True)
-
-menu = st.session_state["menu"]
-
-# ==========================================
-# 8. HALAMAN: BERANDA
-# ==========================================
+# ------------------------------------------
+# HALAMAN: BERANDA
+# ------------------------------------------
 if menu == "🏠 Beranda":
-    st.markdown(f"""
-    <div class="hero-section">
-        <div class="badge-gold">✓ TERDAFTAR RESMI — {COMPANY_MENKEU}</div>
-        <div class="hero-title">Kepastian Aktuaria untuk<br/>Keputusan Bisnis yang Lebih Tepat</div>
-        <div class="hero-sub">
-            {COMPANY_LEGAL_NAME} menyediakan jasa valuasi aktuaria, konsultasi imbalan kerja,
-            dan pelaporan sesuai standar <b>PSAK 219</b> — didukung pencocokan kurva
-            <i>yield</i> zero-coupon resmi <b>PHEI IGSYC</b> untuk akurasi diskonto liabilitas.
-        </div>
-        <div>
-            <span class="badge-soft">📐 PSAK 219 Compliant</span>
-            <span class="badge-soft">📈 PHEI IGSYC Yield Matching</span>
-            <span class="badge-soft">📄 Laporan Resmi & Auditable</span>
-            <span class="badge-soft">🗂️ Data Multi-Tahun 2021–2026</span>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    c1, c2 = st.columns([1, 1])
-    with c1:
-        if st.button("🚀 Coba Kalkulator Valuasi Sekarang", use_container_width=True):
-            go_to("🧮 Kalkulator Valuasi Aktuaria")
-    with c2:
-        if st.button("💼 Lihat Semua Layanan Kami", use_container_width=True):
-            go_to("💼 Layanan Kami")
-
-    st.markdown("<hr class='divider-soft'/>", unsafe_allow_html=True)
-
-    s1, s2, s3, s4 = st.columns(4)
-    with s1:
-        st.markdown('<div class="stat-box"><div class="stat-num">100%</div><div class="stat-label">Sesuai Standar PSAK 219</div></div>', unsafe_allow_html=True)
-    with s2:
-        st.markdown('<div class="stat-box"><div class="stat-num">30</div><div class="stat-label">Tenor Kurva PHEI IGSYC (Tahun)</div></div>', unsafe_allow_html=True)
-    with s3:
-        st.markdown('<div class="stat-box"><div class="stat-num">2021–2026</div><div class="stat-label">Cakupan Data Historis</div></div>', unsafe_allow_html=True)
-    with s4:
-        st.markdown('<div class="stat-box"><div class="stat-num">24 Jam</div><div class="stat-label">Estimasi Laporan Instan</div></div>', unsafe_allow_html=True)
-
-    st.markdown("<hr class='divider-soft'/>", unsafe_allow_html=True)
-
-    st.markdown('<div class="section-title">Layanan Unggulan Kami</div><div class="section-sub">Solusi aktuaria menyeluruh, dari perhitungan hingga laporan siap audit.</div>', unsafe_allow_html=True)
-
-    fc1, fc2 = st.columns([1.4, 1])
-    with fc1:
+    st.markdown('<div class="main-header">Konsultan Aktuaria Setya Gunawan</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-header">Mitra Terpercaya untuk Solusi Aktuaria dan Valuasi Keuangan Perusahaan Anda.</div>', unsafe_allow_html=True)
+    
+    st.image("https://images.unsplash.com/photo-1554224155-6726b3ff858f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80", use_column_width=True)
+    
+    st.markdown("---")
+    st.markdown("### Mengapa Memilih Kami?")
+    col1, col2, col3 = st.columns(3)
+    with col1:
         st.markdown("""
-        <div class="flagship-card">
-            <div class="flagship-title">🧮 Valuasi Aktuaria PSAK 219 — Imbalan Kerja</div>
-            <div class="flagship-desc">
-                Layanan unggulan kami. Kalkulator online otomatis menghitung <b>PBO</b>, <b>Current Service Cost</b>,
-                dan durasi liabilitas dengan metode <i>Projected Unit Credit</i>, lalu mencocokkan suku bunga
-                diskonto secara otomatis dengan kurva <b>yield PHEI IGSYC</b> resmi — hasilnya langsung
-                tersedia dalam laporan PDF formal dwibahasa, lengkap dengan neraca, OCI, dan rekonsiliasi.
-            </div>
+        <div class="card">
+            <div class="card-title">⚖️ Standar PSAK Resmi</div>
+            <div class="card-text">Laporan dijamin 100% mematuhi regulasi PSAK 219 (Imbalan Kerja) dan pedoman Otoritas Jasa Keuangan (OJK).</div>
         </div>
         """, unsafe_allow_html=True)
-        if st.button("🚀 Buka Kalkulator Valuasi Aktuaria", key="cta_flagship"):
-            go_to("🧮 Kalkulator Valuasi Aktuaria")
-    with fc2:
+    with col2:
         st.markdown("""
-        <div class="info-box">
-            <b>Fitur utama layanan ini:</b><br/><br/>
-            📈 Pencocokan otomatis kurva yield PHEI IGSYC<br/><br/>
-            🗂️ Mendukung data multi-tahun (Excel / input manual)<br/><br/>
-            📄 Laporan PDF resmi siap audit & regulator<br/><br/>
-            🧾 Rekonsiliasi neraca & OCI otomatis
+        <div class="card">
+            <div class="card-title">⚡ Otomatisasi IBPA</div>
+            <div class="card-text">Terintegrasi otomatis dengan Kurva Yield SBN resmi dari PHEI IGSYC untuk penentuan diskonto paling akurat.</div>
         </div>
         """, unsafe_allow_html=True)
+    with col3:
+        st.markdown("""
+        <div class="card">
+            <div class="card-title">🔒 Keamanan Data</div>
+            <div class="card-text">Data HRD dan perusahaan Anda diproses secara terenkripsi dan dijamin kerahasiaannya.</div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    st.info("💡 **Akses Langsung:** Untuk mencoba sistem valuasi otomatis kami, silakan pilih menu **🧮 Kalkulator Valuasi PSAK 219** di sebelah kiri.")
 
-    st.write("")
-    g1, g2, g3 = st.columns(3)
-    with g1:
-        st.markdown("""
-        <div class="service-card">
-            <div class="service-icon">🏦</div>
-            <div class="service-title">Konsultasi Dana Pensiun</div>
-            <div class="service-desc">Pendampingan pembentukan dan evaluasi program dana pensiun perusahaan.</div>
-        </div>
-        """, unsafe_allow_html=True)
-    with g2:
-        st.markdown("""
-        <div class="service-card">
-            <div class="service-icon">🔍</div>
-            <div class="service-title">Audit Kewajiban Aktuaria</div>
-            <div class="service-desc">Reviu independen atas perhitungan liabilitas imbalan kerja perusahaan Anda.</div>
-        </div>
-        """, unsafe_allow_html=True)
-    with g3:
-        st.markdown("""
-        <div class="service-card">
-            <div class="service-icon">🎓</div>
-            <div class="service-title">Pelatihan & Workshop</div>
-            <div class="service-desc">Edukasi internal tim keuangan/SDM mengenai standar PSAK 219 dan praktiknya.</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-# ==========================================
-# 9. HALAMAN: TENTANG KAMI
-# ==========================================
+# ------------------------------------------
+# HALAMAN: TENTANG KAMI
+# ------------------------------------------
 elif menu == "🏢 Tentang Kami":
-    st.markdown(f"""
-    <div class="hero-section" style="padding:44px 44px;">
-        <div class="badge-gold">TENTANG KAMI</div>
-        <div class="hero-title" style="font-size:2.1rem;">{COMPANY_LEGAL_NAME}</div>
-        <div class="hero-sub">Kantor konsultan aktuaria independen yang berfokus pada ketepatan perhitungan,
-        kepatuhan standar akuntansi, dan kejelasan pelaporan bagi klien korporasi di Indonesia.</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    c1, c2 = st.columns(2)
-    with c1:
+    st.markdown('<div class="main-header">Tentang Perusahaan</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-header">Mengenal Lebih Dekat KKA Setya Gunawan</div>', unsafe_allow_html=True)
+    
+    col1, col2 = st.columns([1, 2])
+    with col1:
+        st.image("https://cdn-icons-png.flaticon.com/512/3135/3135715.png", width=250) # Placeholder Profil
+    with col2:
+        st.markdown("### Setya Gunawan, SE, FSAI, AAAIJ, AIIS")
+        st.markdown("**Pemimpin Rekan & Aktuaris Publik**")
+        st.write("""
+        Kami adalah Kantor Konsultan Aktuaria yang berdedikasi tinggi dalam memberikan layanan jasa aktuaria, desain program pensiun, dan manajemen risiko. Dipimpin oleh tenaga ahli bersertifikat **FSAI (Fellow of the Society of Actuaries of Indonesia)**, kami memastikan setiap perhitungan aktuaria Anda memenuhi standar akuntansi keuangan tertinggi di Indonesia.
+        """)
         st.markdown("""
-        <div class="info-box">
-            <b>🎯 Visi</b><br/>
-            Menjadi mitra aktuaria tepercaya yang mendukung perusahaan di Indonesia dalam
-            mengelola kewajiban imbalan kerja secara akurat, transparan, dan sesuai regulasi.
-        </div>
-        """, unsafe_allow_html=True)
-    with c2:
-        st.markdown("""
-        <div class="info-box">
-            <b>🚀 Misi</b><br/>
-            Menghadirkan layanan valuasi aktuaria berbasis teknologi — cepat, presisi, dan
-            selaras dengan standar PSAK 219 serta kurva yield resmi PHEI IGSYC.
-        </div>
-        """, unsafe_allow_html=True)
+        **Legalitas & Perizinan:**
+        * 📜 **Izin Perusahaan:** No. 4.21.0007
+        * 📜 **SK Menteri Keuangan RI:** No. 590/KM.1/2021
+        * 📜 **Registrasi PAI:** AKAI - 21043
+        """)
 
-    st.markdown("<hr class='divider-soft'/>", unsafe_allow_html=True)
-    st.markdown('<div class="section-title">Legalitas & Perizinan</div><div class="section-sub">Beroperasi secara resmi dan diawasi sesuai ketentuan yang berlaku.</div>', unsafe_allow_html=True)
-
-    l1, l2, l3 = st.columns(3)
-    with l1:
-        st.markdown(f'<div class="service-card"><div class="service-icon">📜</div><div class="service-title">Izin Perusahaan</div><div class="service-desc">{COMPANY_LICENSE}</div></div>', unsafe_allow_html=True)
-    with l2:
-        st.markdown(f'<div class="service-card"><div class="service-icon">🏛️</div><div class="service-title">Keputusan Menteri Keuangan</div><div class="service-desc">{COMPANY_MENKEU}</div></div>', unsafe_allow_html=True)
-    with l3:
-        st.markdown(f'<div class="service-card"><div class="service-icon">🪪</div><div class="service-title">Nomor Anggota AKAI</div><div class="service-desc">{COMPANY_AKAI}</div></div>', unsafe_allow_html=True)
-
-    st.markdown("<hr class='divider-soft'/>", unsafe_allow_html=True)
-    st.markdown('<div class="section-title">Mengapa Memilih Kami</div>', unsafe_allow_html=True)
-    w1, w2, w3, w4 = st.columns(4)
-    for col, icon, title, desc in [
-        (w1, "📈", "Akurat & Sesuai SBN", "Menggunakan kurva yield harian resmi PHEI untuk ketepatan diskonto liabilitas."),
-        (w2, "⚡", "Multi-Tahun & Fleksibel", "Mendukung data historis 2021–2026 via Excel maupun editor interaktif."),
-        (w3, "📄", "Laporan Resmi", "Laporan dwibahasa lengkap dengan neraca, OCI, dan rekonsiliasi."),
-        (w4, "🤝", "Pendampingan Personal", "Tim kami siap membantu interpretasi hasil valuasi bersama klien."),
-    ]:
-        with col:
-            st.markdown(f'<div class="service-card"><div class="service-icon">{icon}</div><div class="service-title">{title}</div><div class="service-desc">{desc}</div></div>', unsafe_allow_html=True)
-
-# ==========================================
-# 10. HALAMAN: LAYANAN KAMI
-# ==========================================
-elif menu == "💼 Layanan Kami":
-    st.markdown(f"""
-    <div class="hero-section" style="padding:44px 44px;">
-        <div class="badge-gold">LAYANAN KAMI</div>
-        <div class="hero-title" style="font-size:2.1rem;">Solusi Aktuaria Menyeluruh</div>
-        <div class="hero-sub">Dari perhitungan liabilitas hingga pelaporan resmi — kami mendampingi
-        perusahaan Anda memenuhi kepatuhan standar akuntansi imbalan kerja.</div>
-    </div>
-    """, unsafe_allow_html=True)
-
+# ------------------------------------------
+# HALAMAN: LAYANAN
+# ------------------------------------------
+elif menu == "💼 Layanan":
+    st.markdown('<div class="main-header">Layanan Kami</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-header">Solusi Menyeluruh untuk Kebutuhan Aktuaria Anda</div>', unsafe_allow_html=True)
+    
     st.markdown("""
-    <div class="flagship-card">
-        <div class="flagship-title">⭐ Layanan Unggulan: Kalkulator Valuasi Aktuaria PSAK 219</div>
-        <div class="flagship-desc">
-            Hitung liabilitas imbalan kerja perusahaan Anda secara instan dengan metode
-            <i>Projected Unit Credit</i>, pencocokan otomatis kurva yield PHEI IGSYC, dan
-            hasilkan laporan PDF resmi siap audit — semua dalam hitungan menit.
-        </div>
-        <br/>
-        <div class="flagship-point">✔️ Perhitungan PBO, CSC, dan durasi liabilitas otomatis</div>
-        <div class="flagship-point">✔️ Diskonto tercocokkan otomatis dengan kurva PHEI IGSYC (tenor 1–30 tahun)</div>
-        <div class="flagship-point">✔️ Mendukung unggah Excel multi-tahun maupun input manual di website</div>
-        <div class="flagship-point">✔️ Laporan PDF resmi: neraca, OCI, dan rekonsiliasi multi-tahun</div>
-    </div>
-    """, unsafe_allow_html=True)
-    if st.button("🚀 Gunakan Kalkulator Sekarang", key="cta_service_page"):
-        go_to("🧮 Kalkulator Valuasi Aktuaria")
+    1. **Valuasi Kewajiban Imbalan Kerja (PSAK 219)**
+       Kami menghitung pencadangan kewajiban pesangon, penghargaan masa kerja, dan uang penggantian hak sesuai dengan regulasi terbaru. Laporan kami dirancang untuk mempermudah proses audit oleh Kantor Akuntan Publik (KAP).
+       
+    2. **Desain & Pendirian Dana Pensiun (DPLK/DPPK)**
+       Konsultasi pembentukan dana pensiun dari tahap studi kelayakan, perumusan peraturan dana pensiun, hingga pelaporan ke OJK.
+       
+    3. **Valuasi Asuransi Jiwa & Umum**
+       Perhitungan premi, penentuan cadangan teknis (Premi Belum Merupakan Pendapatan & Klaim yang Belum Diselesaikan), serta *Asset-Liability Management* (ALM) untuk perusahaan asuransi.
+    
+    4. **Sistem Aplikasi Aktuaria Mandiri (Web-Based)**
+       Klien dapat memanfaatkan portal portal canggih kami untuk menyimulasikan dampak kenaikan gaji atau perubahan usia pensiun secara real-time terhadap kewajiban pesangon (Tersedia pada menu Kalkulator).
+    """)
 
-    st.markdown("<hr class='divider-soft'/>", unsafe_allow_html=True)
-    st.markdown('<div class="section-title">Layanan Lainnya</div><div class="section-sub">Dukungan aktuaria di luar valuasi PSAK 219.</div>', unsafe_allow_html=True)
+# ------------------------------------------
+# HALAMAN: KALKULATOR (CORE FITUR)
+# ------------------------------------------
+elif menu == "🧮 Kalkulator Valuasi PSAK 219":
+    st.markdown('<div class="main-header">Kalkulator Valuasi Aktuaria PSAK 219</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-header">Otomatisasi Perhitungan Pesangon Terintegrasi PHEI IGSYC</div>', unsafe_allow_html=True)
 
-    services = [
-        ("🏦", "Valuasi Dana Pensiun", "Perhitungan kewajiban dan pendanaan program pensiun manfaat pasti maupun iuran pasti."),
-        ("🔍", "Audit & Reviu Independen", "Reviu kedua (peer review) atas laporan aktuaria yang disusun pihak lain."),
-        ("📊", "Analisis Sensitivitas", "Simulasi dampak perubahan asumsi diskonto, kenaikan gaji, dan tingkat resign."),
-        ("📁", "Manajemen Data Kepesertaan", "Pembersihan dan strukturisasi data karyawan untuk keperluan valuasi."),
-        ("🎓", "Pelatihan Internal PSAK 219", "Workshop bagi tim keuangan/SDM mengenai konsep dan penerapan standar."),
-        ("📞", "Konsultasi Regulasi", "Pendampingan terkait ketentuan Kemenkeu, OJK, dan standar akuntansi terkait."),
-    ]
-    cols = st.columns(3)
-    for i, (icon, title, desc) in enumerate(services):
-        with cols[i % 3]:
-            st.markdown(f'<div class="service-card"><div class="service-icon">{icon}</div><div class="service-title">{title}</div><div class="service-desc">{desc}</div></div>', unsafe_allow_html=True)
-            st.write("")
+    col_setup1, col_setup2 = st.columns(2)
+    with col_setup1:
+        st.markdown("#### 1. Pengaturan Dokumen Laporan")
+        input_perusahaan = st.text_input("Nama Perusahaan Klien", "PT GATRA MAPAN INDONESIA")
+        tanggal_laporan = st.date_input("Tanggal Laporan Diterbitkan", datetime.date(2026, 3, 27))
+        nomor_laporan = st.text_input("Nomor Laporan Baku", f"082/KAS-FR/PSAK/III/{tanggal_laporan.strftime('%Y')}")
 
-# ==========================================
-# 11. HALAMAN: KONTAK KAMI
-# ==========================================
-elif menu == "📞 Kontak Kami":
-    st.markdown(f"""
-    <div class="hero-section" style="padding:44px 44px;">
-        <div class="badge-gold">HUBUNGI KAMI</div>
-        <div class="hero-title" style="font-size:2.1rem;">Mari Diskusikan Kebutuhan Aktuaria Anda</div>
-        <div class="hero-sub">Tim kami siap membantu perhitungan valuasi, konsultasi, hingga pelaporan
-        imbalan kerja perusahaan Anda.</div>
-    </div>
-    """, unsafe_allow_html=True)
+    with col_setup2:
+        st.markdown("#### 2. Asumsi Aktuaria Dasar")
+        asumsi_gaji = st.number_input("Asumsi Kenaikan Gaji per Tahun (%)", value=5.0, step=0.1) / 100
+        usia_pensiun = st.number_input("Usia Pensiun Normal (Tahun)", value=60, step=1)
+        st.info("💡 Suku bunga diskonto ditentukan otomatis lewat *yield curve matching* PHEI IGSYC.")
 
-    c1, c2 = st.columns([1, 1.1])
-    with c1:
-        st.markdown(f"""
-        <div class="contact-box">
-            <b>📍 Alamat Kantor</b><br/>
-            {COMPANY_ADDRESS}<br/><br/>
-            <b>📱 Telepon / WhatsApp</b><br/>
-            {COMPANY_PHONE}<br/><br/>
-            <b>✉️ Email</b><br/>
-            {COMPANY_EMAIL}<br/><br/>
-            <b>🏛️ Legalitas</b><br/>
-            {COMPANY_LICENSE}<br/>
-            {COMPANY_MENKEU}<br/>
-            {COMPANY_AKAI}
-        </div>
-        """, unsafe_allow_html=True)
-
-    with c2:
-        st.markdown('<div class="section-title" style="font-size:1.3rem;">Kirim Pesan Singkat</div>', unsafe_allow_html=True)
-        with st.form("contact_form"):
-            nama = st.text_input("Nama Lengkap")
-            perusahaan = st.text_input("Nama Perusahaan")
-            email_kontak = st.text_input("Email")
-            pesan = st.text_area("Pesan / Kebutuhan Layanan", height=120)
-            submitted = st.form_submit_button("Kirim Pesan")
-            if submitted:
-                st.success("Terima kasih! Pesan Anda telah dicatat. Tim kami akan menghubungi Anda melalui email/WA yang tercantum.")
-        st.caption("Untuk respon lebih cepat, silakan hubungi langsung melalui WhatsApp atau email di atas.")
-
-# ==========================================
-# 12. HALAMAN: KALKULATOR VALUASI AKTUARIA
-# ==========================================
-elif menu == "🧮 Kalkulator Valuasi Aktuaria":
-    st.markdown("""
-    <div class="calc-header">
-        <div class="badge-gold">LAYANAN UNGGULAN</div>
-        <div class="hero-title" style="font-size:1.9rem; margin-bottom:8px;">📄 Generator Laporan Aktuaria PSAK 219</div>
-        <div class="hero-sub" style="font-size:0.98rem;">Pencocokan otomatis kurva yield PHEI IGSYC — hitung liabilitas dan unduh laporan resmi dalam hitungan menit.</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.sidebar.markdown("---")
-    st.sidebar.header("⚙️ Pengaturan Dokumen & Klien")
-    input_perusahaan = st.sidebar.text_input("Nama Perusahaan Klien", "PT GATRA MAPAN INDONESIA")
-    tanggal_laporan = st.sidebar.date_input("Tanggal Laporan Diterbitkan", datetime.date(2026, 3, 27))
-    nomor_laporan = st.sidebar.text_input("Nomor Laporan Baku", f"082/KAS-FR/PSAK/III/{tanggal_laporan.strftime('%Y')}")
-
-    asumsi_gaji = st.sidebar.number_input("Kenaikan Gaji (%)", value=5.0, step=0.1) / 100
-    usia_pensiun = st.sidebar.number_input("Usia Pensiun Normal", value=60, step=1)
-
-    st.sidebar.info("💡 **Standar Aktuaris:** Suku bunga diskonto ditentukan otomatis lewat *yield curve matching* PHEI IGSYC.")
-
-    metode_input = st.radio(
-        "Pilih Metode Masukan Data Karyawan:",
-        ("Upload File Excel Multi-Tahun", "Input & Editor Data Langsung di Website")
-    )
+    st.markdown("---")
+    st.markdown("#### 3. Masukkan Data Karyawan")
+    metode_input = st.radio("Pilih Metode:", ("Upload File Excel Multi-Tahun", "Input & Editor Data Langsung di Website"), horizontal=True)
 
     datasets_to_process = {}
     benefit_paid_dict = {}
 
     if metode_input == "Upload File Excel Multi-Tahun":
-        uploaded_file = st.file_uploader("Unggah File Excel Multi-Tahun Anda (.xlsx / .xls)", type=["xlsx", "xls"])
+        uploaded_file = st.file_uploader("Unggah File Excel Anda (.xlsx / .xls)", type=["xlsx", "xls"])
         if uploaded_file is not None:
             try:
                 xl_file = pd.ExcelFile(uploaded_file)
@@ -830,152 +510,151 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria":
                         df_emp, total_paid = parse_excel_dataset(uploaded_file, sheet_name=sh)
                         datasets_to_process[yr] = df_emp
                         benefit_paid_dict[yr] = total_paid
-                st.success(f"Berhasil membaca sheet Excel untuk tahun: {list(datasets_to_process.keys())}")
+                st.success(f"Berhasil membaca sheet untuk tahun: {list(datasets_to_process.keys())}")
             except Exception as e:
                 st.error(f"Gagal membaca file: {e}")
 
-    else:
-        st.info("Masukkan data karyawan langsung per tahun menggunakan tabel interaktif di bawah (Rentang 2021 - 2026).")
-        selected_years = st.multiselect(
-            "Pilih Tahun Valuasi yang Ingin Dibuat",
-            [2021, 2022, 2023, 2024, 2025, 2026],
-            default=[2024, 2025]
-        )
-
-        if "manual_datasets" not in st.session_state:
-            st.session_state.manual_datasets = {}
-
+    else: 
+        st.caption("Gunakan tabel interaktif di bawah ini untuk memasukkan data karyawan per tahun.")
+        selected_years = st.multiselect("Pilih Tahun Valuasi", [2021, 2022, 2023, 2024, 2025, 2026], default=[2024, 2025])
+        
+        if "manual_datasets" not in st.session_state: st.session_state.manual_datasets = {}
         tab_years = st.tabs([str(yr) for yr in selected_years]) if selected_years else []
-
+        
         for idx, yr in enumerate(selected_years):
             with tab_years[idx]:
                 if yr not in st.session_state.manual_datasets:
                     st.session_state.manual_datasets[yr] = pd.DataFrame([
-                        {"NIK": "001", "Nama": "Karyawan Contoh 1", "Tanggal Lahir": "1985-05-12", "Tgl. Mulai Bekerja": "2010-01-01", "Total Upah Bulanan (Gross)": 5000000.0, "Saldo DPLK": 0.0}
+                        {"NIK": "001", "Nama": "Jhon Doe", "Tanggal Lahir": "1985-05-12", "Tgl. Mulai Bekerja": "2010-01-01", "Total Upah Bulanan (Gross)": 5000000.0, "Saldo DPLK": 0.0}
                     ])
-
-                edited_df = st.data_editor(
-                    st.session_state.manual_datasets[yr],
-                    num_rows="dynamic",
-                    key=f"manual_editor_{yr}",
-                    use_container_width=True
-                )
+                
+                edited_df = st.data_editor(st.session_state.manual_datasets[yr], num_rows="dynamic", key=f"manual_editor_{yr}", use_container_width=True)
                 st.session_state.manual_datasets[yr] = edited_df
                 datasets_to_process[yr] = edited_df
+                
+                benefit_paid_dict[yr] = st.number_input(f"Total Benefit Paid Aktual Tahun {yr} (Rp)", value=0.0, step=1000000.0, key=f"manual_paid_{yr}")
 
-                benefit_paid_dict[yr] = st.number_input(
-                    f"Total Benefit Paid Aktual Tahun {yr} (Rp)",
-                    value=0.0,
-                    step=1000000.0,
-                    key=f"manual_paid_{yr}"
-                )
-
-    st.markdown("---")
-    if st.button("Jalankan Valuasi Otomatis (PHEI IGSYC Yield Matching) 🚀") and datasets_to_process:
-        with st.spinner("Menghitung durasi liabilitas dan mencocokkan kurva yield PHEI IGSYC..."):
+    st.markdown("<br>", unsafe_allow_html=True)
+    if st.button("🚀 JALANKAN VALUASI OTOMATIS", use_container_width=True) and datasets_to_process:
+        with st.spinner("Menghitung durasi liabilitas dan mencocokkan kurva yield PHEI..."):
             results_dict = {}
             dplk_dict = {}
             applied_discount_dict = {}
             active_years = sorted(list(datasets_to_process.keys()))
-
+            
             for yr in active_years:
                 val_date_dt = datetime.datetime(yr, 12, 31)
                 df_input = datasets_to_process[yr]
-
+                
                 temp_engine = PSAK219Engine(0.065, asumsi_gaji, usia_pensiun)
                 durations = []
-
+                
                 for _, row in df_input.iterrows():
                     try:
-                        dob = pd.to_datetime(row.get("Tanggal Lahir"))
-                        doe = pd.to_datetime(row.get("Tgl. Mulai Bekerja"))
+                        dob, doe = pd.to_datetime(row.get("Tanggal Lahir")), pd.to_datetime(row.get("Tgl. Mulai Bekerja"))
                         gross_salary = float(row.get("Total Upah Bulanan (Gross)", 0))
-                    except:
-                        continue
-                    if pd.isna(dob) or pd.isna(doe) or gross_salary <= 0:
-                        continue
-                    cur_age = (val_date_dt - dob).days / 365.25
-                    pst_serv = (val_date_dt - doe).days / 365.25
+                    except: continue
+                    if pd.isna(dob) or pd.isna(doe) or gross_salary <= 0: continue
+                    
+                    cur_age, pst_serv = (val_date_dt - dob).days / 365.25, (val_date_dt - doe).days / 365.25
                     res = temp_engine.calculate_puc(cur_age, pst_serv, gross_salary)
-                    if res['Duration'] > 0:
-                        durations.append(res['Duration'])
-
+                    if res['Duration'] > 0: durations.append(res['Duration'])
+                
                 avg_duration = np.mean(durations) if durations else 8.0
                 matched_phei_rate = get_phei_discount_rate(avg_duration)
                 applied_discount_dict[yr] = matched_phei_rate
-
+                
                 final_engine = PSAK219Engine(matched_phei_rate, asumsi_gaji, usia_pensiun)
                 hasil_valuasi = []
                 total_dplk_yr = 0.0
-
+                
                 for _, row in df_input.iterrows():
                     try:
-                        dob = pd.to_datetime(row.get("Tanggal Lahir"))
-                        doe = pd.to_datetime(row.get("Tgl. Mulai Bekerja"))
+                        dob, doe = pd.to_datetime(row.get("Tanggal Lahir")), pd.to_datetime(row.get("Tgl. Mulai Bekerja"))
                         gross_salary = float(row.get("Total Upah Bulanan (Gross)", 0))
                         dplk_val = float(row.get("Saldo DPLK", 0.0) or 0.0)
-                    except:
-                        continue
-
-                    if pd.isna(dob) or pd.isna(doe) or gross_salary <= 0:
-                        continue
-
+                    except: continue
+                    if pd.isna(dob) or pd.isna(doe) or gross_salary <= 0: continue
+                        
                     total_dplk_yr += dplk_val
-                    current_age = (val_date_dt - dob).days / 365.25
-                    past_service = (val_date_dt - doe).days / 365.25
-
+                    current_age, past_service = (val_date_dt - dob).days / 365.25, (val_date_dt - doe).days / 365.25
+                    
                     kalkulasi = final_engine.calculate_puc(current_age, past_service, gross_salary)
                     hasil_valuasi.append({
                         "NIK": row.get("NIK", "N/A"), "Name": row.get("Nama", "Unknown"),
                         "Age Valuation": current_age, "Past Service": past_service,
                         "Gross Salary": gross_salary, **kalkulasi
                     })
-
+                    
                 results_dict[yr] = pd.DataFrame(hasil_valuasi)
                 dplk_dict[yr] = total_dplk_yr
-
+                
             st.session_state.results_dict = results_dict
             st.session_state.dplk_dict = dplk_dict
             st.session_state.paid_dict = benefit_paid_dict
             st.session_state.applied_discount_dict = applied_discount_dict
             st.session_state.active_years = active_years
             st.session_state.calculated_results = True
-            st.success(f"Valuasi Selesai! Suku Bunga PHEI IGSYC Tercocokkan Otomatis (Durasi Rata-rata ~{avg_duration:.2f} Tahun).")
+            st.success(f"Valuasi Selesai! Suku Bunga PHEI Tercocokkan Otomatis (Durasi ~{avg_duration:.2f} Tahun).")
 
     if st.session_state.get("calculated_results"):
-        st.subheader("📊 Ringkasan Hasil Kalkulasi & Suku Bunga PHEI IGSYC Otomatis")
+        st.markdown("---")
+        st.markdown("### 📊 Ringkasan Hasil Kalkulasi & Laporan PDF")
         res_dict = st.session_state.results_dict
         dp_dict = st.session_state.dplk_dict
         pd_dict = st.session_state.paid_dict
         disc_dict = st.session_state.applied_discount_dict
         act_yrs = st.session_state.active_years
-
+        
         summary_data = []
         for yr in sorted(act_yrs, reverse=True):
             df_y = res_dict[yr]
             pbo_y = df_y['PBO'].sum() if not df_y.empty else 0
             rate_y = disc_dict.get(yr, 0.0659)
             summary_data.append({
-                "Periode Tahun": f"31 Dec {yr}",
+                "Tahun": f"31 Dec {yr}",
                 "Diskonto PHEI": f"{rate_y*100:.4f}%".replace('.', ','),
-                "Total Peserta": len(df_y),
-                "Benefit Paid (Aktual)": f"Rp {pd_dict.get(yr, 0):,.0f}".replace(",", "."),
-                "Present Value of DBO (PBO)": f"Rp {pbo_y:,.0f}".replace(",", "."),
-                "Saldo DPLK": f"Rp {dp_dict[yr]:,.0f}".replace(",", "."),
+                "Peserta": len(df_y),
+                "PBO (Kewajiban)": f"Rp {pbo_y:,.0f}".replace(",", "."),
                 "Net Liability": f"Rp {pbo_y - dp_dict[yr]:,.0f}".replace(",", ".")
             })
-
+        
         st.dataframe(pd.DataFrame(summary_data), use_container_width=True)
-
+        
         cur_applied_rate = disc_dict.get(act_yrs[-1], 0.0659) if act_yrs else 0.0659
         pdf_file = generate_comprehensive_report(
-            res_dict, dp_dict, pd_dict, cur_applied_rate, asumsi_gaji, usia_pensiun,
+            res_dict, dp_dict, pd_dict, cur_applied_rate, asumsi_gaji, usia_pensiun, 
             act_yrs, input_perusahaan, nomor_laporan
         )
-
+        
         st.download_button(
-            label="📥 Download Laporan PDF Lengkap (Sertakan Kurva Yield PHEI)",
+            label="📥 UNDUH LAPORAN PDF RESMI",
             data=pdf_file,
-            file_name=f"FINAL_REPORT_PHEI_IGSYC_{input_perusahaan.replace(' ', '_')}.pdf",
+            file_name=f"LAPORAN_AKTUARIA_{input_perusahaan.replace(' ', '_')}.pdf",
             mime="application/pdf"
         )
+
+# ------------------------------------------
+# HALAMAN: HUBUNGI KAMI
+# ------------------------------------------
+elif menu == "📞 Hubungi Kami":
+    st.markdown('<div class="main-header">Hubungi Kami</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-header">Kami Siap Membantu Keperluan Perusahaan Anda</div>', unsafe_allow_html=True)
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("""
+        **📍 Kantor Pusat:**
+        Cilandak 88 Condominium UNIT D-1,  
+        Jl. Margasatwa Barat No.88, Cilandak Timur,  
+        Pasar Minggu, Jakarta Selatan, DKI Jakarta 12560
+        
+        **📧 Email:**  
+        kka_setyagunawan@yahoo.com
+        
+        **📱 Telepon / WhatsApp:**  
+        (0812) 9090 9019
+        """)
+    with col2:
+        st.info("🕒 **Jam Operasional:**\nSenin - Jumat: 08.00 - 17.00 WIB\nSabtu - Minggu: Tutup (Hanya Janji Temu)")
+        st.button("✉️ Kirim Pesan Email Langsung")
