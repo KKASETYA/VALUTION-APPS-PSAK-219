@@ -209,8 +209,8 @@ def generate_comprehensive_report(results_dict, dplk_dict, paid_dict, discount, 
     total_dplk = dplk_dict.get(cur_yr, 0.0)
     total_benefit_paid = paid_dict.get(cur_yr, 2983814836.0)
     
-    int_cost = bop_obligation * 0.0711[cite: 3]
-    net_expense = total_csc + int_cost[cite: 3]
+    int_cost = bop_obligation * 0.0711
+    net_expense = total_csc + int_cost
     funded_status = total_pbo - total_dplk
     pbo_expected = bop_obligation + net_expense - total_benefit_paid
     actuarial_gain_loss = total_pbo - pbo_expected
@@ -234,10 +234,10 @@ def generate_comprehensive_report(results_dict, dplk_dict, paid_dict, discount, 
     elements.append(Paragraph("<b>I. Executive Summary & Actuarial Assumptions</b>", h_style))
     assumption_data = [
         ["Parameter Asumsi", "Nilai / Tingkat"],
-        ["Tingkat Diskonto (Awal / Akhir)", "7.11% / 6.37% per tahun[cite: 3]"],
-        ["Tingkat Kenaikan Gaji", f"{salary_inc*100:.2f}% per tahun[cite: 3]"],
-        ["Usia Pensiun Normal", f"{ret_age} tahun (Gol I-III) / 56 tahun (Gol IV-VI)[cite: 3]"],
-        ["Tabel Mortalita", "TMI IV (Otomatis per Usia Individu)[cite: 3]"]
+        ["Tingkat Diskonto (Awal / Akhir)", "7.11% / 6.37% per tahun"],
+        ["Tingkat Kenaikan Gaji", f"{salary_inc*100:.2f}% per tahun"],
+        ["Usia Pensiun Normal", f"{ret_age} tahun (Gol I-III) / 56 tahun (Gol IV-VI)"],
+        ["Tabel Mortalita", "TMI IV (Otomatis per Usia Individu)"]
     ]
     t_assump = Table(assumption_data, colWidths=[240, 260])
     t_assump.setStyle(std_tbl_style)
@@ -285,11 +285,11 @@ def generate_comprehensive_report(results_dict, dplk_dict, paid_dict, discount, 
     elements.append(PageBreak())
     
     elements.append(Paragraph("<b>III. Actuarial Statement & Closing</b>", h_style))
-    elements.append(Paragraph("Laporan ini disusun berdasarkan data yang disediakan oleh PT. Asuransi Umum Videi sesuai dengan standar PSAK 219[cite: 4].", body_style))
+    elements.append(Paragraph("Laporan ini disusun berdasarkan data yang disediakan oleh PT. Asuransi Umum Videi sesuai dengan standar PSAK 219.", body_style))
     elements.append(Spacer(1, 20))
     elements.append(Paragraph("<b>KONSULTAN AKTUARIA SETYA GUNAWAN</b>", body_style))
     elements.append(Spacer(1, 30))
-    elements.append(Paragraph("<b><u>Drs. Setya Gunawan, FSAI, AAAIJ</u></b><br/>Aktuaris Registrasi / AKAI - 21043[cite: 4]", body_style))
+    elements.append(Paragraph("<b><u>Drs. Setya Gunawan, FSAI, AAAIJ</u></b><br/>Aktuaris Registrasi / AKAI - 21043", body_style))
 
     doc.build(elements, onFirstPage=draw_footer, onLaterPages=draw_footer)
     pdf_buffer.seek(0)
