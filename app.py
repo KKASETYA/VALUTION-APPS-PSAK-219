@@ -310,10 +310,10 @@ def generate_comprehensive_report(results_dict, dplk_dict, paid_dict, discount, 
 
 
 # ==========================================
-# 3. STREAMLIT WEB INTERFACE (DENGAN EDITOR MULTI-TAHUN)
+# 3. STREAMLIT WEB INTERFACE (DENGAN PILIHAN METODE INPUT)
 # ==========================================
 st.set_page_config(page_title="Valuasi Aktuaria Multi-Tahun", layout="wide")
-st.title("📄 Generator Laporan Aktuaria (Auto-Detect Benefit Paid & Editor Interaktif)")
+st.title("📄 Generator Laporan Aktuaria (Upload Excel / Input Manual Interaktif)")
 
 st.sidebar.header("⚙️ Pengaturan Dokumen & Klien")
 input_perusahaan = st.sidebar.text_input("Nama Perusahaan Klien", "PT GATRA MAPAN INDONESIA")
@@ -324,105 +324,112 @@ asumsi_diskonto = st.sidebar.number_input("Tingkat Diskonto (%)", value=6.7942, 
 asumsi_gaji = st.sidebar.number_input("Kenaikan Gaji (%)", value=5.0, step=0.1) / 100
 usia_pensiun = st.sidebar.number_input("Usia Pensiun Normal", value=60, step=1)
 
-uploaded_file = st.file_uploader("Unggah File Excel Multi-Tahun Anda (.xlsx / .xls)", type=["xlsx", "xls"])
+# Pilihan Metode Input
+metode_input = st.radio(
+    "Pilih Metode Masukan Data Karyawan:",
+    ("Upload File Excel Multi-Tahun", "Input & Editor Data Langsung di Website")
+)
 
-if "datasets_raw" not in st.session_state:
-    st.session_state.datasets_raw = {}
-if "benefit_paid_raw" not in st.session_state:
-    st.session_state.benefit_paid_raw = {}
+datasets_to_process = {}
+benefit_paid_dict = {}
 
-if uploaded_file is not None:
-    try:
-        xl_file = pd.ExcelFile(uploaded_file)
-        sheet_names = xl_file.sheet_names
-        for sh in sheet_names:
-            match = re.search(r'(20\d{2})', sh)
-            if match:
-                yr = int(match.group(1))
-                df_emp, total_paid = parse_excel_dataset(uploaded_file, sheet_name=sh)
-                if yr not in st.session_state.datasets_raw:
-                    st.session_state.datasets_raw[yr] = df_emp
-                    st.session_state.benefit_paid_raw[yr] = total_paid
-        st.success(f"Berhasil membaca sheet untuk tahun: {list(st.session_state.datasets_raw.keys())}")
-    except Exception as e:
-        st.error(f"Gagal membaca file: {e}")
+if metode_input == "Upload File Excel Multi-Tahun":
+    uploaded_file = st.file_uploader("Unggah File Excel Multi-Tahun Anda (.xlsx / .xls)", type=["xlsx", "xls"])
+    if uploaded_file is not None:
+        try:
+            xl_file = pd.ExcelFile(uploaded_file)
+            sheet_names = xl_file.sheet_names
+            for sh in sheet_names:
+                match = re.search(r'(20\d{2})', sh)
+                if match:
+                    yr = int(match.group(1))
+                    df_emp, total_paid = parse_excel_dataset(uploaded_file, sheet_name=sh)
+                    datasets_to_process[yr] = df_emp
+                    benefit_paid_dict[yr] = total_paid
+            st.success(f"Berhasil membaca sheet Excel untuk tahun: {list(datasets_to_process.keys())}")
+        except Exception as e:
+            st.error(f"Gagal membaca file: {e}")
 
-st.markdown("---")
-if st.session_state.datasets_raw:
-    st.subheader("📋 Input & Editor Data Karyawan Langsung di Website Berdasarkan Tahun")
-    sorted_yrs_raw = sorted(list(st.session_state.datasets_raw.keys()))
-    tab_years = st.tabs([str(yr) for yr in sorted_yrs_raw])
+else: # Input & Editor Data Langsung di Website
+    st.info("Masukkan data karyawan langsung per tahun menggunakan tabel interaktif di bawah.")
+    selected_years = st.multiselect("Pilih Tahun Valuasi yang Ingin Dibuat", [2023, 2024, 2025, 2026], default=[2024, 2025])
     
-    edited_datasets = {}
-    benefit_paid_dict = {}
+    if "manual_datasets" not in st.session_state:
+        st.session_state.manual_datasets = {}
+        
+    tab_years = st.tabs([str(yr) for yr in selected_years]) if selected_years else []
     
-    for idx, yr in enumerate(sorted_yrs_raw):
+    for idx, yr in enumerate(selected_years):
         with tab_years[idx]:
-            st.write(f"Edit Data Karyawan untuk Tahun **{yr}**:")
+            if yr not in st.session_state.manual_datasets:
+                # Buat DataFrame default kosong/contoh
+                st.session_state.manual_datasets[yr] = pd.DataFrame([
+                    {"NIK": "001", "Nama": "Karyawan Contoh 1", "Tanggal Lahir": "1985-05-12", "Tgl. Mulai Bekerja": "2010-01-01", "Total Upah Bulanan (Gross)": 5000000.0, "Saldo DPLK": 0.0}
+                ])
+            
             edited_df = st.data_editor(
-                st.session_state.datasets_raw[yr],
+                st.session_state.manual_datasets[yr],
                 num_rows="dynamic",
-                key=f"editor_yr_{yr}",
+                key=f"manual_editor_{yr}",
                 use_container_width=True
             )
-            edited_datasets[yr] = edited_df
+            st.session_state.manual_datasets[yr] = edited_df
+            datasets_to_process[yr] = edited_df
             
-            # Input tambahan nilai benefit paid yang dapat disesuaikan langsung
-            default_paid = st.session_state.benefit_paid_raw.get(yr, 0.0)
             benefit_paid_dict[yr] = st.number_input(
                 f"Total Benefit Paid Aktual Tahun {yr} (Rp)",
-                value=float(default_paid),
+                value=0.0,
                 step=1000000.0,
-                key=f"paid_yr_{yr}"
+                key=f"manual_paid_{yr}"
             )
 
-    st.markdown("---")
-    if st.button("Jalankan Valuasi & Hitung Pembayaran Pesangon 🚀"):
-        with st.spinner("Memproses perhitungan aktuaria multi-tahun..."):
-            results_dict = {}
-            dplk_dict = {}
-            active_years = sorted(list(edited_datasets.keys()))
+st.markdown("---")
+if st.button("Jalankan Valuasi & Hitung Pembayaran Pesangon 🚀") and datasets_to_process:
+    with st.spinner("Memproses perhitungan aktuaria..."):
+        results_dict = {}
+        dplk_dict = {}
+        active_years = sorted(list(datasets_to_process.keys()))
+        
+        for yr in active_years:
+            val_date_dt = datetime.datetime(yr, 12, 31)
+            df_input = datasets_to_process[yr]
+            hasil_valuasi = []
+            total_dplk_yr = 0.0
             
-            for yr in active_years:
-                val_date_dt = datetime.datetime(yr, 12, 31)
-                df_input = edited_datasets[yr]
-                hasil_valuasi = []
-                total_dplk_yr = 0.0
+            for _, row in df_input.iterrows():
+                try:
+                    dob = pd.to_datetime(row.get("Tanggal Lahir"))
+                    doe = pd.to_datetime(row.get("Tgl. Mulai Bekerja"))
+                    gross_salary = float(row.get("Total Upah Bulanan (Gross)", 0))
+                    dplk_val = float(row.get("Saldo DPLK", 0.0) or 0.0)
+                except:
+                    continue
+                    
+                if pd.isna(dob) or pd.isna(doe) or gross_salary <= 0:
+                    continue
+                    
+                total_dplk_yr += dplk_val
+                current_age = (val_date_dt - dob).days / 365.25
+                past_service = (val_date_dt - doe).days / 365.25
                 
-                for _, row in df_input.iterrows():
-                    try:
-                        dob = pd.to_datetime(row.get("Tanggal Lahir"))
-                        doe = pd.to_datetime(row.get("Tgl. Mulai Bekerja"))
-                        gross_salary = float(row.get("Total Upah Bulanan (Gross)", 0))
-                        dplk_val = float(row.get("Saldo DPLK", 0.0) or 0.0)
-                    except:
-                        continue
-                        
-                    if pd.isna(dob) or pd.isna(doe) or gross_salary <= 0:
-                        continue
-                        
-                    total_dplk_yr += dplk_val
-                    current_age = (val_date_dt - dob).days / 365.25
-                    past_service = (val_date_dt - doe).days / 365.25
-                    
-                    engine = PSAK219Engine(asumsi_diskonto, asumsi_gaji, usia_pensiun)
-                    kalkulasi = engine.calculate_puc(current_age, past_service, gross_salary)
-                    
-                    hasil_valuasi.append({
-                        "NIK": row.get("NIK", "N/A"), "Name": row.get("Nama", "Unknown"),
-                        "Age Valuation": current_age, "Past Service": past_service,
-                        "Gross Salary": gross_salary, **kalkulasi
-                    })
-                    
-                results_dict[yr] = pd.DataFrame(hasil_valuasi)
-                dplk_dict[yr] = total_dplk_yr
+                engine = PSAK219Engine(asumsi_diskonto, asumsi_gaji, usia_pensiun)
+                kalkulasi = engine.calculate_puc(current_age, past_service, gross_salary)
                 
-            st.session_state.results_dict = results_dict
-            st.session_state.dplk_dict = dplk_dict
-            st.session_state.paid_dict = benefit_paid_dict
-            st.session_state.active_years = active_years
-            st.session_state.calculated_results = True
-            st.success("Perhitungan Selesai!")
+                hasil_valuasi.append({
+                    "NIK": row.get("NIK", "N/A"), "Name": row.get("Nama", "Unknown"),
+                    "Age Valuation": current_age, "Past Service": past_service,
+                    "Gross Salary": gross_salary, **kalkulasi
+                })
+                
+            results_dict[yr] = pd.DataFrame(hasil_valuasi)
+            dplk_dict[yr] = total_dplk_yr
+            
+        st.session_state.results_dict = results_dict
+        st.session_state.dplk_dict = dplk_dict
+        st.session_state.paid_dict = benefit_paid_dict
+        st.session_state.active_years = active_years
+        st.session_state.calculated_results = True
+        st.success("Perhitungan Selesai!")
 
 if st.session_state.get("calculated_results"):
     st.subheader("📊 Ringkasan Hasil Kalkulasi & Benefit Paid")
