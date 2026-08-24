@@ -31,15 +31,20 @@ def parse_excel_universal(file_or_buffer, sheet_name=0):
     detected_year = 2025
     str_sh = str(sheet_name).lower()
     
+    # Deteksi Tahun Akurat Berdasarkan Format Sheet ('31 Dec 23', '31 Dec 24', '31 Dec 25')
     match_4dig = re.search(r'(20\d{2})', str_sh)
     if match_4dig:
         detected_year = int(match_4dig.group(1))
     else:
-        match_2dig = re.search(r'(\d{2})', str_sh)
-        if match_2dig:
-            yr_val = int(match_2dig.group(1))
-            if yr_val in [23, 24, 25, 26]:
-                detected_year = 2000 + yr_val
+        match_dec = re.search(r'dec\s*(\d{2})', str_sh)
+        if match_dec:
+            detected_year = 2000 + int(match_dec.group(1))
+        else:
+            match_2dig = re.search(r'(\d{2})', str_sh)
+            if match_2dig:
+                yr_val = int(match_2dig.group(1))
+                if yr_val in [23, 24, 25, 26]:
+                    detected_year = 2000 + yr_val
 
     data_start_idx = 7
     for idx, val in enumerate(df_raw.iloc[:, 0]):
@@ -272,7 +277,7 @@ benefit_paid_input = st.sidebar.number_input("Realisasi Benefit Paid Aktual", va
 override_pbo_input = st.sidebar.number_input("Lock Final PBO (Opsional, 0 = Auto)", value=3813896220.0, step=1000000.0)
 override_csc_input = st.sidebar.number_input("Lock Final CSC (Opsional, 0 = Auto)", value=488511769.0, step=1000000.0)
 
-# PILIHAN METODE MASUKAN DATA
+# PILIHAN METODE MASUKAN DATA (DIPERTAHANKAN LENGKAP)
 metode_utama = st.radio(
     "Pilih Metode Masukan Data:", 
     ["Upload Excel (Auto-Detect Format Multi-Sheet)", "Input / Edit Manual Langsung di Web (Multi-Tab Tahun)"]
@@ -364,7 +369,7 @@ if st.button("Jalankan Valuasi Multi-Tahun 🚀") and datasets_to_process:
         st.success("Valuasi Selesai untuk Seluruh Tahun (2023, 2024, 2025)!")
 
 if st.session_state.get("calculated"):
-    st.subheader("📊 Ringkasan Hasil Valuasi Multi-Tahun")
+    st.subheader("📊 Ringkasan Hasil Valuasi Multi-Tahun (2023, 2024, 2025)")
     res_dict = st.session_state.results_dict
     dp_dict = st.session_state.dplk_dict
     pd_dict = st.session_state.paid_dict
