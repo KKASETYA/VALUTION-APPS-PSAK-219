@@ -24,23 +24,20 @@ def fmt_num(num, decimals=0):
         return formatted.replace(",", "X").replace(".", ",").replace("X", ".")
 
 # ==========================================
-# PARSER EXCEL CERDAS (AUTO-DETECT TAHUN & KONTEN)
+# UNIVERSAL PARSER EXCEL (MULTI-SHEET & FORMAT LAMA/BARU)
 # ==========================================
 def parse_excel_universal(file_or_buffer, sheet_name=0):
     df_raw = pd.read_excel(file_or_buffer, sheet_name=sheet_name, header=None)
     
-    # Deteksi tahun dari nama sheet atau baris header/konten atas
-    detected_year = 2025 # Default fallback
+    detected_year = 2025
     match_sheet = re.search(r'(20\d{2})', str(sheet_name))
     if match_sheet:
         detected_year = int(match_sheet.group(1))
     else:
-        # Cek dua digit tahun seperti '23' di '31 Dec 23'
         match_2dig = re.search(r'31\s+Dec\s+(\d{2})', str(sheet_name), re.IGNORECASE)
         if match_2dig:
             detected_year = 2000 + int(match_2dig.group(1))
         else:
-            # Cari di baris atas sheet (misal baris 'Data Per :')
             for r in range(min(3, len(df_raw))):
                 for c in range(len(df_raw.columns)):
                     val = df_raw.iloc[r, c]
@@ -53,7 +50,6 @@ def parse_excel_universal(file_or_buffer, sheet_name=0):
                             detected_year = int(m.group(1))
                             break
                             
-    # Deteksi baris awal tabel data
     data_start_idx = 7
     for idx, val in enumerate(df_raw.iloc[:, 0]):
         if isinstance(val, (int, float)) and val == 1:
@@ -68,7 +64,9 @@ def parse_excel_universal(file_or_buffer, sheet_name=0):
     
     for idx in range(data_start_idx, len(df_raw)):
         row = df_raw.iloc[idx]
-        
+        if len(row) > 2 and pd.isna(row.iloc[1]) and pd.isna(row.iloc[2]):
+            continue
+            
         nik = row.iloc[1] if len(row) > 1 else None
         nama = row.iloc[2] if len(row) > 2 else None
         dob = row.iloc[3] if len(row) > 3 else None
@@ -144,7 +142,7 @@ class PSAK219Engine:
     def get_decrement_rates(self, age):
         q_mortality = 0.0005 * (1.09 ** (age - 20))
         q_disability = q_mortality * 0.10
-        if age < 30: q_resign = 0.05
+        if age < 30: q_resign = 0.06
         elif age < 40: q_resign = 0.04
         elif age < 50: q_resign = 0.02
         elif age < 55: q_resign = 0.01
@@ -154,7 +152,7 @@ class PSAK219Engine:
     def calculate_puc(self, current_age, past_service, current_salary):
         years_to_retire = self.ret_age - current_age
         if pd.isna(current_age) or pd.isna(past_service) or pd.isna(current_salary) or years_to_retire <= 0:
-            return {'PBO': 0, 'CSC': 0, 'Undiscounted_PBO': 0, 'Tenor_Bracket': '> 5'}
+            return {'PBO': 0, 'CSC': 0, 'Undiscounted_PBO': 0}
             
         total_service = past_service + years_to_retire
         pvfb_death, pvfb_disability = 0, 0
@@ -188,29 +186,21 @@ class PSAK219Engine:
         pbo = total_pvfb * (past_service / total_service)
         csc = total_pvfb / total_service
         
-        return {'PBO': pbo, 'CSC': csc, 'Undiscounted_PBO': undiscounted_benefit * (past_service/total_service), 'Retirement_Benefit': b_ret}
+        return {'PBO': pbo, 'CSC': csc, 'Undiscounted_PBO': undiscounted_benefit * (past_service/total_service)}
 
 
 # ==========================================
-# 2. GENERATOR PDF LAPORAN LENGKAP KOMPREHENSIF
+# 2. GENERATOR PDF LAPORAN KOMPREHENSIF LENGKAP
 # ==========================================
 def draw_footer(canvas, doc):
     canvas.saveState()
     canvas.setStrokeColor(colors.black)
     canvas.setLineWidth(1)
     canvas.line(36, 65, 576, 65)
-    
-    footer_text1 = "Konsultan Aktuaria Setya Gunawan"
-    footer_text2 = "Izin Perusahaan No. 4.21.0007 | Keputusan Menteri Keuangan RI No. 590/KM.1/2021 | AKAI - 21043"
-    footer_text3 = "Cilandak 88 Condominium UNIT D-1, Jl. Margasatwa Barat No.88, Cilandak Timur, Pasar Minggu,"
-    footer_text4 = "Jakarta Selatan, DKI Jakarta 12560 | HP/WA (0812) 9090 9019 | Email: kka_setyagunawan@yahoo.com"
-    
     canvas.setFont('Helvetica-Bold', 9)
-    canvas.drawCentredString(letter[0]/2.0, 50, footer_text1)
+    canvas.drawCentredString(letter[0]/2.0, 50, "Konsultan Aktuaria Setya Gunawan")
     canvas.setFont('Helvetica', 8)
-    canvas.drawCentredString(letter[0]/2.0, 40, footer_text2)
-    canvas.drawCentredString(letter[0]/2.0, 30, footer_text3)
-    canvas.drawCentredString(letter[0]/2.0, 20, footer_text4)
+    canvas.drawCentredString(letter[0]/2.0, 40, "Izin Perusahaan No. 4.21.0007 | Keputusan Menteri Keuangan RI No. 590/KM.1/2021 | AKAI - 21043")
     canvas.restoreState()
 
 def generate_comprehensive_report(results_dict, dplk_dict, paid_dict, discount, salary_inc, ret_age, val_years, company_name, report_no):
@@ -376,12 +366,12 @@ st.set_page_config(page_title="Valuasi Aktuaria Multi-Tahun", layout="wide")
 st.title("📄 Generator Laporan Aktuaria Lengkap (Excel & Manual Input)")
 
 st.sidebar.header("⚙️ Pengaturan Dokumen & Klien")
-input_perusahaan = st.sidebar.text_input("Nama Perusahaan Klien", "PT. GATRA MAPAN INDONESIA")
-nomor_laporan = st.sidebar.text_input("Nomor Laporan Baku", "082/KAS-FR/PSAK/III/2026")
+input_perusahaan = st.sidebar.text_input("Nama Perusahaan Klien", "PT. ASURANSI UMUM VIDEI")
+nomor_laporan = st.sidebar.text_input("Nomor Laporan Baku", "0067/KAS-FR/PSAK/III/2026")
 
-asumsi_diskonto = st.sidebar.number_input("Tingkat Diskonto (%)", value=6.7942, step=0.0001) / 100
+asumsi_diskonto = st.sidebar.number_input("Tingkat Diskonto (%)", value=6.37, step=0.01) / 100
 asumsi_gaji = st.sidebar.number_input("Kenaikan Gaji (%)", value=5.0, step=0.1) / 100
-usia_pensiun = st.sidebar.number_input("Usia Pensiun Normal", value=56, step=1)
+usia_pensiun = st.sidebar.number_input("Usia Pensiun Normal", value=55, step=1)
 
 metode_utama = st.radio(
     "Pilih Metode Masukan Data:", 
@@ -402,13 +392,11 @@ if metode_utama == "Upload Excel (Auto-Detect Format Lama / Baru / Multi-Sheet)"
             st.success(f"Berhasil mendeteksi {len(sheet_names)} sheet: {sheet_names}")
             
             for sh in sheet_names:
-                # Lewati sheet non-data seperti 'Asumsi dari Klien'
                 if 'asumsi' in sh.lower():
                     continue
                     
                 detected_yr, df_emp, total_paid = parse_excel_universal(uploaded_file, sheet_name=sh)
                 
-                # Jika sheet khusus kontrak atau lainnya disimpan berdasarkan nama sheet atau tahun terdeteksi
                 if 'kontrak' in sh.lower() or 'cuti' in sh.lower():
                     datasets_to_process[sh] = df_emp
                     benefit_paid_dict[sh] = total_paid
