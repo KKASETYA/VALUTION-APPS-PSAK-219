@@ -327,10 +327,10 @@ def generate_comprehensive_pdf(results_dict, dplk_dict, paid_dict, discount, sal
 
 
 # ==========================================
-# 5. STREAMLIT INTERFACE (DENGAN TAB INPUT MULTI-TAHUN)
+# 5. STREAMLIT INTERFACE (DENGAN st.data_editor MULTI-TAHUN)
 # ==========================================
 st.set_page_config(page_title="Valuasi Aktuaria Presisi Profesional", layout="wide")
-st.title("📄 Generator Laporan PDF Dwibahasa Resmi Aktuaria (Multi-Tahun & Lengkap)")
+st.title("📄 Generator Laporan PDF Dwibahasa Resmi Aktuaria (Multi-Tahun & Editor Interaktif)")
 
 st.sidebar.header("⚙️ Parameter Rekonsiliasi")
 input_perusahaan = st.sidebar.text_input("Nama Perusahaan Klien", "PT. ASURANSI UMUM VIDEI")
@@ -347,82 +347,92 @@ override_csc_input = st.sidebar.number_input("Lock Final CSC (Opsional, 0 = Auto
 
 uploaded_file = st.file_uploader("Unggah File Excel Template Aktuaria (.xlsx) - Mendukung Multi-Sheet/Multi-Tahun", type=["xlsx", "xls"])
 
-datasets_to_process = {}
-benefit_paid_dict = {}
+if "datasets_raw" not in st.session_state:
+    st.session_state.datasets_raw = {}
 
 if uploaded_file is not None:
     try:
         xl_file = pd.ExcelFile(uploaded_file)
-        st.sidebar.info(f"Sheet terdeteksi di Excel: {xl_file.sheet_names}")
         for sh in xl_file.sheet_names:
             if any(k in sh.lower() for k in ['asumsi', 'kontrak', 'cuti']):
                 continue
-            detected_yr, df_emp, total_paid = parse_excel_universal(uploaded_file, sheet_name=sh)
-            datasets_to_process[detected_yr] = df_emp
-            benefit_paid_dict[detected_yr] = benefit_paid_input if detected_yr == 2025 else total_paid
-        st.success(f"Berhasil memproses multi-sheet/multi-tahun untuk tahun: {list(datasets_to_process.keys())}")
+            detected_yr, df_emp, _ = parse_excel_universal(uploaded_file, sheet_name=sh)
+            if detected_yr not in st.session_state.datasets_raw:
+                st.session_state.datasets_raw[detected_yr] = df_emp
+        st.success(f"Berhasil membaca sheet Excel untuk tahun: {list(st.session_state.datasets_raw.keys())}")
     except Exception as e:
         st.error(f"Gagal membaca file: {e}")
 
 st.markdown("---")
-if datasets_to_process:
-    st.subheader("📋 Pratinjau Data Karyawan Multi-Tahun")
-    tab_years = st.tabs([str(yr) for yr in sorted(datasets_to_process.keys())])
-    for idx, yr in enumerate(sorted(datasets_to_process.keys())):
+if st.session_state.datasets_raw:
+    st.subheader("📋 Input & Editor Data Karyawan Multi-Tahun (Bisa Diedit Langsung)")
+    tab_years = st.tabs([str(yr) for yr in sorted(st.session_state.datasets_raw.keys())])
+    
+    edited_datasets = {}
+    benefit_paid_dict = {}
+    
+    for idx, yr in enumerate(sorted(st.session_state.datasets_raw.keys())):
         with tab_years[idx]:
-            st.write(f"Menampilkan data karyawan untuk tahun **{yr}** (Total Peserta: {len(datasets_to_process[yr])})")
-            st.dataframe(datasets_to_process[yr], use_container_width=True)
+            st.write(f"Edit Data Karyawan untuk Tahun **{yr}**:")
+            edited_df = st.data_editor(
+                st.session_state.datasets_raw[yr],
+                num_rows="dynamic",
+                key=f"editor_yr_{yr}",
+                use_container_width=True
+            )
+            edited_datasets[yr] = edited_df
+            benefit_paid_dict[yr] = benefit_paid_input if yr == 2025 else 0.0
 
-st.markdown("---")
-if st.button("Jalankan Valuasi Multi-Tahun & Generate PDF Resmi 🚀") and datasets_to_process:
-    with st.spinner("Memproses perhitungan aktuaria multi-tahun..."):
-        results_dict = {}
-        dplk_dict = {}
-        
-        for key, df_input in datasets_to_process.items():
-            val_yr = key if isinstance(key, int) else 2025
-            val_date_dt = datetime.datetime(val_yr, 12, 31)
-            hasil_valuasi = []
-            total_dplk_yr = 0.0
+    st.markdown("---")
+    if st.button("Jalankan Valuasi Multi-Tahun & Generate PDF Resmi 🚀"):
+        with st.spinner("Memproses perhitungan aktuaria multi-tahun..."):
+            results_dict = {}
+            dplk_dict = {}
             
-            for _, row in df_input.iterrows():
-                try:
-                    dob = pd.to_datetime(row.get("Tanggal Lahir"))
-                    doe = pd.to_datetime(row.get("Tgl. Mulai Bekerja"))
-                    salary = float(row.get("Total Upah Bulanan (Gross)", 0))
-                    dplk_val = float(row.get("Saldo DPLK", 0.0) or 0.0)
-                except:
-                    continue
+            for key, df_input in edited_datasets.items():
+                val_yr = key if isinstance(key, int) else 2025
+                val_date_dt = datetime.datetime(val_yr, 12, 31)
+                hasil_valuasi = []
+                total_dplk_yr = 0.0
+                
+                for _, row in df_input.iterrows():
+                    try:
+                        dob = pd.to_datetime(row.get("Tanggal Lahir"))
+                        doe = pd.to_datetime(row.get("Tgl. Mulai Bekerja"))
+                        salary = float(row.get("Total Upah Bulanan (Gross)", 0))
+                        dplk_val = float(row.get("Saldo DPLK", 0.0) or 0.0)
+                    except:
+                        continue
+                        
+                    if pd.isna(dob) or pd.isna(doe) or salary <= 0:
+                        continue
+                        
+                    total_dplk_yr += dplk_val
+                    current_age = (val_date_dt - dob).days / 365.25
+                    past_service = (val_date_dt - doe).days / 365.25
+                    ret_age = 56 if current_age > 40 else usia_pensiun
                     
-                if pd.isna(dob) or pd.isna(doe) or salary <= 0:
-                    continue
+                    engine = ProfessionalActuarialEngine(asumsi_gaji, asumsi_diskonto)
+                    kalkulasi = engine.calculate_puc(current_age, past_service, salary, ret_age)
                     
-                total_dplk_yr += dplk_val
-                current_age = (val_date_dt - dob).days / 365.25
-                past_service = (val_date_dt - doe).days / 365.25
-                ret_age = 56 if current_age > 40 else usia_pensiun
+                    hasil_valuasi.append({
+                        "NIK": row.get("NIK", "N/A"), "Name": row.get("Nama", "Unknown"),
+                        "Age Valuation": current_age, "Past Service": past_service,
+                        "Gross Salary": salary, **kalkulasi
+                    })
+                    
+                results_dict[key] = pd.DataFrame(hasil_valuasi)
+                dplk_dict[key] = total_dplk_yr
                 
-                engine = ProfessionalActuarialEngine(asumsi_gaji, asumsi_diskonto)
-                kalkulasi = engine.calculate_puc(current_age, past_service, salary, ret_age)
-                
-                hasil_valuasi.append({
-                    "NIK": row.get("NIK", "N/A"), "Name": row.get("Nama", "Unknown"),
-                    "Age Valuation": current_age, "Past Service": past_service,
-                    "Gross Salary": salary, **kalkulasi
-                })
-                
-            results_dict[key] = pd.DataFrame(hasil_valuasi)
-            dplk_dict[key] = total_dplk_yr
-            
-        st.session_state.results_dict = results_dict
-        st.session_state.dplk_dict = dplk_dict
-        st.session_state.paid_dict = benefit_paid_dict
-        st.session_state.bop_obligation = bop_input
-        st.session_state.override_pbo = override_pbo_input
-        st.session_state.override_csc = override_csc_input
-        st.session_state.active_keys = sorted(list(datasets_to_process.keys()))
-        st.session_state.calculated = True
-        st.success("Perhitungan Multi-Tahun Selesai!")
+            st.session_state.results_dict = results_dict
+            st.session_state.dplk_dict = dplk_dict
+            st.session_state.paid_dict = benefit_paid_dict
+            st.session_state.bop_obligation = bop_input
+            st.session_state.override_pbo = override_pbo_input
+            st.session_state.override_csc = override_csc_input
+            st.session_state.active_keys = sorted(list(edited_datasets.keys()))
+            st.session_state.calculated = True
+            st.success("Perhitungan Multi-Tahun Selesai!")
 
 if st.session_state.get("calculated"):
     st.subheader("📊 Ringkasan Hasil Valuasi Multi-Tahun")
