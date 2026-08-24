@@ -23,7 +23,7 @@ def fmt_num(num, decimals=0):
         return formatted.replace(",", "X").replace(".", ",").replace("X", ".")
 
 # ==========================================
-# 2. UNIVERSAL PARSER EXCEL (MULTI-SHEET)
+# 2. UNIVERSAL PARSER EXCEL (MULTI-SHEET / MULTI-TAHUN)
 # ==========================================
 def parse_excel_universal(file_or_buffer, sheet_name=0):
     df_raw = pd.read_excel(file_or_buffer, sheet_name=sheet_name, header=None)
@@ -327,10 +327,10 @@ def generate_comprehensive_pdf(results_dict, dplk_dict, paid_dict, discount, sal
 
 
 # ==========================================
-# 5. STREAMLIT INTERFACE
+# 5. STREAMLIT INTERFACE (DENGAN MULTI-TAHUN OTOMATIS)
 # ==========================================
 st.set_page_config(page_title="Valuasi Aktuaria Presisi Profesional", layout="wide")
-st.title("📄 Generator Laporan PDF Dwibahasa Resmi Aktuaria (Fitur Lengkap Terjaga)")
+st.title("📄 Generator Laporan PDF Dwibahasa Resmi Aktuaria (Multi-Tahun & Lengkap)")
 
 st.sidebar.header("⚙️ Parameter Rekonsiliasi")
 input_perusahaan = st.sidebar.text_input("Nama Perusahaan Klien", "PT. ASURANSI UMUM VIDEI")
@@ -345,7 +345,7 @@ benefit_paid_input = st.sidebar.number_input("Realisasi Benefit Paid Aktual", va
 override_pbo_input = st.sidebar.number_input("Lock Final PBO (Opsional, 0 = Auto)", value=3813896220.0, step=1000000.0)
 override_csc_input = st.sidebar.number_input("Lock Final CSC (Opsional, 0 = Auto)", value=488511769.0, step=1000000.0)
 
-uploaded_file = st.file_uploader("Unggah File Excel Template Aktuaria (.xlsx)", type=["xlsx", "xls"])
+uploaded_file = st.file_uploader("Unggah File Excel Template Aktuaria (.xlsx) - Mendukung Multi-Sheet/Multi-Tahun", type=["xlsx", "xls"])
 
 datasets_to_process = {}
 benefit_paid_dict = {}
@@ -353,19 +353,20 @@ benefit_paid_dict = {}
 if uploaded_file is not None:
     try:
         xl_file = pd.ExcelFile(uploaded_file)
+        st.sidebar.info(f"Sheet terdeteksi di Excel: {xl_file.sheet_names}")
         for sh in xl_file.sheet_names:
             if any(k in sh.lower() for k in ['asumsi', 'kontrak', 'cuti']):
                 continue
             detected_yr, df_emp, total_paid = parse_excel_universal(uploaded_file, sheet_name=sh)
             datasets_to_process[detected_yr] = df_emp
             benefit_paid_dict[detected_yr] = benefit_paid_input if detected_yr == 2025 else total_paid
-        st.success(f"Berhasil mendeteksi sheet: {list(datasets_to_process.keys())}")
+        st.success(f"Berhasil memproses multi-sheet/multi-tahun untuk tahun: {list(datasets_to_process.keys())}")
     except Exception as e:
         st.error(f"Gagal membaca file: {e}")
 
 st.markdown("---")
-if st.button("Jalankan Valuasi & Generate PDF Komprehensif 🚀") and datasets_to_process:
-    with st.spinner("Memproses perhitungan aktuaria..."):
+if st.button("Jalankan Valuasi Multi-Tahun & Generate PDF Resmi 🚀") and datasets_to_process:
+    with st.spinner("Memproses perhitungan aktuaria multi-tahun..."):
         results_dict = {}
         dplk_dict = {}
         
@@ -412,10 +413,10 @@ if st.button("Jalankan Valuasi & Generate PDF Komprehensif 🚀") and datasets_t
         st.session_state.override_csc = override_csc_input
         st.session_state.active_keys = sorted(list(datasets_to_process.keys()))
         st.session_state.calculated = True
-        st.success("Perhitungan Selesai!")
+        st.success("Perhitungan Multi-Tahun Selesai!")
 
 if st.session_state.get("calculated"):
-    st.subheader("📊 Ringkasan Hasil Valuasi")
+    st.subheader("📊 Ringkasan Hasil Valuasi Multi-Tahun")
     res_dict = st.session_state.results_dict
     dp_dict = st.session_state.dplk_dict
     pd_dict = st.session_state.paid_dict
@@ -440,8 +441,8 @@ if st.session_state.get("calculated"):
     )
     
     st.download_button(
-        label="📥 Download Laporan PDF Komprehensif Resmi",
+        label="📥 Download Laporan PDF Komprehensif Multi-Tahun",
         data=pdf_file,
-        file_name=f"COMPREHENSIVE_OFFICIAL_REPORT_{input_perusahaan.replace(' ', '_')}.pdf",
+        file_name=f"MULTIYEAR_COMPREHENSIVE_REPORT_{input_perusahaan.replace(' ', '_')}.pdf",
         mime="application/pdf"
     )
