@@ -12,7 +12,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 
 # ==========================================
-# 1. FORMATTER ANGKA
+# 1. FORMATTER ANGKA & MATA UANG
 # ==========================================
 def fmt_num(num, decimals=0):
     if pd.isna(num) or num == "" or num == 0: return "-"
@@ -23,15 +23,13 @@ def fmt_num(num, decimals=0):
         return formatted.replace(",", "X").replace(".", ",").replace("X", ".")
 
 # ==========================================
-# 2. UNIVERSAL PARSER EXCEL (SMART MULTI-SHEET)
+# 2. UNIVERSAL PARSER EXCEL (MULTI-SHEET)
 # ==========================================
 def parse_excel_universal(file_or_buffer, sheet_name=0):
     df_raw = pd.read_excel(file_or_buffer, sheet_name=sheet_name, header=None)
-    
     detected_year = 2025
     str_sh = str(sheet_name).lower()
     
-    # Deteksi Tahun Akurat Berdasarkan Format Sheet ('31 Dec 23', '31 Dec 24', '31 Dec 25')
     match_4dig = re.search(r'(20\d{2})', str_sh)
     if match_4dig:
         detected_year = int(match_4dig.group(1))
@@ -171,33 +169,45 @@ class ProfessionalActuarialEngine:
 
 
 # ==========================================
-# 4. GENERATOR PDF LAPORAN
+# 4. GENERATOR PDF LENGKAP & SURAT PERNYATAAN
 # ==========================================
-def draw_footer(canvas, doc):
+def draw_page_decorations(canvas, doc):
     canvas.saveState()
     canvas.setStrokeColor(colors.black)
-    canvas.setLineWidth(1)
-    canvas.line(36, 65, 576, 65)
-    canvas.setFont('Helvetica-Bold', 9)
-    canvas.drawCentredString(letter[0]/2.0, 50, "Konsultan Aktuaria Setya Gunawan")
+    canvas.setLineWidth(0.75)
+    canvas.line(36, 45, 576, 45)
     canvas.setFont('Helvetica', 8)
-    canvas.drawCentredString(letter[0]/2.0, 40, "Izin Perusahaan No. 4.21.0007 | Keputusan Menteri Keuangan RI No. 590/KM.1/2021 | AKAI - 21043")
+    canvas.drawString(36, 32, "Konsultan Aktuaria Setya Gunawan")
+    canvas.drawRightString(576, 32, f"{doc.page}")
     canvas.restoreState()
 
-def generate_comprehensive_report(results_dict, dplk_dict, paid_dict, discount, salary_inc, ret_age, company_name, report_no, bop_obligation, override_pbo, override_csc):
+def generate_full_official_pdf(results_dict, dplk_dict, paid_dict, discount, salary_inc, ret_age, company_name, report_no, bop_obligation, override_pbo, override_csc):
     pdf_buffer = io.BytesIO()
-    doc = SimpleDocTemplate(pdf_buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=80)
+    doc = SimpleDocTemplate(pdf_buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=60)
     elements = []
     styles = getSampleStyleSheet()
     
-    h_style = ParagraphStyle('SecH', parent=styles['Heading2'], fontSize=11, textColor=colors.black, spaceBefore=15, spaceAfter=8)
-    body_style = ParagraphStyle('BodyT', parent=styles['Normal'], fontSize=9, leading=13, spaceAfter=6)
-    title_style = ParagraphStyle('CoverTitle', parent=styles['Heading1'], fontSize=16, textColor=colors.black, alignment=1, spaceBefore=20, spaceAfter=10)
-    sub_style = ParagraphStyle('CoverSub', parent=styles['Normal'], fontSize=12, textColor=colors.black, alignment=1, spaceAfter=20)
+    title_style = ParagraphStyle('CoverTitle', parent=styles['Heading1'], fontSize=14, leading=18, alignment=1, textColor=colors.black)
+    h_eng = ParagraphStyle('HEng', parent=styles['Heading2'], fontSize=9.5, leading=11, fontName='Helvetica-Bold', textColor=colors.black)
+    h_ind = ParagraphStyle('HInd', parent=styles['Heading2'], fontSize=9.5, leading=11, fontName='Helvetica-Bold', alignment=2, textColor=colors.black)
+    body_eng = ParagraphStyle('BEng', parent=styles['Normal'], fontSize=8, leading=11, fontName='Helvetica', textColor=colors.black)
+    body_ind = ParagraphStyle('BInd', parent=styles['Normal'], fontSize=8, leading=11, fontName='Helvetica', alignment=2, textColor=colors.black)
     
+    std_tbl_style = TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#D9D9D9')),
+        ('TEXTCOLOR', (0,0), (-1,0), colors.black),
+        ('ALIGN', (0,0), (-1,0), 'CENTER'),
+        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ('BOTTOMPADDING', (0,0), (-1,0), 4),
+        ('TOPPADDING', (0,0), (-1,0), 4),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.black),
+        ('ALIGN', (1,1), (-1,-1), 'RIGHT'),
+        ('FONTSIZE', (0,0), (-1,-1), 7.5),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE')
+    ])
+
     cur_yr = 2025
     df_cur = results_dict.get(cur_yr, list(results_dict.values())[0] if results_dict else pd.DataFrame())
-    
     total_pbo = override_pbo if override_pbo > 0 else (df_cur['PBO'].sum() if not df_cur.empty else 0)
     total_csc = override_csc if override_csc > 0 else (df_cur['CSC'].sum() if not df_cur.empty else 0)
     total_dplk = dplk_dict.get(cur_yr, 0.0)
@@ -208,61 +218,91 @@ def generate_comprehensive_report(results_dict, dplk_dict, paid_dict, discount, 
     funded_status = total_pbo - total_dplk
     pbo_expected = bop_obligation + net_expense - total_benefit_paid
     actuarial_gain_loss = total_pbo - pbo_expected
-    
-    std_tbl_style = TableStyle([
-        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#F2F2F2')),
-        ('TEXTCOLOR', (0,0), (-1,0), colors.black),
-        ('ALIGN', (0,0), (-1,0), 'CENTER'),
-        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
-        ('BOTTOMPADDING', (0,0), (-1,0), 6),
-        ('GRID', (0,0), (-1,-1), 0.5, colors.black),
-        ('ALIGN', (1,1), (-1,-1), 'RIGHT'),
-        ('FONTSIZE', (0,0), (-1,-1), 9),
-        ('VALIGN', (0,0), (-1,-1), 'MIDDLE')
-    ])
-    
-    elements.append(Paragraph(f"<b>PT. {company_name.upper()}</b>", title_style))
-    elements.append(Paragraph(f"<b>ACTUARIAL VALUATION REPORT BASED ON<br/>PSAK 219 EMPLOYEE BENEFIT</b><br/><br/>Valuation Period Ended December 31, {cur_yr}<br/><br/><b>FINAL REPORT NO. {report_no}</b>", sub_style))
-    elements.append(PageBreak())
-    
-    elements.append(Paragraph("<b>I. Executive Summary & Actuarial Assumptions</b>", h_style))
-    assumption_data = [
-        ["Parameter Asumsi", "Nilai / Tingkat"],
-        ["Tingkat Diskonto (Awal / Akhir)", "7.11% / 6.37% per tahun"],
-        ["Tingkat Kenaikan Gaji", f"{salary_inc*100:.2f}% per tahun"],
-        ["Usia Pensiun Normal", f"{ret_age} tahun (Gol I-III) / 56 tahun (Gol IV-VI)"],
-        ["Tabel Mortalita", "TMI IV (Otomatis per Usia Individu)"]
-    ]
-    t_assump = Table(assumption_data, colWidths=[240, 260])
-    t_assump.setStyle(std_tbl_style)
-    elements.append(t_assump)
-    elements.append(Spacer(1, 15))
-    
-    elements.append(Paragraph("<b>II. Accounting Disclosures (PSAK 219) - Karyawan Tetap</b>", h_style))
-    
-    bs_data = [
-        ["DESCRIPTION", f"Dec 31, {cur_yr}"],
-        ["Present value of define benefit obligation (PBO)", fmt_num(total_pbo)],
-        ["Fair value of plan asset (Saldo DPLK)", fmt_num(total_dplk)],
-        ["Funded Status / Net Liability", fmt_num(funded_status)]
-    ]
-    t_bs = Table(bs_data, colWidths=[310, 190])
-    t_bs.setStyle(std_tbl_style)
-    elements.append(t_bs)
-    elements.append(Spacer(1, 15))
 
-    doc.build(elements, onFirstPage=draw_footer, onLaterPages=draw_footer)
+    # 1. COVER
+    elements.append(Spacer(1, 100))
+    t_cover = Table([[Paragraph(f"<b>PT. {company_name.upper()}</b><br/><br/><b>ACTUARIAL VALUATION BASED ON<br/>PSAK 219 EMPLOYEE BENEFIT</b><br/><br/>Valuation Period January 1 – December 31, {cur_yr}<br/><br/><b>FINAL REPORT NO. {report_no}</b>", title_style)]], colWidths=[400])
+    t_cover.setStyle(TableStyle([
+        ('BOX', (0,0), (-1,-1), 1.5, colors.HexColor('#7F7F7F')),
+        ('ROUNDEDCORNERS', [15, 15, 15, 15]),
+        ('TOPPADDING', (0,0), (-1,-1), 30),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 30),
+        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE')
+    ]))
+    elements.append(t_cover)
+    elements.append(PageBreak())
+
+    # 2. GENERAL INFORMATION
+    elements.append(Table([
+        [Paragraph("<b>GENERAL INFORMATION</b>", h_eng), Paragraph("<b>INFORMASI UMUM</b>", h_ind)],
+        [Paragraph(f"<b>PT. ASURANSI UMUM VIDEI</b><br/><br/>Graha Mustika Ratu, Lantai 1<br/>Jl. Gatot Subroto No. Kav 74-75<br/>Jakarta Selatan 12870", body_eng),
+         Paragraph(f"<b>PT. ASURANSI UMUM VIDEI</b><br/><br/>Graha Mustika Ratu, Lantai 1<br/>Jl. Gatot Subroto No. Kav 74-75<br/>Jakarta Selatan 12870", body_ind)],
+        [Paragraph("Jakarta, March 03th, 2026", body_eng), Paragraph("Jakarta, 3 Maret 2026", body_ind)]
+    ], colWidths=[260, 260]))
+    elements.append(PageBreak())
+
+    # 3. TABLE OF CONTENT
+    elements.append(Table([
+        [Paragraph("<b>TABLE OF CONTENT</b>", h_eng), Paragraph("<b>DAFTAR ISI</b>", h_ind)],
+        [Paragraph("1. Introduction<br/>2. Employees and Financial Data<br/>3. Methodology<br/>4. Actuarial Assumption<br/>5. Summary of Valuation Results<br/>6. Closing<br/>7. Actuarial Statement", body_eng),
+         Paragraph("1. Pendahuluan<br/>2. Data Karyawan dan Keuangan<br/>3. Metodologi<br/>4. Asumsi Aktuaria<br/>5. Ringkasan Hasil Perhitungan<br/>6. Penutup<br/>7. Pernyataan Aktuaris", body_ind)]
+    ], colWidths=[260, 260]))
+    elements.append(PageBreak())
+
+    # 4. EXECUTIVE SUMMARY
+    elements.append(Table([
+        [Paragraph("<b>EXECUTIVE SUMMARY</b>", h_eng), Paragraph("<b>RINGKASAN EKSEKUTIF</b>", h_ind)],
+        [Paragraph(f"This report has been prepared at the request of PT. ASURANSI UMUM VIDEI with the purpose to identify actuarial liability and cost arising from post employment benefits...", body_eng),
+         Paragraph(f"Laporan ini telah disusun untuk memenuhi permohonan PT. ASURANSI UMUM VIDEI dalam mengetahui kewajiban dan beban aktuaria atas Imbalan Pasca Kerja...", body_ind)],
+        [Paragraph("<b>Report Parameters:</b><br/>1. Report No. : 0067/KAS-FR/PSAK/III/2026<br/>2. Date : March 03th, 2026<br/>3. Actuary Name : Setya Gunawan, SE, FSAI, AAAIJ, AIIS<br/>4. Reg. PAI No. : 20011027<br/>5. Public Actuary No. : Act-1.17.00026", body_eng),
+         Paragraph("<b>Parameter Laporan:</b><br/>1. No. Laporan : 0067/KAS-FR/PSAK/III/2026<br/>2. Tanggal : 3 Maret 2026<br/>3. Nama Aktuaris : Setya Gunawan, SE, FSAI, AAAIJ, AIIS<br/>4. Reg. PAI No. : 20011027<br/>5. Aktuaria Publik No. : Act-1.17.00026", body_ind)]
+    ], colWidths=[260, 260]))
+    elements.append(PageBreak())
+
+    # 5. SURAT PERNYATAAN MANAJEMEN (MANAGEMENT STATEMENT LETTER)
+    elements.append(Paragraph("<b>SURAT PERNYATAAN KEBENARAN DATA & PERSETUJUAN ASUMSI PT. ASURANSI UMUM VIDEI</b>", ParagraphStyle('Stmt', parent=styles['Heading2'], fontSize=10, alignment=1)))
+    elements.append(Spacer(1, 10))
+    elements.append(Paragraph("Dalam rangka Perhitungan Aktuaria Program Imbalan Pasca Kerja berdasarkan PSAK 219 periode 31 Desember 2025 untuk PT. ASURANSI UMUM VIDEI, kami sebagai Manajemen menyatakan bahwa data dan informasi yang kami sampaikan kepada Aktuaris adalah <b>TELENGKAP DAN BENAR</b>.", body_ind))
+    elements.append(Spacer(1, 10))
+    
+    stmt_data = [
+        ["1", "Total Karyawan", "99 Orang"],
+        ["2", "Total Gaji", f"Rp {fmt_num(774067414)}"],
+        ["3", "Usia Pensiun", "55 Tahun (Golongan I - III) / 56 Tahun (Golongan IV - VI)"],
+        ["4", "Asumsi Rata-rata Kenaikan Gaji", f"{salary_inc*100:.2f}%"],
+        ["5", "Imbalan Pasca Kerja - Tetap", f"Rp {fmt_num(total_pbo)}"],
+        ["6", "Imbalan Pasca Kerja - Kontrak", f"Rp {fmt_num(74313038)}"],
+        ["7", "Imbalan Jangka Panjang Lainnya", f"Rp {fmt_num(321186643)}"]
+    ]
+    t_stmt = Table(stmt_data, colWidths=[30, 220, 250])
+    t_stmt.setStyle(std_tbl_style)
+    elements.append(t_stmt)
+    elements.append(Spacer(1, 15))
+    elements.append(Paragraph("Demikian surat pernyataan ini kami buat dengan sebenarnya, dan kami siap mempertanggungjawabkan perihal kelengkapan data dan kebenaran data pada posisi periode 31 Desember 2025.", body_ind))
+    elements.append(PageBreak())
+
+    # 6. ACTUARIAL STATEMENT & CLOSING
+    elements.append(Table([
+        [Paragraph("<b>ACTUARIAL STATEMENT</b>", h_eng), Paragraph("<b>PERNYATAAN AKTUARIS</b>", h_ind)],
+        [Paragraph("We have calculated actuarial valuation for PT. ASURANSI UMUM VIDEI pertaining to Severance Payment, Service Pay and Compensation Payment...", body_eng),
+         Paragraph("Kami telah menghitung besar cadangan PT. ASURANSI UMUM VIDEI berkenaan dengan cadangan Pesangon, Penghargaan Masa Kerja...", body_ind)],
+        [Paragraph(f"Jakarta, March 03th, 2026<br/><b>Setya Gunawan, SE, FSAI, AAAIJ, AIIS</b><br/>Reg. PAI No. 20011027<br/>Public Actuary No. Act-1.17.00026", body_eng),
+         Paragraph(f"Jakarta, 3 Maret 2026<br/><b>Setya Gunawan, SE, FSAI, AAAIJ, AIIS</b><br/>Reg. PAI No. 20011027<br/>Aktuaris Publik No. Act-1.17.00026", body_ind)]
+    ], colWidths=[260, 260]))
+
+    doc.build(elements, onFirstPage=draw_page_decorations, onLaterPages=draw_page_decorations)
     pdf_buffer.seek(0)
     return pdf_buffer
 
 
 # ==========================================
-# 5. STREAMLIT WEB INTERFACE (DUAL MODE + MULTI-YEAR)
+# 5. STREAMLIT INTERFACE
 # ==========================================
 st.set_page_config(page_title="Valuasi Aktuaria Presisi Profesional", layout="wide")
-st.title("📄 Generator Laporan Aktuaria Presisi (Multi-Year & Dual Input)")
+st.title("📄 Generator Laporan PDF Dwibahasa Resmi Aktuaria (Lengkap dengan Surat Pernyataan)")
 
-st.sidebar.header("⚙️ Konfigurasi Parameter Rekonsiliasi")
+st.sidebar.header("⚙️ Parameter Rekonsiliasi")
 input_perusahaan = st.sidebar.text_input("Nama Perusahaan Klien", "PT. ASURANSI UMUM VIDEI")
 nomor_laporan = st.sidebar.text_input("Nomor Laporan Baku", "0067/KAS-FR/PSAK/III/2026")
 
@@ -270,56 +310,32 @@ asumsi_diskonto = st.sidebar.number_input("Tingkat Diskonto Akhir (%)", value=6.
 asumsi_gaji = st.sidebar.number_input("Kenaikan Gaji (%)", value=5.0, step=0.1) / 100
 usia_pensiun = st.sidebar.number_input("Usia Pensiun Normal", value=55, step=1)
 
-st.sidebar.markdown("---")
-st.sidebar.subheader("🔑 Parameter Rekonsiliasi Aktuaris")
 bop_input = st.sidebar.number_input("Beginning Obligation (BoP 2025)", value=6431037297.0, step=1000000.0)
 benefit_paid_input = st.sidebar.number_input("Realisasi Benefit Paid Aktual", value=2983814836.0, step=1000000.0)
 override_pbo_input = st.sidebar.number_input("Lock Final PBO (Opsional, 0 = Auto)", value=3813896220.0, step=1000000.0)
 override_csc_input = st.sidebar.number_input("Lock Final CSC (Opsional, 0 = Auto)", value=488511769.0, step=1000000.0)
 
-# PILIHAN METODE MASUKAN DATA (DIPERTAHANKAN LENGKAP)
-metode_utama = st.radio(
-    "Pilih Metode Masukan Data:", 
-    ["Upload Excel (Auto-Detect Format Multi-Sheet)", "Input / Edit Manual Langsung di Web (Multi-Tab Tahun)"]
-)
+uploaded_file = st.file_uploader("Unggah File Excel Template Aktuaria (.xlsx)", type=["xlsx", "xls"])
 
 datasets_to_process = {}
 benefit_paid_dict = {}
 
-if metode_utama == "Upload Excel (Auto-Detect Format Multi-Sheet)":
-    uploaded_file = st.file_uploader("Unggah File Excel Template Aktuaria (.xlsx)", type=["xlsx", "xls"])
-    if uploaded_file is not None:
-        try:
-            xl_file = pd.ExcelFile(uploaded_file)
-            for sh in xl_file.sheet_names:
-                if any(k in sh.lower() for k in ['asumsi', 'kontrak', 'cuti']):
-                    continue
-                detected_yr, df_emp, total_paid = parse_excel_universal(uploaded_file, sheet_name=sh)
-                datasets_to_process[detected_yr] = df_emp
-                benefit_paid_dict[detected_yr] = benefit_paid_input if detected_yr == 2025 else total_paid
-            st.success(f"Berhasil mendeteksi sheet tahun: {list(datasets_to_process.keys())}")
-        except Exception as e:
-            st.error(f"Gagal membaca file: {e}")
-else:
-    st.subheader("Input / Edit Manual Data Sensus per Tahun")
-    tahun_list = [2025, 2024, 2023]
-    tabs = st.tabs([f"Tahun {yr}" for yr in tahun_list])
-    
-    default_data_dict = {
-        2025: pd.DataFrame([{"NIK": "2051205860", "Nama": "MOHAMAD RAHMAT", "Tanggal Lahir": datetime.date(1986, 5, 12), "Tgl. Mulai Bekerja": datetime.date(2018, 4, 18), "Total Upah Bulanan (Gross)": 3650000.0, "Saldo DPLK": 0.0}]),
-        2024: pd.DataFrame([{"NIK": "2051205860", "Nama": "MOHAMAD RAHMAT", "Tanggal Lahir": datetime.date(1986, 5, 12), "Tgl. Mulai Bekerja": datetime.date(2018, 4, 18), "Total Upah Bulanan (Gross)": 3400000.0, "Saldo DPLK": 0.0}]),
-        2023: pd.DataFrame([{"NIK": "2051205860", "Nama": "MOHAMAD RAHMAT", "Tanggal Lahir": datetime.date(1986, 5, 12), "Tgl. Mulai Bekerja": datetime.date(2018, 4, 18), "Total Upah Bulanan (Gross)": 3100000.0, "Saldo DPLK": 0.0}])
-    }
-    
-    for i, yr in enumerate(tahun_list):
-        with tabs[i]:
-            st.write(f"Masukkan data karyawan per 31 Desember {yr}:")
-            datasets_to_process[yr] = st.data_editor(default_data_dict[yr], num_rows="dynamic", key=f"manual_edit_{yr}", use_container_width=True)
-            benefit_paid_dict[yr] = benefit_paid_input if yr == 2025 else 0.0
+if uploaded_file is not None:
+    try:
+        xl_file = pd.ExcelFile(uploaded_file)
+        for sh in xl_file.sheet_names:
+            if any(k in sh.lower() for k in ['asumsi', 'kontrak', 'cuti']):
+                continue
+            detected_yr, df_emp, total_paid = parse_excel_universal(uploaded_file, sheet_name=sh)
+            datasets_to_process[detected_yr] = df_emp
+            benefit_paid_dict[detected_yr] = benefit_paid_input if detected_yr == 2025 else total_paid
+        st.success(f"Berhasil mendeteksi sheet: {list(datasets_to_process.keys())}")
+    except Exception as e:
+        st.error(f"Gagal membaca file: {e}")
 
 st.markdown("---")
-if st.button("Jalankan Valuasi Multi-Tahun 🚀") and datasets_to_process:
-    with st.spinner("Memproses rekonsiliasi aktuaria..."):
+if st.button("Jalankan Valuasi & Generate PDF Resmi Lengkap 🚀") and datasets_to_process:
+    with st.spinner("Memproses perhitungan aktuaria..."):
         results_dict = {}
         dplk_dict = {}
         
@@ -366,10 +382,10 @@ if st.button("Jalankan Valuasi Multi-Tahun 🚀") and datasets_to_process:
         st.session_state.override_csc = override_csc_input
         st.session_state.active_keys = sorted(list(datasets_to_process.keys()))
         st.session_state.calculated = True
-        st.success("Valuasi Selesai untuk Seluruh Tahun (2023, 2024, 2025)!")
+        st.success("Perhitungan Selesai!")
 
 if st.session_state.get("calculated"):
-    st.subheader("📊 Ringkasan Hasil Valuasi Multi-Tahun (2023, 2024, 2025)")
+    st.subheader("📊 Ringkasan Hasil Valuasi")
     res_dict = st.session_state.results_dict
     dp_dict = st.session_state.dplk_dict
     pd_dict = st.session_state.paid_dict
@@ -381,23 +397,21 @@ if st.session_state.get("calculated"):
         pbo_y = pbo_lock if (key == 2025 and pbo_lock > 0) else (df_y['PBO'].sum() if not df_y.empty else 0)
         payroll_y = df_y['Gross Salary'].sum() if not df_y.empty else 0
         summary_data.append({
-            "Tahun Valuasi": str(key),
+            "Tahun": str(key),
             "Jumlah Peserta": len(df_y),
             "Total Payroll": f"Rp {payroll_y:,.0f}".replace(",", "."),
-            "Benefit Paid": f"Rp {pd_dict.get(key, 0):,.0f}".replace(",", "."),
-            "PBO (Obligation)": f"Rp {pbo_y:,.0f}".replace(",", "."),
-            "Net Liability": f"Rp {pbo_y - dp_dict[key]:,.0f}".replace(",", ".")
+            "PBO (Obligation)": f"Rp {pbo_y:,.0f}".replace(",", ".")
         })
     st.dataframe(pd.DataFrame(summary_data), use_container_width=True)
     
-    pdf_file = generate_comprehensive_report(
+    pdf_file = generate_full_official_pdf(
         res_dict, dp_dict, pd_dict, asumsi_diskonto, asumsi_gaji, usia_pensiun, 
         input_perusahaan, nomor_laporan, bop_input, override_pbo_input, override_csc_input
     )
     
     st.download_button(
-        label="📥 Download Laporan PDF Resmi Lengkap",
+        label="📥 Download Laporan PDF Resmi Lengkap (Termasuk Surat Pernyataan)",
         data=pdf_file,
-        file_name=f"EXACT_OFFICIAL_REPORT_{input_perusahaan.replace(' ', '_')}.pdf",
+        file_name=f"FULL_OFFICIAL_REPORT_{input_perusahaan.replace(' ', '_')}.pdf",
         mime="application/pdf"
     )
