@@ -327,7 +327,7 @@ def generate_comprehensive_pdf(results_dict, dplk_dict, paid_dict, discount, sal
 
 
 # ==========================================
-# 5. STREAMLIT INTERFACE (DENGAN MULTI-TAHUN OTOMATIS)
+# 5. STREAMLIT INTERFACE (DENGAN TAB INPUT MULTI-TAHUN)
 # ==========================================
 st.set_page_config(page_title="Valuasi Aktuaria Presisi Profesional", layout="wide")
 st.title("📄 Generator Laporan PDF Dwibahasa Resmi Aktuaria (Multi-Tahun & Lengkap)")
@@ -363,6 +363,15 @@ if uploaded_file is not None:
         st.success(f"Berhasil memproses multi-sheet/multi-tahun untuk tahun: {list(datasets_to_process.keys())}")
     except Exception as e:
         st.error(f"Gagal membaca file: {e}")
+
+st.markdown("---")
+if datasets_to_process:
+    st.subheader("📋 Pratinjau Data Karyawan Multi-Tahun")
+    tab_years = st.tabs([str(yr) for yr in sorted(datasets_to_process.keys())])
+    for idx, yr in enumerate(sorted(datasets_to_process.keys())):
+        with tab_years[idx]:
+            st.write(f"Menampilkan data karyawan untuk tahun **{yr}** (Total Peserta: {len(datasets_to_process[yr])})")
+            st.dataframe(datasets_to_process[yr], use_container_width=True)
 
 st.markdown("---")
 if st.button("Jalankan Valuasi Multi-Tahun & Generate PDF Resmi 🚀") and datasets_to_process:
