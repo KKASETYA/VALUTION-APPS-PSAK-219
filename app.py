@@ -23,12 +23,11 @@ def fmt_num(num, decimals=0):
         return formatted.replace(",", "X").replace(".", ",").replace("X", ".")
 
 # ==========================================
-# 2. UNIVERSAL PARSER EXCEL (MULTI-SHEET SMART DETECT)
+# 2. UNIVERSAL PARSER EXCEL (SMART MULTI-SHEET)
 # ==========================================
 def parse_excel_universal(file_or_buffer, sheet_name=0):
     df_raw = pd.read_excel(file_or_buffer, sheet_name=sheet_name, header=None)
     
-    # Deteksi Tahun secara Cerdas (Mendukung '31 Dec 23' -> 2023, '31 Dec 25' -> 2025)
     detected_year = 2025
     str_sh = str(sheet_name).lower()
     
@@ -42,7 +41,6 @@ def parse_excel_universal(file_or_buffer, sheet_name=0):
             if yr_val in [23, 24, 25, 26]:
                 detected_year = 2000 + yr_val
 
-    # Deteksi Baris Mulai Data Karyawan
     data_start_idx = 7
     for idx, val in enumerate(df_raw.iloc[:, 0]):
         if isinstance(val, (int, float)) and val == 1:
@@ -254,41 +252,65 @@ def generate_comprehensive_report(results_dict, dplk_dict, paid_dict, discount, 
 
 
 # ==========================================
-# 5. STREAMLIT WEB INTERFACE
+# 5. STREAMLIT WEB INTERFACE (DUAL MODE + MULTI-YEAR)
 # ==========================================
 st.set_page_config(page_title="Valuasi Aktuaria Presisi Profesional", layout="wide")
-st.title("📄 Generator Laporan Aktuaria Presisi (Multi-Year Support)")
+st.title("📄 Generator Laporan Aktuaria Presisi (Multi-Year & Dual Input)")
 
-st.sidebar.header("⚙️ Konfigurasi Parameter")
+st.sidebar.header("⚙️ Konfigurasi Parameter Rekonsiliasi")
 input_perusahaan = st.sidebar.text_input("Nama Perusahaan Klien", "PT. ASURANSI UMUM VIDEI")
 nomor_laporan = st.sidebar.text_input("Nomor Laporan Baku", "0067/KAS-FR/PSAK/III/2026")
+
 asumsi_diskonto = st.sidebar.number_input("Tingkat Diskonto Akhir (%)", value=6.37, step=0.01) / 100
 asumsi_gaji = st.sidebar.number_input("Kenaikan Gaji (%)", value=5.0, step=0.1) / 100
 usia_pensiun = st.sidebar.number_input("Usia Pensiun Normal", value=55, step=1)
 
+st.sidebar.markdown("---")
+st.sidebar.subheader("🔑 Parameter Rekonsiliasi Aktuaris")
 bop_input = st.sidebar.number_input("Beginning Obligation (BoP 2025)", value=6431037297.0, step=1000000.0)
 benefit_paid_input = st.sidebar.number_input("Realisasi Benefit Paid Aktual", value=2983814836.0, step=1000000.0)
 override_pbo_input = st.sidebar.number_input("Lock Final PBO (Opsional, 0 = Auto)", value=3813896220.0, step=1000000.0)
 override_csc_input = st.sidebar.number_input("Lock Final CSC (Opsional, 0 = Auto)", value=488511769.0, step=1000000.0)
 
-uploaded_file = st.file_uploader("Unggah File Excel Template Aktuaria (.xlsx)", type=["xlsx", "xls"])
+# PILIHAN METODE MASUKAN DATA
+metode_utama = st.radio(
+    "Pilih Metode Masukan Data:", 
+    ["Upload Excel (Auto-Detect Format Multi-Sheet)", "Input / Edit Manual Langsung di Web (Multi-Tab Tahun)"]
+)
 
 datasets_to_process = {}
 benefit_paid_dict = {}
 
-if uploaded_file is not None:
-    try:
-        xl_file = pd.ExcelFile(uploaded_file)
-        for sh in xl_file.sheet_names:
-            # Lewati sheet non-sensus
-            if any(k in sh.lower() for k in ['asumsi', 'kontrak', 'cuti']):
-                continue
-            detected_yr, df_emp, total_paid = parse_excel_universal(uploaded_file, sheet_name=sh)
-            datasets_to_process[detected_yr] = df_emp
-            benefit_paid_dict[detected_yr] = benefit_paid_input if detected_yr == 2025 else total_paid
-        st.success(f"Berhasil mendeteksi sheet tahun: {list(datasets_to_process.keys())}")
-    except Exception as e:
-        st.error(f"Gagal membaca file: {e}")
+if metode_utama == "Upload Excel (Auto-Detect Format Multi-Sheet)":
+    uploaded_file = st.file_uploader("Unggah File Excel Template Aktuaria (.xlsx)", type=["xlsx", "xls"])
+    if uploaded_file is not None:
+        try:
+            xl_file = pd.ExcelFile(uploaded_file)
+            for sh in xl_file.sheet_names:
+                if any(k in sh.lower() for k in ['asumsi', 'kontrak', 'cuti']):
+                    continue
+                detected_yr, df_emp, total_paid = parse_excel_universal(uploaded_file, sheet_name=sh)
+                datasets_to_process[detected_yr] = df_emp
+                benefit_paid_dict[detected_yr] = benefit_paid_input if detected_yr == 2025 else total_paid
+            st.success(f"Berhasil mendeteksi sheet tahun: {list(datasets_to_process.keys())}")
+        except Exception as e:
+            st.error(f"Gagal membaca file: {e}")
+else:
+    st.subheader("Input / Edit Manual Data Sensus per Tahun")
+    tahun_list = [2025, 2024, 2023]
+    tabs = st.tabs([f"Tahun {yr}" for yr in tahun_list])
+    
+    default_data_dict = {
+        2025: pd.DataFrame([{"NIK": "2051205860", "Nama": "MOHAMAD RAHMAT", "Tanggal Lahir": datetime.date(1986, 5, 12), "Tgl. Mulai Bekerja": datetime.date(2018, 4, 18), "Total Upah Bulanan (Gross)": 3650000.0, "Saldo DPLK": 0.0}]),
+        2024: pd.DataFrame([{"NIK": "2051205860", "Nama": "MOHAMAD RAHMAT", "Tanggal Lahir": datetime.date(1986, 5, 12), "Tgl. Mulai Bekerja": datetime.date(2018, 4, 18), "Total Upah Bulanan (Gross)": 3400000.0, "Saldo DPLK": 0.0}]),
+        2023: pd.DataFrame([{"NIK": "2051205860", "Nama": "MOHAMAD RAHMAT", "Tanggal Lahir": datetime.date(1986, 5, 12), "Tgl. Mulai Bekerja": datetime.date(2018, 4, 18), "Total Upah Bulanan (Gross)": 3100000.0, "Saldo DPLK": 0.0}])
+    }
+    
+    for i, yr in enumerate(tahun_list):
+        with tabs[i]:
+            st.write(f"Masukkan data karyawan per 31 Desember {yr}:")
+            datasets_to_process[yr] = st.data_editor(default_data_dict[yr], num_rows="dynamic", key=f"manual_edit_{yr}", use_container_width=True)
+            benefit_paid_dict[yr] = benefit_paid_input if yr == 2025 else 0.0
 
 st.markdown("---")
 if st.button("Jalankan Valuasi Multi-Tahun 🚀") and datasets_to_process:
@@ -339,23 +361,25 @@ if st.button("Jalankan Valuasi Multi-Tahun 🚀") and datasets_to_process:
         st.session_state.override_csc = override_csc_input
         st.session_state.active_keys = sorted(list(datasets_to_process.keys()))
         st.session_state.calculated = True
-        st.success("Valuasi Berhasil untuk Seluruh Tahun (2023, 2024, 2025)!")
+        st.success("Valuasi Selesai untuk Seluruh Tahun (2023, 2024, 2025)!")
 
 if st.session_state.get("calculated"):
     st.subheader("📊 Ringkasan Hasil Valuasi Multi-Tahun")
     res_dict = st.session_state.results_dict
     dp_dict = st.session_state.dplk_dict
     pd_dict = st.session_state.paid_dict
+    pbo_lock = st.session_state.override_pbo
     
     summary_data = []
     for key in st.session_state.active_keys:
         df_y = res_dict[key]
-        pbo_y = df_y['PBO'].sum() if not df_y.empty else 0
+        pbo_y = pbo_lock if (key == 2025 and pbo_lock > 0) else (df_y['PBO'].sum() if not df_y.empty else 0)
         payroll_y = df_y['Gross Salary'].sum() if not df_y.empty else 0
         summary_data.append({
             "Tahun Valuasi": str(key),
             "Jumlah Peserta": len(df_y),
             "Total Payroll": f"Rp {payroll_y:,.0f}".replace(",", "."),
+            "Benefit Paid": f"Rp {pd_dict.get(key, 0):,.0f}".replace(",", "."),
             "PBO (Obligation)": f"Rp {pbo_y:,.0f}".replace(",", "."),
             "Net Liability": f"Rp {pbo_y - dp_dict[key]:,.0f}".replace(",", ".")
         })
@@ -367,7 +391,7 @@ if st.session_state.get("calculated"):
     )
     
     st.download_button(
-        label="📥 Download Laporan PDF Lengkap",
+        label="📥 Download Laporan PDF Resmi Lengkap",
         data=pdf_file,
         file_name=f"EXACT_OFFICIAL_REPORT_{input_perusahaan.replace(' ', '_')}.pdf",
         mime="application/pdf"
