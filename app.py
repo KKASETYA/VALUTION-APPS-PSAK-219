@@ -13,32 +13,57 @@ from reportlab.lib import colors
 from reportlab.lib.units import inch
 
 # ==========================================
-# 1. REFERENSI KURVA YIELD ZERO KUPON IBPA (BUILT-IN)
+# 1. REFERENSI KURVA YIELD PHEI / IBPA (RESMI SESUAI TABEL)
 # ==========================================
-# Berdasarkan benchmark kurva yield SBN/IBPA untuk tenor 1 s.d. 30 tahun (bisa disesuaikan standar aktuaria)
-IBPA_YIELD_CURVE = {
-    1: 0.0635, 2: 0.0650, 3: 0.0665, 4: 0.0678, 5: 0.0689,
-    6: 0.0698, 7: 0.0705, 8: 0.0711, 9: 0.0716, 10: 0.0720,
-    12: 0.0725, 15: 0.0730, 20: 0.0735, 25: 0.0740, 30: 0.0745
+PHEI_IGSYC_YIELD_CURVE = {
+    1: 6.3682 / 100,   # Tenor 1,0 Tahun
+    2: 6.3972 / 100,   # Tenor 2,0 Tahun
+    3: 6.4245 / 100,   # Tenor 3,0 Tahun
+    4: 6.4507 / 100,   # Tenor 4,0 Tahun
+    5: 6.4763 / 100,   # Tenor 5,0 Tahun
+    6: 6.5016 / 100,   # Tenor 6,0 Tahun
+    7: 6.5265 / 100,   # Tenor 7,0 Tahun
+    8: 6.5511 / 100,   # Tenor 8,0 Tahun
+    9: 6.5753 / 100,   # Tenor 9,0 Tahun
+    10: 6.5991 / 100,  # Tenor 10,0 Tahun
+    11: 6.6223 / 100,  # Tenor 11,0 Tahun
+    12: 6.6447 / 100,  # Tenor 12,0 Tahun
+    13: 6.6664 / 100,  # Tenor 13,0 Tahun
+    14: 6.6872 / 100,  # Tenor 14,0 Tahun
+    15: 6.7070 / 100,  # Tenor 15,0 Tahun
+    16: 6.7259 / 100,  # Tenor 16,0 Tahun
+    17: 6.7437 / 100,  # Tenor 17,0 Tahun
+    18: 6.7604 / 100,  # Tenor 18,0 Tahun
+    19: 6.7762 / 100,  # Tenor 19,0 Tahun
+    20: 6.7908 / 100,  # Tenor 20,0 Tahun
+    21: 6.8045 / 100,  # Tenor 21,0 Tahun
+    22: 6.8171 / 100,  # Tenor 22,0 Tahun
+    23: 6.8288 / 100,  # Tenor 23,0 Tahun
+    24: 6.8396 / 100,  # Tenor 24,0 Tahun
+    25: 6.8495 / 100,  # Tenor 25,0 Tahun
+    26: 6.8586 / 100,  # Tenor 26,0 Tahun
+    27: 6.8669 / 100,  # Tenor 27,0 Tahun
+    28: 6.8745 / 100,  # Tenor 28,0 Tahun
+    29: 6.8814 / 100,  # Tenor 29,0 Tahun
+    30: 6.8877 / 100   # Tenor 30,0 Tahun
 }
 
-def get_ibpa_discount_rate(duration):
-    """Mencari tingkat diskonto IBPA otomatis berdasarkan tenor/durasi rata-rata liabilitas"""
+def get_phei_discount_rate(duration):
+    """Mencari tingkat diskonto otomatis berdasarkan kurva yield PHEI via interpolasi tenor"""
     dur_int = int(round(duration))
-    if dur_int in IBPA_YIELD_CURVE:
-        return IBPA_YIELD_CURVE[dur_int]
+    if dur_int in PHEI_IGSYC_YIELD_CURVE:
+        return PHEI_IGSYC_YIELD_CURVE[dur_int]
     elif dur_int < 1:
-        return IBPA_YIELD_CURVE[1]
+        return PHEI_IGSYC_YIELD_CURVE[1]
     elif dur_int > 30:
-        return IBPA_YIELD_CURVE[30]
+        return PHEI_IGSYC_YIELD_CURVE[30]
     else:
-        # Interpolasi linier sederhana jika di antara tenor
-        lower_tenor = max([t for t in IBPA_YIELD_CURVE.keys() if t <= dur_int])
-        upper_tenor = min([t for t in IBPA_YIELD_CURVE.keys() if t >= dur_int])
+        lower_tenor = max([t for t in PHEI_IGSYC_YIELD_CURVE.keys() if t <= dur_int])
+        upper_tenor = min([t for t in PHEI_IGSYC_YIELD_CURVE.keys() if t >= dur_int])
         if lower_tenor == upper_tenor:
-            return IBPA_YIELD_CURVE[lower_tenor]
-        r_low = IBPA_YIELD_CURVE[lower_tenor]
-        r_high = IBPA_YIELD_CURVE[upper_tenor]
+            return PHEI_IGSYC_YIELD_CURVE[lower_tenor]
+        r_low = PHEI_IGSYC_YIELD_CURVE[lower_tenor]
+        r_high = PHEI_IGSYC_YIELD_CURVE[upper_tenor]
         return r_low + (r_high - r_low) * (dur_int - lower_tenor) / (upper_tenor - lower_tenor)
 
 # ==========================================
@@ -53,11 +78,10 @@ def fmt_num(num, decimals=0):
         return formatted.replace(",", "X").replace(".", ",").replace("X", ".")
 
 # ==========================================
-# PARSER EXCEL PRESISI (KARYAWAN AKTIF & PEMBAYARAN PESANGON)
+# PARSER EXCEL PRESISI
 # ==========================================
 def parse_excel_dataset(file_or_buffer, sheet_name=0):
     df = pd.read_excel(file_or_buffer, sheet_name=sheet_name, header=None)
-    
     data_start_idx = 7
     for idx, val in enumerate(df.iloc[:, 0]):
         if isinstance(val, (int, float)) and val == 1:
@@ -155,10 +179,9 @@ class PSAK219Engine:
             return {'PBO': 0, 'CSC': 0, 'Duration': 0}
             
         total_service = past_service + years_to_retire
-        pvfb_death, pvfb_disability = 0, 0
-        p_survival = 1.0 
         weighted_time_pv = 0
-        total_pvfb = 0
+        Parser_pvfb = 0
+        p_survival = 1.0 
         
         for t in range(int(years_to_retire)):
             age_t = current_age + t
@@ -173,9 +196,8 @@ class PSAK219Engine:
             
             cf = (b_death * (p_survival * q_m)) + (b_disab * (p_survival * q_d))
             pv = cf * v
-            pvfb_death += pv * (p_survival * q_m) # simplified accumulation
             weighted_time_pv += (t + 1) * pv
-            total_pvfb += pv
+            Parser_pvfb += pv
             p_survival *= (1 - (q_m + q_d + q_w))
             
         salary_ret = current_salary * ((1 + self.salary_inc) ** years_to_retire)
@@ -185,11 +207,11 @@ class PSAK219Engine:
         pv_ret = b_ret * v_ret * p_survival
         
         weighted_time_pv += years_to_retire * pv_ret
-        total_pvfb += pv_ret
+        Parser_pvfb += pv_ret
         
-        duration = (weighted_time_pv / total_pvfb) if total_pvfb > 0 else years_to_retire / 2.0
-        pbo = total_pvfb * (past_service / total_service)
-        csc = total_pvfb / total_service
+        duration = (weighted_time_pv / Parser_pvfb) if Parser_pvfb > 0 else years_to_retire / 2.0
+        pbo = Parser_pvfb * (past_service / total_service)
+        csc = Parser_pvfb / total_service
         
         return {'PBO': pbo, 'CSC': csc, 'Duration': duration}
 
@@ -269,13 +291,13 @@ def generate_comprehensive_report(results_dict, dplk_dict, paid_dict, applied_di
     elements.append(PageBreak())
     
     # --- HALAMAN 1: INFO ---
-    elements.append(Paragraph("<b>I. Executive Summary & Employee Data Information (IBPA Yield Curve Matched)</b>", h_style))
+    elements.append(Paragraph("<b>I. Executive Summary & Employee Data Information (PHEI IGSYC Yield Matched)</b>", h_style))
     data_info = [
         ["No.", "Description", f"Dec 31, {cur_yr}", f"Dec 31, {cur_yr-1}"],
         ["1", "Total Participant (Person)", fmt_num(total_participants), "-"],
         ["2", "Average Age (year)", fmt_num(df_cur['Age Valuation'].mean() if not df_cur.empty else 0, 2), "-"],
         ["3", "Average Past Service (year)", fmt_num(df_cur['Past Service'].mean() if not df_cur.empty else 0, 2), "-"],
-        ["4", "Applied IBPA Discount Rate (%)", f"{applied_discount*100:.4f}%".replace('.', ','), "-"],
+        ["4", "Applied PHEI IGSYC Discount Rate (%)", f"{applied_discount*100:.4f}%".replace('.', ','), "-"],
         ["5", "Total Monthly Payroll (Rp.)", fmt_num(total_payroll), "-"],
         ["6", "Saldo DPLK (Rp.)", fmt_num(total_dplk), "-"],
         ["7", "Benefit Paid (Actual) (Rp.)", fmt_num(total_benefit_paid), "-"]
@@ -341,10 +363,10 @@ def generate_comprehensive_report(results_dict, dplk_dict, paid_dict, applied_di
 
 
 # ==========================================
-# 4. STREAMLIT WEB INTERFACE (OTOMATIS IBPA YIELD CURVE)
+# 4. STREAMLIT WEB INTERFACE (PHEI INTEGRATED)
 # ==========================================
-st.set_page_config(page_title="Valuasi Aktuaria Multi-Tahun (IBPA Matched)", layout="wide")
-st.title("📄 Generator Laporan Aktuaria (Otomatis Kurva Yield IBPA & Editor Mandiri)")
+st.set_page_config(page_title="Valuasi Aktuaria Multi-Tahun (PHEI IGSYC Matched)", layout="wide")
+st.title("📄 Generator Laporan Aktuaria (Kurva Yield PHEI IGSYC Resmi & Editor Mandiri)")
 
 st.sidebar.header("⚙️ Pengaturan Dokumen & Klien")
 input_perusahaan = st.sidebar.text_input("Nama Perusahaan Klien", "PT GATRA MAPAN INDONESIA")
@@ -354,7 +376,7 @@ nomor_laporan = st.sidebar.text_input("Nomor Laporan Baku", f"082/KAS-FR/PSAK/II
 asumsi_gaji = st.sidebar.number_input("Kenaikan Gaji (%)", value=5.0, step=0.1) / 100
 usia_pensiun = st.sidebar.number_input("Usia Pensiun Normal", value=60, step=1)
 
-st.sidebar.info("💡 **Catatan Aktuaris:** Tingkat diskonto akan ditentukan dan dicocokkan secara otomatis oleh sistem (*Yield Curve Matching*) berdasarkan referensi kurva zero kupon IBPA sesuai profil tenor liabilitas karyawan klien.")
+st.sidebar.info("💡 **Standar Aktuaris:** Sistem mencocokkan tingkat diskonto secara otomatis berdasarkan kurva *yield* resmi PHEI IGSYC sesuai profil durasi liabilitas karyawan.")
 
 metode_input = st.radio(
     "Pilih Metode Masukan Data Karyawan:",
@@ -381,7 +403,7 @@ if metode_input == "Upload File Excel Multi-Tahun":
             st.error(f"Gagal membaca file: {e}")
 
 else: 
-    st.info("Masukkan data karyawan langsung per tahun menggunakan tabel interaktif di bawah.")
+    st.info("Masukkan data karyawan langsung per tahun menggunakan tabel interaktif di bawah (Rentang 2021 - 2026).")
     selected_years = st.multiselect(
         "Pilih Tahun Valuasi yang Ingin Dibuat", 
         [2021, 2022, 2023, 2024, 2025, 2026], 
@@ -417,8 +439,8 @@ else:
             )
 
 st.markdown("---")
-if st.button("Jalankan Valuasi Otomatis (IBPA Yield Matching) 🚀") and datasets_to_process:
-    with st.spinner("Menghitung durasi liabilitas dan mencocokkan kurva yield IBPA..."):
+if st.button("Jalankan Valuasi Otomatis (PHEI IGSYC Yield Matching) 🚀") and datasets_to_process:
+    with st.spinner("Menghitung durasi liabilitas dan mencocokkan kurva yield PHEI IGSYC..."):
         results_dict = {}
         dplk_dict = {}
         applied_discount_dict = {}
@@ -428,8 +450,8 @@ if st.button("Jalankan Valuasi Otomatis (IBPA Yield Matching) 🚀") and dataset
             val_date_dt = datetime.datetime(yr, 12, 31)
             df_input = datasets_to_process[yr]
             
-            # Langkah 1: Kalkulasi awal dengan tingkat diskonto estimasi awal (misal 7%) untuk mendapatkan rata-rata durasi liabilitas
-            temp_engine = PSAK219Engine(0.07, asumsi_gaji, usia_pensiun)
+            # Step 1: Estimasi awal durasi liabilitas
+            temp_engine = PSAK219Engine(0.065, asumsi_gaji, usia_pensiun)
             durations = []
             
             for _, row in df_input.iterrows():
@@ -447,15 +469,14 @@ if st.button("Jalankan Valuasi Otomatis (IBPA Yield Matching) 🚀") and dataset
                 if res['Duration'] > 0:
                     durations.append(res['Duration'])
             
-            # Tentukan durasi rata-rata tertimbang liabilitas
             avg_duration = np.mean(durations) if durations else 8.0
             
-            # Langkah 2: Ambil tingkat diskonto otomatis dari Kurva Yield IBPA berdasarkan durasi tersebut
-            matched_ibpa_rate = get_ibpa_discount_rate(avg_duration)
-            applied_discount_dict[yr] = matched_ibpa_rate
+            # Step 2: Ambil diskonto otomatis dari tabel PHEI IGSYC
+            matched_phei_rate = get_phei_discount_rate(avg_duration)
+            applied_discount_dict[yr] = matched_phei_rate
             
-            # Langkah 3: Jalankan kalkulasi akhir PUC menggunakan diskonto IBPA hasil matching
-            final_engine = PSAK219Engine(matched_ibpa_rate, asumsi_gaji, usia_pensiun)
+            # Step 3: Kalkulasi akhir PUC dengan diskonto PHEI
+            final_engine = PSAK219Engine(matched_phei_rate, asumsi_gaji, usia_pensiun)
             hasil_valuasi = []
             total_dplk_yr = 0.0
             
@@ -492,10 +513,10 @@ if st.button("Jalankan Valuasi Otomatis (IBPA Yield Matching) 🚀") and dataset
         st.session_state.applied_discount_dict = applied_discount_dict
         st.session_state.active_years = active_years
         st.session_state.calculated_results = True
-        st.success(f"Valuasi Selesai! Tingkat Diskonto IBPA Tercocokkan Otomatis (Durasi Rata-rata ~{avg_duration:.2f} Tahun).")
+        st.success(f"Valuasi Selesai! Suku Bunga PHEI IGSYC Tercocokkan Otomatis (Durasi Rata-rata ~{avg_duration:.2f} Tahun).")
 
 if st.session_state.get("calculated_results"):
-    st.subheader("📊 Ringkasan Hasil Kalkulasi & Suku Bunga IBPA Otomatis")
+    st.subheader("📊 Ringkasan Hasil Kalkulasi & Suku Bunga PHEI IGSYC Otomatis")
     res_dict = st.session_state.results_dict
     dp_dict = st.session_state.dplk_dict
     pd_dict = st.session_state.paid_dict
@@ -506,10 +527,10 @@ if st.session_state.get("calculated_results"):
     for yr in sorted(act_yrs, reverse=True):
         df_y = res_dict[yr]
         pbo_y = df_y['PBO'].sum() if not df_y.empty else 0
-        rate_y = disc_dict.get(yr, 0.0689)
+        rate_y = disc_dict.get(yr, 0.0659)
         summary_data.append({
             "Periode Tahun": f"31 Dec {yr}",
-            "Diskonto IBPA": f"{rate_y*100:.4f}%".replace('.', ','),
+            "Diskonto PHEI": f"{rate_y*100:.4f}%".replace('.', ','),
             "Total Peserta": len(df_y),
             "Benefit Paid (Aktual)": f"Rp {pd_dict.get(yr, 0):,.0f}".replace(",", "."),
             "Present Value of DBO (PBO)": f"Rp {pbo_y:,.0f}".replace(",", "."),
@@ -519,15 +540,15 @@ if st.session_state.get("calculated_results"):
     
     st.dataframe(pd.DataFrame(summary_data), use_container_width=True)
     
-    cur_applied_rate = disc_dict.get(act_yrs[-1], 0.0689) if act_yrs else 0.0689
+    cur_applied_rate = disc_dict.get(act_yrs[-1], 0.0659) if act_yrs else 0.0659
     pdf_file = generate_comprehensive_report(
         res_dict, dp_dict, pd_dict, cur_applied_rate, asumsi_gaji, usia_pensiun, 
         act_yrs, input_perusahaan, nomor_laporan
     )
     
     st.download_button(
-        label="📥 Download Laporan PDF Lengkap (Sertakan Kurva Yield IBPA)",
+        label="📥 Download Laporan PDF Lengkap (Sertakan Kurva Yield PHEI)",
         data=pdf_file,
-        file_name=f"FINAL_REPORT_IBPA_MATCHED_{input_perusahaan.replace(' ', '_')}.pdf",
+        file_name=f"FINAL_REPORT_PHEI_IGSYC_{input_perusahaan.replace(' ', '_')}.pdf",
         mime="application/pdf"
     )
