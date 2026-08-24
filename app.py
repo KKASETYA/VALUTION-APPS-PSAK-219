@@ -169,7 +169,7 @@ class ProfessionalActuarialEngine:
 
 
 # ==========================================
-# 4. GENERATOR PDF RESMI LENGKAP & UTUH
+# 4. GENERATOR PDF RESMI LENGKAP (TABEL 1 S.D. 5)
 # ==========================================
 def draw_page_decorations(canvas, doc):
     canvas.saveState()
@@ -198,11 +198,11 @@ def generate_comprehensive_pdf(results_dict, dplk_dict, paid_dict, discount, sal
         ('TEXTCOLOR', (0,0), (-1,0), colors.black),
         ('ALIGN', (0,0), (-1,0), 'CENTER'),
         ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
-        ('BOTTOMPADDING', (0,0), (-1,0), 4),
-        ('TOPPADDING', (0,0), (-1,0), 4),
+        ('BOTTOMPADDING', (0,0), (-1,0), 3),
+        ('TOPPADDING', (0,0), (-1,0), 3),
         ('GRID', (0,0), (-1,-1), 0.5, colors.black),
         ('ALIGN', (1,1), (-1,-1), 'RIGHT'),
-        ('FONTSIZE', (0,0), (-1,-1), 7.5),
+        ('FONTSIZE', (0,0), (-1,-1), 7),
         ('VALIGN', (0,0), (-1,-1), 'MIDDLE')
     ])
 
@@ -260,46 +260,117 @@ def generate_comprehensive_pdf(results_dict, dplk_dict, paid_dict, discount, sal
     ], colWidths=[260, 260]))
     elements.append(PageBreak())
 
-    # 5. TABEL UTAMA PENGUNGKAPAN (TABEL 4)
-    elements.append(Table([[Paragraph("<b>TABLE 4 / TABEL 4</b>", h_eng), Paragraph("<b>FUNDED STATUS & RECONCILIATION</b>", h_ind)]], colWidths=[260, 260]))
-    elements.append(Spacer(1, 8))
+    # 5. TABEL 1: IKHTISAR DATA DAN ASUMSI AKTUARIA
+    elements.append(Paragraph("<b>TABLE 1 / TABEL 1: IKHTISAR DATA DAN ASUMSI AKTUARIA</b>", ParagraphStyle('T1Title', parent=styles['Heading2'], fontSize=9, alignment=1)))
+    elements.append(Spacer(1, 5))
+    t1_data = [
+        ["EXPLANATION", "Des 31, 2024", "Des 31, 2025", "URAIAN"],
+        ["Number of Employee", "147", f"{len(df_cur)}", "Jumlah Karyawan (orang)"],
+        ["Monthly Wages", "824.331.212", f"{fmt_num(df_cur['Gross Salary'].sum() if not df_cur.empty else 0)}", "Jumlah Gaji Sebulan"],
+        ["Average Monthly Wages", "5.607.695", f"{fmt_num(df_cur['Gross Salary'].mean() if not df_cur.empty else 0)}", "Rata-rata Gaji Sebulan"],
+        ["Average Age (Years)", "39,78", f"{df_cur['Age Valuation'].mean():.2f}".replace('.', ',') if not df_cur.empty else "0", "Rata-rata Usia (Tahun)"],
+        ["Average Years of Service", "8,81", f"{df_cur['Past Service'].mean():.2f}".replace('.', ',') if not df_cur.empty else "0", "Rata-rata Masa Kerja (Tahun)"],
+        ["Discount Rate Beginning", "6,64%", "7,11%", "Tingkat Diskonto Awal Tahun"],
+        ["Discount Rate Ending", "7,11%", f"{discount*100:.2f}%".replace('.', ','), "Tingkat Diskonto Akhir Tahun"],
+        ["Future Salary Increases", "5,00%", f"{salary_inc*100:.2f}%".replace('.', ','), "Tingkat Kenaikan Gaji"],
+        ["Current Service Cost", "725.729.273", fmt_num(total_csc), "Biaya Jasa Kini"],
+        ["Total Benefit Paid", "(391.618.631)", f"({fmt_num(total_benefit_paid)})", "Imbalan yang dibayarkan"],
+        ["Obligation at BoP", "7.202.205.556", fmt_num(bop_obligation), "Nilai kini kewajiban awal periode"],
+        ["Obligation at EoP", "6.431.037.297", fmt_num(total_pbo), "Nilai kini kewajiban akhir periode"],
+        ["Mortality Table", "TMI IV", "TMI IV", "Tabel Mortalita"],
+        ["Normal Retirement Age", "55 / 56", f"{ret_age}", "Usia Pensiun Normal (Tahun)"]
+    ]
+    t_table1 = Table(t1_data, colWidths=[150, 65, 65, 160])
+    t_table1.setStyle(std_tbl_style)
+    elements.append(t_table1)
+    elements.append(PageBreak())
 
+    # 6. TABEL 2: ANALISIS KEUNTUNGAN DAN KERUGIAN AKTUARIA (GAIN AND LOSS CALCULATIONS)
+    elements.append(Paragraph("<b>TABLE 2 / TABEL 2: ANALISIS KEUNTUNGAN DAN KERUGIAN AKTUARIA</b>", ParagraphStyle('T2Title', parent=styles['Heading2'], fontSize=9, alignment=1)))
+    elements.append(Spacer(1, 5))
+    t2_data = [
+        ["EXPLANATION", "Des 31, 2024", "Des 31, 2025", "URAIAN"],
+        ["Actual Present Value of Obligation at BoP", fmt_num(7202205556), fmt_num(bop_obligation), "Nilai Kini Kewajiban Awal Periode"],
+        ["Interest Cost", fmt_num(513076815), fmt_num(int_cost), "Biaya Bunga"],
+        ["Current Service Cost", fmt_num(725729273), fmt_num(total_csc), "Biaya Jasa Kini"],
+        ["Benefit Payments", f"({fmt_num(391618631)})", f"({fmt_num(total_benefit_paid)})", "Pembayaran Manfaat"],
+        ["Present Value of Obligation at EoP - Expected", fmt_num(7536098048), fmt_num(pbo_expected), "Nilai Kini Kewajiban Akhir (Ekspektasi)"],
+        ["Actuarial (Gain)/Loss on Obligation", f"({fmt_num(602594759)})", f"{fmt_num(actuarial_gain_loss)}", "Keuntungan/Kerugian Aktuaria pada Kewajiban"],
+        ["Present Value of Obligation at EoP - Actual", fmt_num(6431037297), fmt_num(total_pbo), "Nilai Kini Kewajiban Akhir (Aktual)"],
+        ["Total Actuarial (Gain)/Loss for Period", f"({fmt_num(602594759)})", f"{fmt_num(actuarial_gain_loss)}", "Total Keuntungan/Kerugian Aktuaria Tahun Berjalan"]
+    ]
+    t_table2 = Table(t2_data, colWidths=[150, 65, 65, 160])
+    t_table2.setStyle(std_tbl_style)
+    elements.append(t_table2)
+    elements.append(PageBreak())
+
+    # 7. TABEL 3: PENDAPATAN KOMPREHENSIF LAINNYA (OTHER COMPREHENSIVE INCOME)
+    elements.append(Paragraph("<b>TABLE 3 / TABEL 3: PENDAPATAN KOMPREHENSIF LAINNYA (OCI)</b>", ParagraphStyle('T3Title', parent=styles['Heading2'], fontSize=9, alignment=1)))
+    elements.append(Spacer(1, 5))
+    t3_data = [
+        ["EXPLANATION", "Des 31, 2024", "Des 31, 2025", "URAIAN"],
+        ["Other Comprehensive Income at BoP", "-", "-", "OCI Awal Periode"],
+        ["Actuarial (Gain)/Loss on Obligation", f"({fmt_num(602594759)})", f"{fmt_num(actuarial_gain_loss)}", "Keuntungan/Kerugian Aktuaria pada Kewajiban"],
+        ["Actuarial (Gain)/Loss on Plan Assets", "-", "-", "Keuntungan/Kerugian Aktuaria pada Aktiva Program"],
+        ["Total Actuarial (Gain)/Loss at Period", f"({fmt_num(602594759)})", f"{fmt_num(actuarial_gain_loss)}", "Total Keuntungan/Kerugian Aktuaria Periode Ini"],
+        ["Other Comprehensive Income at EoP", f"({fmt_num(602594759)})", f"{fmt_num(actuarial_gain_loss)}", "OCI Akhir Periode"]
+    ]
+    t_table3 = Table(t3_data, colWidths=[150, 65, 65, 160])
+    t_table3.setStyle(std_tbl_style)
+    elements.append(t_table3)
+    elements.append(PageBreak())
+
+    # 8. TABEL 4: STATUS PENDANAAN & REKONSILIASI (FUNDED STATUS & RECONCILIATION)
+    elements.append(Paragraph("<b>TABLE 4 / TABEL 4: STATUS PENDANAAN & REKONSILIASI</b>", ParagraphStyle('T4Title', parent=styles['Heading2'], fontSize=9, alignment=1)))
+    elements.append(Spacer(1, 5))
     t_t4_1 = Table([
         ["E X P L A N A T I O N", "Des 31, 2024", "Des 31, 2025", "U R A I A N"],
-        ["FUNDED STATUS", "", "", "STATUS PENDANAAN"],
-        ["Assets and Obligation", "", "", "Kekayaan dan Kewajiban"],
         ["Present Value of Obligation at EOP", fmt_num(6431037297.0), fmt_num(total_pbo), "Nilai Kini Kewajiban"],
         ["Fair Value of Plan Assets", "-", "-", "Nilai Wajar Aktiva Program"],
         ["Funded Status", fmt_num(6431037297.0), fmt_num(funded_status), "Posisi Pendanaan"],
-        ["Liability/(Assets) Recognized", fmt_num(6431037297.0), fmt_num(funded_status), "Kewajiban Diakui di Neraca"]
-    ], colWidths=[150, 65, 65, 140])
+        ["Liability/(Assets) Recognized in Balance Sheet", fmt_num(6431037297.0), fmt_num(funded_status), "Kewajiban Diakui di Neraca"]
+    ], colWidths=[150, 65, 65, 160])
     t_t4_1.setStyle(std_tbl_style)
     elements.append(t_t4_1)
     elements.append(Spacer(1, 10))
 
     t_t4_2 = Table([
         ["E X P L A N A T I O N", "Des 31, 2024", "Des 31, 2025", "U R A I A N"],
-        ["Reconciliation of liability/(Asset)", "", "", "Perubahan Kewajiban/(Kekayaan)"],
         ["Liability/(Assets) at BoP", fmt_num(7202205556), fmt_num(bop_obligation), "Kewajiban pada Awal Periode"],
         ["Expense/(Income)", fmt_num(223045131), fmt_num(net_expense), "Beban/(Pendapatan)"],
         ["Benefit Payment - Actual", f"({fmt_num(391618631)})", f"({fmt_num(total_benefit_paid)})", "Realisasi Pembayaran Manfaat"],
         ["Other Comprehensive Income", f"({fmt_num(602594759)})", f"({fmt_num(abs(actuarial_gain_loss))})", "Pendapatan Komprehensif Lainnya"],
         ["Liability/(Assets) at EoP", fmt_num(6431037297.0), fmt_num(funded_status), "Kewajiban pada Akhir Periode"]
-    ], colWidths=[150, 65, 65, 140])
+    ], colWidths=[150, 65, 65, 160])
     t_t4_2.setStyle(std_tbl_style)
     elements.append(t_t4_2)
     elements.append(PageBreak())
 
-    # 6. SURAT PERNYATAAN MANAJEMEN
+    # 9. TABEL 5: PENGAKUAN BEBAN / PENDAPATAN DI LAPORAN LABA RUGI (RECOGNITION OF EXPENSE)
+    elements.append(Paragraph("<b>TABLE 5 / TABEL 5: PENGAKUAN BEBAN DALAM LABA RUGI</b>", ParagraphStyle('T5Title', parent=styles['Heading2'], fontSize=9, alignment=1)))
+    elements.append(Spacer(1, 5))
+    t5_data = [
+        ["EXPLANATION", "Des 31, 2024", "Des 31, 2025", "URAIAN"],
+        ["Current Service Cost", fmt_num(725729273), fmt_num(total_csc), "Biaya Jasa Kini"],
+        ["Interest Cost", fmt_num(513076815), fmt_num(int_cost), "Biaya Bunga"],
+        ["Expected Return on Plan Assets", "-", "-", "Harapan Hasil Investasi"],
+        ["Net Expense / (Income) Recognized", fmt_num(223045131), fmt_num(net_expense), "Beban / (Pendapatan) yang Diakui di Laba Rugi"]
+    ]
+    t_table5 = Table(t5_data, colWidths=[150, 65, 65, 160])
+    t_table5.setStyle(std_tbl_style)
+    elements.append(t_table5)
+    elements.append(PageBreak())
+
+    # 10. SURAT PERNYATAAN MANAJEMEN
     elements.append(Paragraph("<b>SURAT PERNYATAAN KEBENARAN DATA & PERSETUJUAN ASUMSI PT. ASURANSI UMUM VIDEI</b>", ParagraphStyle('Stmt', parent=styles['Heading2'], fontSize=10, alignment=1)))
     elements.append(Spacer(1, 10))
     elements.append(Paragraph("Dalam rangka Perhitungan Aktuaria Program Imbalan Pasca Kerja berdasarkan PSAK 219 periode 31 Desember 2025 untuk PT. ASURANSI UMUM VIDEI, kami sebagai Manajemen menyatakan bahwa data dan informasi yang kami sampaikan kepada Aktuaris adalah <b>TELENGKAP DAN BENAR</b>.", body_ind))
     elements.append(Spacer(1, 10))
     
     stmt_data = [
-        ["1", "Total Karyawan", "99 Orang"],
-        ["2", "Total Gaji", f"Rp {fmt_num(774067414)}"],
-        ["3", "Usia Pensiun", "55 Tahun (Golongan I - III) / 56 Tahun (Golongan IV - VI)"],
+        ["1", "Total Karyawan", f"{len(df_cur)} Orang"],
+        ["2", "Total Gaji", f"Rp {fmt_num(df_cur['Gross Salary'].sum() if not df_cur.empty else 0)}"],
+        ["3", "Usia Pensiun", f"{ret_age} Tahun"],
         ["4", "Asumsi Rata-rata Kenaikan Gaji", f"{salary_inc*100:.2f}%"],
         ["5", "Imbalan Pasca Kerja - Tetap", f"Rp {fmt_num(total_pbo)}"],
         ["6", "Imbalan Pasca Kerja - Kontrak", f"Rp {fmt_num(74313038)}"],
@@ -312,7 +383,7 @@ def generate_comprehensive_pdf(results_dict, dplk_dict, paid_dict, discount, sal
     elements.append(Paragraph("Demikian surat pernyataan ini kami buat dengan sebenarnya, dan kami siap mempertanggungjawabkan perihal kelengkapan data dan kebenaran data pada posisi periode 31 Desember 2025.", body_ind))
     elements.append(PageBreak())
 
-    # 7. ACTUARIAL STATEMENT & CLOSING
+    # 11. ACTUARIAL STATEMENT & CLOSING
     elements.append(Table([
         [Paragraph("<b>ACTUARIAL STATEMENT</b>", h_eng), Paragraph("<b>PERNYATAAN AKTUARIS</b>", h_ind)],
         [Paragraph("We have calculated actuarial valuation for PT. ASURANSI UMUM VIDEI pertaining to Severance Payment, Service Pay and Compensation Payment...", body_eng),
@@ -327,10 +398,10 @@ def generate_comprehensive_pdf(results_dict, dplk_dict, paid_dict, discount, sal
 
 
 # ==========================================
-# 5. STREAMLIT INTERFACE (DENGAN st.data_editor MULTI-TAHUN)
+# 5. STREAMLIT INTERFACE
 # ==========================================
 st.set_page_config(page_title="Valuasi Aktuaria Presisi Profesional", layout="wide")
-st.title("📄 Generator Laporan PDF Dwibahasa Resmi Aktuaria (Multi-Tahun & Editor Interaktif)")
+st.title("📄 Generator Laporan PDF Dwibahasa Resmi Aktuaria (Lengkap Tabel 1-5)")
 
 st.sidebar.header("⚙️ Parameter Rekonsiliasi")
 input_perusahaan = st.sidebar.text_input("Nama Perusahaan Klien", "PT. ASURANSI UMUM VIDEI")
@@ -460,8 +531,8 @@ if st.session_state.get("calculated"):
     )
     
     st.download_button(
-        label="📥 Download Laporan PDF Komprehensif Multi-Tahun",
+        label="📥 Download Laporan PDF Komprehensif Resmi (Lengkap Tabel 1-5)",
         data=pdf_file,
-        file_name=f"MULTIYEAR_COMPREHENSIVE_REPORT_{input_perusahaan.replace(' ', '_')}.pdf",
+        file_name=f"FULL_TABLES_REPORT_{input_perusahaan.replace(' ', '_')}.pdf",
         mime="application/pdf"
     )
