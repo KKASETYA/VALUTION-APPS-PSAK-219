@@ -13,16 +13,8 @@ from reportlab.lib import colors
 from reportlab.lib.units import inch
 
 # ==========================================
-# 1. DATABASE & YIELD CURVE OTOMATIS
+# 1. DATABASE & FORMATTER
 # ==========================================
-YIELD_CURVE_PHEI = {
-    1: 0.0481, 2: 0.0511, 3: 0.0535, 4: 0.0555, 5: 0.0572,
-    6: 0.0587, 7: 0.0599, 8: 0.0610, 9: 0.0620, 10: 0.0628,
-    11: 0.0636, 12: 0.0643, 13: 0.0650, 14: 0.0656, 15: 0.0661,
-    16: 0.0666, 17: 0.0671, 18: 0.0675, 19: 0.0679, 20: 0.0683,
-    25: 0.0697, 30: 0.0706
-}
-
 def fmt_num(num, decimals=0):
     if pd.isna(num) or num == "" or num == 0: return "-"
     if decimals == 0:
@@ -302,10 +294,10 @@ def generate_comprehensive_report(results_dict, dplk_dict, paid_dict, discount, 
 
 
 # ==========================================
-# 5. STREAMLIT WEB INTERFACE
+# 5. STREAMLIT WEB INTERFACE (DUAL MODE)
 # ==========================================
 st.set_page_config(page_title="Valuasi Aktuaria Presisi Profesional", layout="wide")
-st.title("📄 Generator Laporan Aktuaria Presisi (100% Match Official Report)")
+st.title("📄 Generator Laporan Aktuaria Presisi (Excel & Manual Input)")
 
 st.sidebar.header("⚙️ Konfigurasi Parameter Rekonsiliasi")
 input_perusahaan = st.sidebar.text_input("Nama Perusahaan Klien", "PT. ASURANSI UMUM VIDEI")
@@ -322,23 +314,45 @@ benefit_paid_input = st.sidebar.number_input("Realisasi Benefit Paid Aktual", va
 override_pbo_input = st.sidebar.number_input("Lock Final PBO (Opsional, 0 = Auto)", value=3813896220.0, step=1000000.0)
 override_csc_input = st.sidebar.number_input("Lock Final CSC (Opsional, 0 = Auto)", value=488511769.0, step=1000000.0)
 
-uploaded_file = st.file_uploader("Unggah File Excel Template Aktuaria (.xlsx)", type=["xlsx", "xls"])
+# PILIHAN METODE MASUKAN DATA
+metode_utama = st.radio(
+    "Pilih Metode Masukan Data:", 
+    ["Upload Excel (Auto-Detect Format Multi-Sheet)", "Input / Edit Manual Langsung di Web (Multi-Tab Tahun)"]
+)
 
 datasets_to_process = {}
 benefit_paid_dict = {}
 
-if uploaded_file is not None:
-    try:
-        xl_file = pd.ExcelFile(uploaded_file)
-        for sh in xl_file.sheet_names:
-            if 'asumsi' in sh.lower():
-                continue
-            detected_yr, df_emp, total_paid = parse_excel_universal(uploaded_file, sheet_name=sh)
-            datasets_to_process[detected_yr] = df_emp
-            benefit_paid_dict[detected_yr] = benefit_paid_input if detected_yr == 2025 else total_paid
-        st.success(f"Berhasil membaca sheet: {list(datasets_to_process.keys())}")
-    except Exception as e:
-        st.error(f"Gagal membaca file: {e}")
+if metode_utama == "Upload Excel (Auto-Detect Format Multi-Sheet)":
+    uploaded_file = st.file_uploader("Unggah File Excel Template Aktuaria (.xlsx)", type=["xlsx", "xls"])
+    if uploaded_file is not None:
+        try:
+            xl_file = pd.ExcelFile(uploaded_file)
+            for sh in xl_file.sheet_names:
+                if 'asumsi' in sh.lower():
+                    continue
+                detected_yr, df_emp, total_paid = parse_excel_universal(uploaded_file, sheet_name=sh)
+                datasets_to_process[detected_yr] = df_emp
+                benefit_paid_dict[detected_yr] = benefit_paid_input if detected_yr == 2025 else total_paid
+            st.success(f"Berhasil membaca sheet: {list(datasets_to_process.keys())}")
+        except Exception as e:
+            st.error(f"Gagal membaca file: {e}")
+else:
+    st.subheader("Input / Edit Manual Data Sensus per Tahun")
+    tahun_list = [2025, 2024, 2023]
+    tabs = st.tabs([f"Tahun {yr}" for yr in tahun_list])
+    
+    default_data_dict = {
+        2025: pd.DataFrame([{"NIK": "2051205860", "Nama": "MOHAMAD RAHMAT", "Tanggal Lahir": datetime.date(1986, 5, 12), "Tgl. Mulai Bekerja": datetime.date(2018, 4, 18), "Total Upah Bulanan (Gross)": 3650000.0, "Saldo DPLK": 0.0}]),
+        2024: pd.DataFrame([{"NIK": "2051205860", "Nama": "MOHAMAD RAHMAT", "Tanggal Lahir": datetime.date(1986, 5, 12), "Tgl. Mulai Bekerja": datetime.date(2018, 4, 18), "Total Upah Bulanan (Gross)": 3400000.0, "Saldo DPLK": 0.0}]),
+        2023: pd.DataFrame([{"NIK": "2051205860", "Nama": "MOHAMAD RAHMAT", "Tanggal Lahir": datetime.date(1986, 5, 12), "Tgl. Mulai Bekerja": datetime.date(2018, 4, 18), "Total Upah Bulanan (Gross)": 3100000.0, "Saldo DPLK": 0.0}])
+    }
+    
+    for i, yr in enumerate(tahun_list):
+        with tabs[i]:
+            st.write(f"Masukkan data karyawan per 31 Desember {yr}:")
+            datasets_to_process[yr] = st.data_editor(default_data_dict[yr], num_rows="dynamic", key=f"manual_edit_{yr}", use_container_width=True)
+            benefit_paid_dict[yr] = benefit_paid_input if yr == 2025 else 0.0
 
 st.markdown("---")
 if st.button("Jalankan Valuasi 100% Match Laporan Resmi 🚀") and datasets_to_process:
@@ -393,7 +407,7 @@ if st.button("Jalankan Valuasi 100% Match Laporan Resmi 🚀") and datasets_to_p
         st.success("Perhitungan Selesai dan 100% Identik dengan Laporan Resmi!")
 
 if st.session_state.get("calculated"):
-    st.subheader("📊 Ringkasan Hasil Valuasi (100% Match Konsultan)")
+    st.subheader("📊 Ringkasan Hasil Valuasi")
     res_dict = st.session_state.results_dict
     dp_dict = st.session_state.dplk_dict
     pd_dict = st.session_state.paid_dict
@@ -423,7 +437,7 @@ if st.session_state.get("calculated"):
     )
     
     st.download_button(
-        label="📥 Download Laporan PDF 100% Sama Persis dengan Konsultan",
+        label="📥 Download Laporan PDF Resmi",
         data=pdf_file,
         file_name=f"EXACT_OFFICIAL_REPORT_{input_perusahaan.replace(' ', '_')}.pdf",
         mime="application/pdf"
