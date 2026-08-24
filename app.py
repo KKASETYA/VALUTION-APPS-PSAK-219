@@ -13,6 +13,35 @@ from reportlab.lib import colors
 from reportlab.lib.units import inch
 
 # ==========================================
+# 1. REFERENSI KURVA YIELD ZERO KUPON IBPA (BUILT-IN)
+# ==========================================
+# Berdasarkan benchmark kurva yield SBN/IBPA untuk tenor 1 s.d. 30 tahun (bisa disesuaikan standar aktuaria)
+IBPA_YIELD_CURVE = {
+    1: 0.0635, 2: 0.0650, 3: 0.0665, 4: 0.0678, 5: 0.0689,
+    6: 0.0698, 7: 0.0705, 8: 0.0711, 9: 0.0716, 10: 0.0720,
+    12: 0.0725, 15: 0.0730, 20: 0.0735, 25: 0.0740, 30: 0.0745
+}
+
+def get_ibpa_discount_rate(duration):
+    """Mencari tingkat diskonto IBPA otomatis berdasarkan tenor/durasi rata-rata liabilitas"""
+    dur_int = int(round(duration))
+    if dur_int in IBPA_YIELD_CURVE:
+        return IBPA_YIELD_CURVE[dur_int]
+    elif dur_int < 1:
+        return IBPA_YIELD_CURVE[1]
+    elif dur_int > 30:
+        return IBPA_YIELD_CURVE[30]
+    else:
+        # Interpolasi linier sederhana jika di antara tenor
+        lower_tenor = max([t for t in IBPA_YIELD_CURVE.keys() if t <= dur_int])
+        upper_tenor = min([t for t in IBPA_YIELD_CURVE.keys() if t >= dur_int])
+        if lower_tenor == upper_tenor:
+            return IBPA_YIELD_CURVE[lower_tenor]
+        r_low = IBPA_YIELD_CURVE[lower_tenor]
+        r_high = IBPA_YIELD_CURVE[upper_tenor]
+        return r_low + (r_high - r_low) * (dur_int - lower_tenor) / (upper_tenor - lower_tenor)
+
+# ==========================================
 # FUNGSI BANTUAN: FORMAT ANGKA & RUPIAH
 # ==========================================
 def fmt_num(num, decimals=0):
@@ -40,8 +69,6 @@ def parse_excel_dataset(file_or_buffer, sheet_name=0):
     
     for idx in range(data_start_idx, len(df)):
         row = df.iloc[idx]
-        
-        # 1. Ambil Data Karyawan Aktif (Kolom 1 s.d. 6)
         nik = row.iloc[1] if len(row) > 1 else None
         nama = row.iloc[2] if len(row) > 2 else None
         dob = row.iloc[3] if len(row) > 3 else None
@@ -69,7 +96,6 @@ def parse_excel_dataset(file_or_buffer, sheet_name=0):
                 'Saldo DPLK': dplk_val
             })
             
-        # 2. Ambil Data Pembayaran Pesangon Aktual (Kolom Kanan / Indeks 11)
         if len(row) > 11:
             val_paid = row.iloc[11]
             try:
@@ -78,12 +104,11 @@ def parse_excel_dataset(file_or_buffer, sheet_name=0):
             except:
                 pass
                 
-    df_employees = pd.DataFrame(clean_data)
-    return df_employees, total_benefit_paid
+    return pd.DataFrame(clean_data), total_benefit_paid
 
 
 # ==========================================
-# 1. ENGINE AKTUARIA (PROJECTED UNIT CREDIT)
+# 2. ENGINE AKTUARIA (PROJECTED UNIT CREDIT)
 # ==========================================
 class PSAK219Engine:
     def __init__(self, discount_rate, salary_increase, retirement_age):
@@ -127,12 +152,13 @@ class PSAK219Engine:
     def calculate_puc(self, current_age, past_service, current_salary):
         years_to_retire = self.ret_age - current_age
         if pd.isna(current_age) or pd.isna(past_service) or pd.isna(current_salary) or years_to_retire <= 0:
-            return {'PBO': 0, 'CSC': 0, 'Undiscounted_PBO': 0, 'Retirement_Benefit': 0}
+            return {'PBO': 0, 'CSC': 0, 'Duration': 0}
             
         total_service = past_service + years_to_retire
         pvfb_death, pvfb_disability = 0, 0
         p_survival = 1.0 
-        undiscounted_benefit = 0
+        weighted_time_pv = 0
+        total_pvfb = 0
         
         for t in range(int(years_to_retire)):
             age_t = current_age + t
@@ -145,27 +171,31 @@ class PSAK219Engine:
             b_disab = salary_t * ((2 * up_t) + upmk_t)
             v = 1 / ((1 + self.discount_rate) ** (t + 1))
             
-            pvfb_death += b_death * v * (p_survival * q_m)
-            pvfb_disability += b_disab * v * (p_survival * q_d)
-            undiscounted_benefit += (b_death * (p_survival * q_m)) + (b_disab * (p_survival * q_d))
+            cf = (b_death * (p_survival * q_m)) + (b_disab * (p_survival * q_d))
+            pv = cf * v
+            pvfb_death += pv * (p_survival * q_m) # simplified accumulation
+            weighted_time_pv += (t + 1) * pv
+            total_pvfb += pv
             p_survival *= (1 - (q_m + q_d + q_w))
             
         salary_ret = current_salary * ((1 + self.salary_inc) ** years_to_retire)
         up_ret, upmk_ret = self.get_benefit_pp35(total_service)
         b_ret = salary_ret * ((1.75 * up_ret) + upmk_ret)
         v_ret = 1 / ((1 + self.discount_rate) ** years_to_retire)
-        pvfb_ret = b_ret * v_ret * p_survival
+        pv_ret = b_ret * v_ret * p_survival
         
-        undiscounted_benefit += b_ret * p_survival
-        total_pvfb = pvfb_death + pvfb_disability + pvfb_ret
+        weighted_time_pv += years_to_retire * pv_ret
+        total_pvfb += pv_ret
+        
+        duration = (weighted_time_pv / total_pvfb) if total_pvfb > 0 else years_to_retire / 2.0
         pbo = total_pvfb * (past_service / total_service)
         csc = total_pvfb / total_service
         
-        return {'PBO': pbo, 'CSC': csc, 'Undiscounted_PBO': undiscounted_benefit * (past_service/total_service), 'Retirement_Benefit': b_ret}
+        return {'PBO': pbo, 'CSC': csc, 'Duration': duration}
 
 
 # ==========================================
-# 2. GENERATOR PDF LAPORAN LENGKAP
+# 3. GENERATOR PDF LAPORAN LENGKAP
 # ==========================================
 def draw_footer(canvas, doc):
     canvas.saveState()
@@ -186,7 +216,7 @@ def draw_footer(canvas, doc):
     canvas.drawCentredString(letter[0]/2.0, 20, footer_text4)
     canvas.restoreState()
 
-def generate_comprehensive_report(results_dict, dplk_dict, paid_dict, discount, salary_inc, ret_age, val_years, company_name, report_no):
+def generate_comprehensive_report(results_dict, dplk_dict, paid_dict, applied_discount, salary_inc, ret_age, val_years, company_name, report_no):
     pdf_buffer = io.BytesIO()
     doc = SimpleDocTemplate(pdf_buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=80)
     elements = []
@@ -207,7 +237,7 @@ def generate_comprehensive_report(results_dict, dplk_dict, paid_dict, discount, 
     total_dplk = dplk_dict.get(cur_yr, 0.0)
     total_benefit_paid = paid_dict.get(cur_yr, 0.0)
     
-    int_cost = total_pbo * discount
+    int_cost = total_pbo * applied_discount
     past_service_cost = - (total_pbo * 0.03)
     pbo_bop = total_pbo * 0.93
     net_expense = total_csc + past_service_cost + int_cost
@@ -239,15 +269,16 @@ def generate_comprehensive_report(results_dict, dplk_dict, paid_dict, discount, 
     elements.append(PageBreak())
     
     # --- HALAMAN 1: INFO ---
-    elements.append(Paragraph("<b>I. Executive Summary & Employee Data Information</b>", h_style))
+    elements.append(Paragraph("<b>I. Executive Summary & Employee Data Information (IBPA Yield Curve Matched)</b>", h_style))
     data_info = [
         ["No.", "Description", f"Dec 31, {cur_yr}", f"Dec 31, {cur_yr-1}"],
         ["1", "Total Participant (Person)", fmt_num(total_participants), "-"],
         ["2", "Average Age (year)", fmt_num(df_cur['Age Valuation'].mean() if not df_cur.empty else 0, 2), "-"],
         ["3", "Average Past Service (year)", fmt_num(df_cur['Past Service'].mean() if not df_cur.empty else 0, 2), "-"],
-        ["4", "Total Monthly Payroll (Rp.)", fmt_num(total_payroll), "-"],
-        ["5", "Saldo DPLK (Rp.)", fmt_num(total_dplk), "-"],
-        ["6", "Benefit Paid (Actual) (Rp.)", fmt_num(total_benefit_paid), "-"]
+        ["4", "Applied IBPA Discount Rate (%)", f"{applied_discount*100:.4f}%".replace('.', ','), "-"],
+        ["5", "Total Monthly Payroll (Rp.)", fmt_num(total_payroll), "-"],
+        ["6", "Saldo DPLK (Rp.)", fmt_num(total_dplk), "-"],
+        ["7", "Benefit Paid (Actual) (Rp.)", fmt_num(total_benefit_paid), "-"]
     ]
     t_info = Table(data_info, colWidths=[35, 235, 115, 115])
     t_info.setStyle(std_tbl_style)
@@ -310,21 +341,21 @@ def generate_comprehensive_report(results_dict, dplk_dict, paid_dict, discount, 
 
 
 # ==========================================
-# 3. STREAMLIT WEB INTERFACE (DENGAN PILIHAN METODE INPUT 2021-2026)
+# 4. STREAMLIT WEB INTERFACE (OTOMATIS IBPA YIELD CURVE)
 # ==========================================
-st.set_page_config(page_title="Valuasi Aktuaria Multi-Tahun", layout="wide")
-st.title("📄 Generator Laporan Aktuaria (Upload Excel / Input Manual Interaktif)")
+st.set_page_config(page_title="Valuasi Aktuaria Multi-Tahun (IBPA Matched)", layout="wide")
+st.title("📄 Generator Laporan Aktuaria (Otomatis Kurva Yield IBPA & Editor Mandiri)")
 
 st.sidebar.header("⚙️ Pengaturan Dokumen & Klien")
 input_perusahaan = st.sidebar.text_input("Nama Perusahaan Klien", "PT GATRA MAPAN INDONESIA")
 tanggal_laporan = st.sidebar.date_input("Tanggal Laporan Diterbitkan", datetime.date(2026, 3, 27))
 nomor_laporan = st.sidebar.text_input("Nomor Laporan Baku", f"082/KAS-FR/PSAK/III/{tanggal_laporan.strftime('%Y')}")
 
-asumsi_diskonto = st.sidebar.number_input("Tingkat Diskonto (%)", value=6.7942, step=0.0001) / 100
 asumsi_gaji = st.sidebar.number_input("Kenaikan Gaji (%)", value=5.0, step=0.1) / 100
 usia_pensiun = st.sidebar.number_input("Usia Pensiun Normal", value=60, step=1)
 
-# Pilihan Metode Input
+st.sidebar.info("💡 **Catatan Aktuaris:** Tingkat diskonto akan ditentukan dan dicocokkan secara otomatis oleh sistem (*Yield Curve Matching*) berdasarkan referensi kurva zero kupon IBPA sesuai profil tenor liabilitas karyawan klien.")
+
 metode_input = st.radio(
     "Pilih Metode Masukan Data Karyawan:",
     ("Upload File Excel Multi-Tahun", "Input & Editor Data Langsung di Website")
@@ -338,8 +369,7 @@ if metode_input == "Upload File Excel Multi-Tahun":
     if uploaded_file is not None:
         try:
             xl_file = pd.ExcelFile(uploaded_file)
-            sheet_names = xl_file.sheet_names
-            for sh in sheet_names:
+            for sh in xl_file.sheet_names:
                 match = re.search(r'(20\d{2})', sh)
                 if match:
                     yr = int(match.group(1))
@@ -350,7 +380,7 @@ if metode_input == "Upload File Excel Multi-Tahun":
         except Exception as e:
             st.error(f"Gagal membaca file: {e}")
 
-else: # Input & Editor Data Langsung di Website (Rentang 2021 - 2026)
+else: 
     st.info("Masukkan data karyawan langsung per tahun menggunakan tabel interaktif di bawah.")
     selected_years = st.multiselect(
         "Pilih Tahun Valuasi yang Ingin Dibuat", 
@@ -387,15 +417,45 @@ else: # Input & Editor Data Langsung di Website (Rentang 2021 - 2026)
             )
 
 st.markdown("---")
-if st.button("Jalankan Valuasi & Hitung Pembayaran Pesangon 🚀") and datasets_to_process:
-    with st.spinner("Memproses perhitungan aktuaria..."):
+if st.button("Jalankan Valuasi Otomatis (IBPA Yield Matching) 🚀") and datasets_to_process:
+    with st.spinner("Menghitung durasi liabilitas dan mencocokkan kurva yield IBPA..."):
         results_dict = {}
         dplk_dict = {}
+        applied_discount_dict = {}
         active_years = sorted(list(datasets_to_process.keys()))
         
         for yr in active_years:
             val_date_dt = datetime.datetime(yr, 12, 31)
             df_input = datasets_to_process[yr]
+            
+            # Langkah 1: Kalkulasi awal dengan tingkat diskonto estimasi awal (misal 7%) untuk mendapatkan rata-rata durasi liabilitas
+            temp_engine = PSAK219Engine(0.07, asumsi_gaji, usia_pensiun)
+            durations = []
+            
+            for _, row in df_input.iterrows():
+                try:
+                    dob = pd.to_datetime(row.get("Tanggal Lahir"))
+                    doe = pd.to_datetime(row.get("Tgl. Mulai Bekerja"))
+                    gross_salary = float(row.get("Total Upah Bulanan (Gross)", 0))
+                except:
+                    continue
+                if pd.isna(dob) or pd.isna(doe) or gross_salary <= 0:
+                    continue
+                cur_age = (val_date_dt - dob).days / 365.25
+                pst_serv = (val_date_dt - doe).days / 365.25
+                res = temp_engine.calculate_puc(cur_age, pst_serv, gross_salary)
+                if res['Duration'] > 0:
+                    durations.append(res['Duration'])
+            
+            # Tentukan durasi rata-rata tertimbang liabilitas
+            avg_duration = np.mean(durations) if durations else 8.0
+            
+            # Langkah 2: Ambil tingkat diskonto otomatis dari Kurva Yield IBPA berdasarkan durasi tersebut
+            matched_ibpa_rate = get_ibpa_discount_rate(avg_duration)
+            applied_discount_dict[yr] = matched_ibpa_rate
+            
+            # Langkah 3: Jalankan kalkulasi akhir PUC menggunakan diskonto IBPA hasil matching
+            final_engine = PSAK219Engine(matched_ibpa_rate, asumsi_gaji, usia_pensiun)
             hasil_valuasi = []
             total_dplk_yr = 0.0
             
@@ -415,8 +475,7 @@ if st.button("Jalankan Valuasi & Hitung Pembayaran Pesangon 🚀") and datasets_
                 current_age = (val_date_dt - dob).days / 365.25
                 past_service = (val_date_dt - doe).days / 365.25
                 
-                engine = PSAK219Engine(asumsi_diskonto, asumsi_gaji, usia_pensiun)
-                kalkulasi = engine.calculate_puc(current_age, past_service, gross_salary)
+                kalkulasi = final_engine.calculate_puc(current_age, past_service, gross_salary)
                 
                 hasil_valuasi.append({
                     "NIK": row.get("NIK", "N/A"), "Name": row.get("Nama", "Unknown"),
@@ -430,23 +489,27 @@ if st.button("Jalankan Valuasi & Hitung Pembayaran Pesangon 🚀") and datasets_
         st.session_state.results_dict = results_dict
         st.session_state.dplk_dict = dplk_dict
         st.session_state.paid_dict = benefit_paid_dict
+        st.session_state.applied_discount_dict = applied_discount_dict
         st.session_state.active_years = active_years
         st.session_state.calculated_results = True
-        st.success("Perhitungan Selesai!")
+        st.success(f"Valuasi Selesai! Tingkat Diskonto IBPA Tercocokkan Otomatis (Durasi Rata-rata ~{avg_duration:.2f} Tahun).")
 
 if st.session_state.get("calculated_results"):
-    st.subheader("📊 Ringkasan Hasil Kalkulasi & Benefit Paid")
+    st.subheader("📊 Ringkasan Hasil Kalkulasi & Suku Bunga IBPA Otomatis")
     res_dict = st.session_state.results_dict
     dp_dict = st.session_state.dplk_dict
     pd_dict = st.session_state.paid_dict
+    disc_dict = st.session_state.applied_discount_dict
     act_yrs = st.session_state.active_years
     
     summary_data = []
     for yr in sorted(act_yrs, reverse=True):
         df_y = res_dict[yr]
         pbo_y = df_y['PBO'].sum() if not df_y.empty else 0
+        rate_y = disc_dict.get(yr, 0.0689)
         summary_data.append({
             "Periode Tahun": f"31 Dec {yr}",
+            "Diskonto IBPA": f"{rate_y*100:.4f}%".replace('.', ','),
             "Total Peserta": len(df_y),
             "Benefit Paid (Aktual)": f"Rp {pd_dict.get(yr, 0):,.0f}".replace(",", "."),
             "Present Value of DBO (PBO)": f"Rp {pbo_y:,.0f}".replace(",", "."),
@@ -456,14 +519,15 @@ if st.session_state.get("calculated_results"):
     
     st.dataframe(pd.DataFrame(summary_data), use_container_width=True)
     
+    cur_applied_rate = disc_dict.get(act_yrs[-1], 0.0689) if act_yrs else 0.0689
     pdf_file = generate_comprehensive_report(
-        res_dict, dp_dict, pd_dict, asumsi_diskonto, asumsi_gaji, usia_pensiun, 
+        res_dict, dp_dict, pd_dict, cur_applied_rate, asumsi_gaji, usia_pensiun, 
         act_yrs, input_perusahaan, nomor_laporan
     )
     
     st.download_button(
-        label="📥 Download Laporan PDF Lengkap (Sertakan Benefit Paid)",
+        label="📥 Download Laporan PDF Lengkap (Sertakan Kurva Yield IBPA)",
         data=pdf_file,
-        file_name=f"FINAL_REPORT_KOMPREHENSIF_{input_perusahaan.replace(' ', '_')}.pdf",
+        file_name=f"FINAL_REPORT_IBPA_MATCHED_{input_perusahaan.replace(' ', '_')}.pdf",
         mime="application/pdf"
     )
