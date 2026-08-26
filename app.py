@@ -673,28 +673,22 @@ menu = st.session_state["menu"]
 # ==========================================
 # 8. HALAMAN: BERANDA
 # ==========================================
+# ==========================================
+# 8. HALAMAN: BERANDA
+# ==========================================
 if menu == "🏠 Beranda":
-    st.markdown(
-        f"""
-        <div class="hero-section">
-            {LOGO_CHIP_HTML}
-            <div class="badge-gold">✓ TERDAFTAR OJK & KEMENKEU — {COMPANY_MENKEU}</div>
-            <div class="hero-title">Kantor Konsultan Aktuaria Setya Gunawan<br/>Solusi Profesional PSAK 219</div>
-            <div class="hero-sub">
-                {COMPANY_LEGAL_NAME} menyediakan jasa valuasi aktuaria imbalan kerja,
-                konsultasi program pensiun, dan pelaporan keuangan sesuai standar <b>PSAK 219 & IFRIC AD</b> — 
-                didukung pencocokan kurva yield PHEI zero-coupon resmi per tahun valuasi.
-            </div>
-            <div>
-                <span class="badge-soft">📐 PSAK 219 & IFRIC AD</span>
-                <span class="badge-soft">📈 PHEI Yield Matching</span>
-                <span class="badge-soft">📄 Kertas Kerja Audit Ready</span>
-                <span class="badge-soft">🗂️ Integrasi API & Otomasi</span>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    # Menggunakan container asli Streamlit agar aman dari error render HTML
+    with st.container():
+        st.success(f"✓ TERDAFTAR OJK & KEMENKEU — {COMPANY_MENKEU}")
+        st.title(f"Kantor Konsultan Aktuaria Setya Gunawan\nSolusi Profesional PSAK 219")
+        st.write(
+            f"{COMPANY_LEGAL_NAME} menyediakan jasa valuasi aktuaria imbalan kerja, "
+            "konsultasi program pensiun, dan pelaporan keuangan sesuai standar **PSAK 219 & IFRIC AD** — "
+            "didukung pencocokan kurva yield PHEI zero-coupon resmi per tahun valuasi."
+        )
+        st.markdown("📐 **PSAK 219 & IFRIC AD** | 📈 **PHEI Yield Matching** | 📄 **Kertas Kerja Audit Ready** | 🗂️ **Integrasi API & Otomasi**")
+
+    st.markdown("---")
 
     c1, c2 = st.columns([1, 1])
     with c1:
@@ -708,41 +702,36 @@ if menu == "🏠 Beranda":
 
     s1, s2, s3, s4 = st.columns(4)
     with s1:
-        st.markdown('<div class="stat-box"><div class="stat-num">100%</div><div class="stat-label">Sesuai PSAK 219 & IFRIC AD</div></div>', unsafe_allow_html=True)
+        st.metric(label="Sesuai PSAK 219 & IFRIC AD", value="100%")
     with s2:
-        st.markdown('<div class="stat-box"><div class="stat-num">30</div><div class="stat-label">Tenor Kurva PHEI (Tahun)</div></div>', unsafe_allow_html=True)
+        st.metric(label="Tenor Kurva PHEI (Tahun)", value="30")
     with s3:
-        st.markdown('<div class="stat-box"><div class="stat-num">Detail</div><div class="stat-label">Tampil Per Karyawan di Web</div></div>', unsafe_allow_html=True)
+        st.metric(label="Tampil Per Karyawan", value="Detail")
     with s4:
-        st.markdown('<div class="stat-box"><div class="stat-num">24 Jam</div><div class="stat-label">Estimasi & Laporan Instan</div></div>', unsafe_allow_html=True)
+        st.metric(label="Estimasi & Laporan", value="24 Jam")
 
     st.markdown("<hr class='divider-soft'/>", unsafe_allow_html=True)
-    st.markdown('<div class="section-title">Layanan Utama KKA Setya Gunawan</div><div class="section-sub">Layanan Valuasi Aktuaria berstandar.</div>', unsafe_allow_html=True)
+    st.subheader("Layanan Utama KKA Setya Gunawan")
+    st.caption("Layanan Valuasi Aktuaria berstandar.")
 
     fc1, fc2 = st.columns([1.4, 1])
     with fc1:
-        st.markdown("""
-        <div class="flagship-card">
-            <div class="flagship-title">🧮 Valuasi Aktuaria Imbalan Kerja (PSAK 219)</div>
-            <div class="flagship-desc">
-                Perhitungan kewajiban imbalan pascakerja menggunakan metode <i>Projected Unit Credit</i> 
-                dan penerapan interpretasi <b>IFRIC AD (Capping 24 Tahun Masa Kerja)</b>. 
-                Sistem mengintegrasikan asumsi demografi TMI IV, tingkat diskonto PHEI, serta analisis sensitivitas mendalam.
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-        if st.button("🚀 Buka Kalkulator Valuasi Aktuaria", key="cta_flagship"):
-            go_to("🧮 Kalkulator Valuasi Aktuaria")
+        with st.container(border=True):
+            st.subheader("🧮 Valuasi Aktuaria Imbalan Kerja (PSAK 219)")
+            st.write(
+                "Perhitungan kewajiban imbalan pascakerja menggunakan metode *Projected Unit Credit* "
+                "dan penerapan interpretasi **IFRIC AD (Capping 24 Tahun Masa Kerja)**. "
+                "Sistem mengintegrasikan asumsi demografi TMI IV, tingkat diskonto PHEI, serta analisis sensitivitas mendalam."
+            )
+            if st.button("🚀 Buka Kalkulator Valuasi Aktuaria", key="cta_flagship"):
+                go_to("🧮 Kalkulator Valuasi Aktuaria")
     with fc2:
-        st.markdown("""
-        <div class="info-box">
-            <b>Keunggulan Sistem KKA Setya Gunawan:</b><br/><br/>
-            📈 Pencocokan kurva yield PHEI otomatis<br/><br/>
-            ⚖️ Atribusi IFRIC AD / ISAK 35 (Capping)<br/><br/>
-            👥 **Tabel rincian tingkat individu langsung di web**<br/><br/>
-            📄 Ekspor Laporan PDF sesuai dengan standar penyajian laporan KKA
-        </div>
-        """, unsafe_allow_html=True)
+        with st.container(border=True):
+            st.markdown("<b>Keunggulan Sistem KKA Setya Gunawan:</b>", unsafe_allow_html=True)
+            st.write("📈 Pencocokan kurva yield PHEI otomatis")
+            st.write("⚖️ Atribusi IFRIC AD / ISAK 35 (Capping)")
+            st.write("👥 **Tabel rincian tingkat individu langsung di web**")
+            st.write("📄 Ekspor Laporan PDF sesuai dengan standar penyajian laporan KKA")
 
 # ==========================================
 # 9. HALAMAN: TENTANG KAMI
