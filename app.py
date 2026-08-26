@@ -530,7 +530,24 @@ def draw_footer_landscape(canvas, doc):
 
 def generate_detailed_report(results_dict, salary_inc, ret_age, val_years, company_name, report_no, report_date):
     pdf_buffer = io.BytesIO()
-    doc = SimpleDocTemplate(pdf_buffer, pagesize=A4, rightMargin=54, leftMargin=54, topMargin=54, bottomMargin=54)
+    
+    # 1. Definisikan kelas kustom untuk mendukung ukuran halaman campuran (A4 Portrait & Landscape)
+    class MixedPageDocTemplate(SimpleDocTemplate):
+        def handle_pageBegin(self):
+            if self.page > 1:
+                self.pagesize = landscape(A4)
+            super().handle_pageBegin()
+
+    # 2. Inisialisasi dokumen menggunakan kelas kustom
+    doc_mixed = MixedPageDocTemplate(
+        pdf_buffer, 
+        pagesize=A4, 
+        rightMargin=54, 
+        leftMargin=54, 
+        topMargin=54, 
+        bottomMargin=54
+    )
+    
     elements = []
     styles = getSampleStyleSheet()
     
@@ -573,7 +590,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_years, compa
     elements.append(Paragraph(address_block, cover_address_style))
     elements.append(PageBreak())
 
-    # 2. BAB PENGANTAR (Pindah ke A4 Landscape untuk tabel berikutnya)
+    # 2. BAB PENGANTAR
     elements.append(Paragraph("<b>1. PENDAHULUAN / INTRODUCTION</b>", h_style))
     elements.append(Paragraph(f"Laporan aktuaria ini disajikan untuk memenuhi permintaan <b>PT {company_name.upper()}</b> guna mengetahui Kewajiban dan Beban atas Imbalan Kerja Karyawan berdasarkan Undang-Undang Ketenagakerjaan (UU Cipta Kerja No. 11 Tahun 2020) dan PSAK 219.", body_style))
     
@@ -620,7 +637,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_years, compa
         elements.append(t1)
         elements.append(Spacer(1, 15))
 
-        # --- LAMPIRAN DETAIL KARYAWAN (DETAIL PER ORANG KEMBALI MUNCUL) ---
+        # --- LAMPIRAN DETAIL KARYAWAN ---
         elements.append(Paragraph(f"<b>LAMPIRAN — Detail Perhitungan Individu Karyawan (Tahun {yr})</b>", h_style))
         table_data = [["No", "NIK & Nama Karyawan", "Tgl Lahir", "Tgl Masuk", "Gaji Kotor (Rp)", "NRA", "Umur", "Masa Kerja", "Faktor UU", "Diskonto", "PVFB (Rp)", "PBO (Rp)", "CSC (Rp)"]]
         
@@ -662,28 +679,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_years, compa
     elements.append(Spacer(1, 20))
     elements.append(Paragraph(f"Jakarta, {formatted_date}<br/><b>KANTOR KONSULTAN AKTUARIA SETYA GUNAWAN</b><br/><br/><br/><br/><b>Tim Aktuaris Publik</b>", ParagraphStyle('SignBlock', parent=styles['Normal'], fontSize=9, alignment=2)))
         
-    doc.build(
-      # Membangun dokumen dengan page template kustom untuk orientasi berbeda tiap halaman
-    from reportlab.platypus import PageTemplate, BaseDocTemplate, Frame
-    
-    # Buat custom DocTemplate yang mendukung pergantian ukuran/orientasi halaman
-    class MixedPageDocTemplate(SimpleDocTemplate):
-        def handle_pageBegin(self):
-            # Jika halaman lebih besar dari 1 (halaman isi & lampiran), ubah ke landscape A4
-            if self.page > 1:
-                self.pagesize = landscape(A4)
-            super().handle_pageBegin()
-
-    # Inisialisasi ulang doc menggunakan kelas custom agar aman
-    doc_mixed = MixedPageDocTemplate(
-        pdf_buffer, 
-        pagesize=A4, 
-        rightMargin=54, 
-        leftMargin=54, 
-        topMargin=54, 
-        bottomMargin=54
-    )
-    
+    # 3. Build dokumen menggunakan doc_mixed
     doc_mixed.build(
         elements, 
         onFirstPage=draw_cover_background, 
