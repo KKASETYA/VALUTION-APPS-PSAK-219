@@ -40,7 +40,6 @@ header[data-testid="stHeader"] { background: transparent; }
 
 .main .block-container { padding-top: 1.5rem; padding-bottom: 3rem; max-width: 1180px; }
 
-/* ---------- Sidebar ---------- */
 [data-testid="stSidebar"] {
     background: linear-gradient(180deg, #241A12 0%, #6E3210 60%, #B8410D 100%);
 }
@@ -97,7 +96,6 @@ header[data-testid="stHeader"] { background: transparent; }
     margin-top: 18px;
 }
 
-/* ---------- Hero ---------- */
 .hero-section {
     background: linear-gradient(135deg, #241A12 0%, #B8410D 45%, #E85D25 100%);
     padding: 56px 44px;
@@ -133,7 +131,6 @@ header[data-testid="stHeader"] { background: transparent; }
     margin: 4px 6px 4px 0;
 }
 
-/* ---------- Cards ---------- */
 .service-card {
     background: #ffffff;
     border-radius: 18px;
@@ -294,7 +291,7 @@ def fmt_num(num, decimals=0):
         return formatted.replace(",", "X").replace(".", ",").replace("X", ".")
 
 # ==========================================
-# 3. PARSER EXCEL PRESISI
+# 3. PARSER EXCEL PRESISI (MENGAMBIL FAKTOR DARI EXCEL)
 # ==========================================
 def parse_excel_dataset(file_or_buffer, sheet_name=0):
     df = pd.read_excel(file_or_buffer, sheet_name=sheet_name, header=None)
@@ -316,6 +313,13 @@ def parse_excel_dataset(file_or_buffer, sheet_name=0):
         salary = row.iloc[5] if len(row) > 5 else 0.0
         dplk = row.iloc[6] if len(row) > 6 else 0.0
 
+        # Membaca faktor pengali spesifik langsung dari kolom Excel jika tersedia
+        # Berdasarkan format tabel aktuaris: Kolom 12 (Pensiun), 13 (Cacat), 14 (Death), 15 (Resign)
+        pension_mult = float(row.iloc[12]) if len(row) > 12 and not pd.isna(row.iloc[12]) else 1.75
+        disability_mult = float(row.iloc[13]) if len(row) > 13 and not pd.isna(row.iloc[13]) else 2.0
+        death_mult = float(row.iloc[14]) if len(row) > 14 and not pd.isna(row.iloc[14]) else 2.0
+        resign_mult = float(row.iloc[15]) if len(row) > 15 and not pd.isna(row.iloc[15]) else 1.0
+
         if not pd.isna(nik) or not pd.isna(nama):
             try:
                 salary_val = float(salary) if not pd.isna(salary) else 0.0
@@ -333,7 +337,11 @@ def parse_excel_dataset(file_or_buffer, sheet_name=0):
                 'Tanggal Lahir': dob,
                 'Tgl. Mulai Bekerja': doe,
                 'Total Upah Bulanan (Gross)': salary_val,
-                'Saldo DPLK': dplk_val
+                'Saldo DPLK': dplk_val,
+                'Pension_Mult': pension_mult,
+                'Disability_Mult': disability_mult,
+                'Death_Mult': death_mult,
+                'Resign_Mult': resign_mult
             })
 
         if len(row) > 11:
@@ -347,7 +355,7 @@ def parse_excel_dataset(file_or_buffer, sheet_name=0):
     return pd.DataFrame(clean_data), total_benefit_paid
 
 # ==========================================
-# 4. ENGINE AKTUARIA (PUC DENGAN ISAK 35)
+# 4. ENGINE AKTUARIA (PUC DENGAN ISAK 35 & FAKTOR EXCEL)
 # ==========================================
 class PSAK219Engine:
     def __init__(self, valuation_year, salary_increase, retirement_age, resign_rate=0.0):
@@ -384,7 +392,7 @@ class PSAK219Engine:
         q_resign = self.resign_rate 
         return q_mortality, q_disability, q_resign
 
-    def calculate_puc(self, current_age, past_service, current_salary):
+    def calculate_puc(self, current_age, past_service, current_salary, p_mult=1.75, d_mult=2.0, death_mult=2.0, r_mult=1.0):
         years_to_retire = self.ret_age - current_age
         if pd.isna(current_age) or pd.isna(past_service) or pd.isna(current_salary) or years_to_retire <= 0:
             return {'PBO': 0, 'CSC': 0, 'Duration': 0, 'PVFB': 0, 'Applied_Discount': 0, 'Future_Service': 0}
@@ -410,9 +418,9 @@ class PSAK219Engine:
             q_m, q_d, q_w = self.get_decrement_rates(age_t)
             up_t, upmk_t = self.get_benefit_pp35(service_t)
 
-            b_death = salary_t * ((2 * up_t) + upmk_t)
-            b_disab = salary_t * ((2 * up_t) + upmk_t)
-            b_resign = salary_t * upmk_t if service_t >= 3 else 0
+            b_death = salary_t * ((death_mult * up_t) + upmk_t)
+            b_disab = salary_t * ((d_mult * up_t) + upmk_t)
+            b_resign = salary_t * (r_mult * upmk_t) if service_t >= 3 else 0
             
             v = 1 / ((1 + discount_rate) ** (t + 1))
 
@@ -433,7 +441,7 @@ class PSAK219Engine:
 
         salary_ret = current_salary * ((1 + self.salary_inc) ** years_to_retire)
         up_ret, upmk_ret = self.get_benefit_pp35(total_service)
-        b_ret = salary_ret * ((1.75 * up_ret) + upmk_ret)
+        b_ret = salary_ret * ((p_mult * up_ret) + upmk_ret)
         v_ret = 1 / ((1 + discount_rate) ** years_to_retire)
         pv_ret = b_ret * v_ret * p_survival
 
@@ -915,6 +923,11 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria":
                             doe = pd.to_datetime(row.get("Tgl. Mulai Bekerja"))
                             gross_salary = float(row.get("Total Upah Bulanan (Gross)", 0))
                             dplk_val = float(row.get("Saldo DPLK", 0.0) or 0.0)
+                            
+                            p_mult = float(row.get("Pension_Mult", 1.75))
+                            d_mult = float(row.get("Disability_Mult", 2.0))
+                            death_mult = float(row.get("Death_Mult", 2.0))
+                            r_mult = float(row.get("Resign_Mult", 1.0))
                         except:
                             continue
 
@@ -925,7 +938,7 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria":
                         current_age = (val_date_dt - dob).days / 365.25
                         past_service = (val_date_dt - doe).days / 365.25
 
-                        kalkulasi = final_engine.calculate_puc(current_age, past_service, gross_salary)
+                        kalkulasi = final_engine.calculate_puc(current_age, past_service, gross_salary, p_mult, d_mult, death_mult, r_mult)
                         hasil_valuasi.append({
                             "NIK": row.get("NIK", "N/A"), "Name": row.get("Nama", "Unknown"),
                             "Tanggal Lahir": dob,
@@ -958,7 +971,6 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria":
                     st.info(f"Tidak ada data untuk tahun {yr}.")
                     continue
 
-                # Format dataframe agar enak dibaca di web
                 df_display = df_y.copy()
                 df_display['Tanggal Lahir'] = pd.to_datetime(df_display['Tanggal Lahir']).dt.strftime('%d-%m-%Y')
                 df_display['Gross Salary'] = df_display['Gross Salary'].apply(lambda x: f"Rp {x:,.0f}".replace(",", "."))
