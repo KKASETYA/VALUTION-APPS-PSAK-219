@@ -15,17 +15,17 @@ from reportlab.lib import colors
 from reportlab.lib.units import inch
 
 # ==========================================
-# KONFIGURASI HALAMAN 
+# KONFIGURASI HALAMAN & IDENTITAS KKA NIRMALA
 # ==========================================
 st.set_page_config(
-    page_title="Setya Gunawan | Konsultan Aktuaria",
+    page_title="KKA Nirmala | Kantor Konsultan Aktuaria",
     page_icon="📐",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
 # ==========================================
-# CUSTOM CSS & TEMA KORPORAT KAS
+# CUSTOM CSS & TEMA KORPORAT KKA NIRMALA
 # ==========================================
 st.markdown("""
 <style>
@@ -40,9 +40,9 @@ header[data-testid="stHeader"] { background: transparent; }
 
 .main .block-container { padding-top: 1.5rem; padding-bottom: 3rem; max-width: 1180px; }
 
-/* ---------- Sidebar ---------- */
+/* ---------- Sidebar KKA Nirmala ---------- */
 [data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #241A12 0%, #6E3210 60%, #B8410D 100%);
+    background: linear-gradient(180deg, #3A0C08 0%, #7A1C14 60%, #A82B20 100%);
 }
 [data-testid="stSidebar"] label,
 [data-testid="stSidebar"] .stMarkdown,
@@ -54,7 +54,7 @@ header[data-testid="stHeader"] { background: transparent; }
 [data-testid="stSidebar"] .stRadio label,
 [data-testid="stSidebar"] .stCaption,
 [data-testid="stSidebar"] small {
-    color: #F5E9E1 !important;
+    color: #FDF3F2 !important;
 }
 [data-testid="stSidebar"] .stRadio > label { font-weight: 600; }
 [data-testid="stSidebar"] hr { border-color: rgba(255,255,255,0.15); }
@@ -99,12 +99,12 @@ header[data-testid="stHeader"] { background: transparent; }
 
 /* ---------- Hero ---------- */
 .hero-section {
-    background: linear-gradient(135deg, #241A12 0%, #B8410D 45%, #E85D25 100%);
+    background: linear-gradient(135deg, #3A0C08 0%, #8A2017 45%, #C2382D 100%);
     padding: 56px 44px;
     border-radius: 26px;
     color: #ffffff;
     margin-bottom: 36px;
-    box-shadow: 0 24px 48px rgba(11,31,58,0.28);
+    box-shadow: 0 24px 48px rgba(58,12,8,0.28);
     position: relative;
     overflow: hidden;
 }
@@ -139,59 +139,58 @@ header[data-testid="stHeader"] { background: transparent; }
     border-radius: 18px;
     padding: 26px 22px;
     box-shadow: 0 6px 20px rgba(15,30,60,0.06);
-    border: 1px solid #F3E4D8;
+    border: 1px solid #F5D6D3;
     transition: all 0.25s ease;
     height: 100%;
     margin-bottom: 6px;
 }
 .service-card:hover {
     transform: translateY(-6px);
-    box-shadow: 0 18px 34px rgba(11,31,58,0.14);
-    border-color:#E85D25;
+    box-shadow: 0 18px 34px rgba(58,12,8,0.14);
+    border-color:#C2382D;
 }
 .service-icon { font-size: 2rem; margin-bottom: 10px; }
-.service-title { font-size: 1.08rem; font-weight: 700; color:#241A12; margin-bottom: 6px; }
-.service-desc { color:#7A6A5D; font-size: 0.88rem; line-height:1.6; }
+.service-title { font-size: 1.08rem; font-weight: 700; color:#3A0C08; margin-bottom: 6px; }
+.service-desc { color:#6B4B48; font-size: 0.88rem; line-height:1.6; }
 
 .flagship-card {
-    background: linear-gradient(135deg, #241A12 0%, #E85D25 100%);
+    background: linear-gradient(135deg, #3A0C08 0%, #C2382D 100%);
     border-radius: 22px;
     padding: 34px 34px;
     color: white;
-    box-shadow: 0 20px 40px rgba(11,31,58,0.32);
+    box-shadow: 0 20px 40px rgba(58,12,8,0.32);
     margin-bottom: 10px;
 }
 .flagship-title { font-size:1.5rem; font-weight:800; margin-bottom:10px; }
 .flagship-desc { opacity:0.92; line-height:1.7; font-size:0.95rem; }
-.flagship-point { font-size:0.86rem; opacity:0.95; margin-bottom:6px; }
 
 .stat-box { text-align:center; padding: 10px 6px; }
-.stat-num { font-size: 1.9rem; font-weight: 800; color:#E85D25; font-family:'Poppins',sans-serif;}
-.stat-label { color:#7A6A5D; font-size: 0.8rem; margin-top:2px;}
+.stat-num { font-size: 1.9rem; font-weight: 800; color:#C2382D; font-family:'Poppins',sans-serif;}
+.stat-label { color:#6B4B48; font-size: 0.8rem; margin-top:2px;}
 
-.section-title { font-size: 1.7rem; font-weight: 800; color:#241A12; margin-bottom: 4px;}
-.section-sub { color:#7A6A5D; margin-bottom: 26px; font-size:0.95rem;}
+.section-title { font-size: 1.7rem; font-weight: 800; color:#3A0C08; margin-bottom: 4px;}
+.section-sub { color:#6B4B48; margin-bottom: 26px; font-size:0.95rem;}
 
 .info-box {
-    background:#FFF6F1;
+    background:#FDF5F4;
     border-radius: 16px;
     padding: 22px 24px;
-    border: 1px solid #F3E4D8;
+    border: 1px solid #F5D6D3;
     margin-bottom: 14px;
 }
-.info-box b { color:#241A12; }
+.info-box b { color:#3A0C08; }
 
 .contact-box {
-    background:#FFF6F1;
+    background:#FDF5F4;
     border-radius: 18px;
     padding: 26px;
-    border: 1px solid #F3E4D8;
+    border: 1px solid #F5D6D3;
 }
 
-.divider-soft { border: none; border-top: 1px solid #F3E4D8; margin: 30px 0; }
+.divider-soft { border: none; border-top: 1px solid #F5D6D3; margin: 30px 0; }
 
 .stButton>button {
-    background: linear-gradient(135deg, #E85D25, #241A12);
+    background: linear-gradient(135deg, #C2382D, #3A0C08);
     color: white !important;
     border: none;
     border-radius: 12px;
@@ -201,12 +200,12 @@ header[data-testid="stHeader"] { background: transparent; }
 }
 .stButton>button:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 20px rgba(30,75,143,0.32);
+    box-shadow: 0 10px 20px rgba(194,56,45,0.32);
 }
 .stButton>button p { color: white !important; }
 
 .stDownloadButton>button {
-    background: linear-gradient(135deg, #F2A65A, #C9500F);
+    background: linear-gradient(135deg, #F2A65A, #A82B20);
     color: #1a1a1a !important;
     border: none;
     border-radius: 12px;
@@ -214,13 +213,13 @@ header[data-testid="stHeader"] { background: transparent; }
 }
 
 .calc-header {
-    background: linear-gradient(135deg, #241A12 0%, #E85D25 100%);
+    background: linear-gradient(135deg, #3A0C08 0%, #C2382D 100%);
     border-radius: 20px;
     padding: 30px 34px;
     color: white;
     margin-bottom: 28px;
 }
-.qris-box { border: 2px dashed #E85D25; padding: 20px; border-radius: 15px; text-align: center; background-color: #FFF5F0; }
+.qris-box { border: 2px dashed #C2382D; padding: 20px; border-radius: 15px; text-align: center; background-color: #FAF1F0; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -355,7 +354,7 @@ def parse_excel_dataset(file_or_buffer, sheet_name=0):
     return pd.DataFrame(clean_data), total_benefit_paid
 
 # ==========================================
-# 4. ENGINE AKTUARIA (PUC DENGAN ISAK 35 & FAKTOR EXCEL)
+# 4. ENGINE AKTUARIA (PUC DENGAN IFRIC AD / ISAK 35 & FAKTOR NIRMALA)
 # ==========================================
 class PSAK219Engine:
     def __init__(self, valuation_year, salary_increase, retirement_age, resign_rate=0.0):
@@ -401,7 +400,7 @@ class PSAK219Engine:
         total_service = past_service + years_to_retire
         weighted_time_pv = 0
         
-        # --- LOGIKA ISAK 35 (CAPPING 24 TAHUN) ---
+        # --- ATRIBUSI IFRIC AD / ISAK 35 (CAPPING 24 TAHUN) ---
         unattributed_years = max(0, total_service - 24)
         past_service_ret = max(0, past_service - unattributed_years)
         total_service_ret = min(total_service, 24)
@@ -448,7 +447,7 @@ class PSAK219Engine:
         weighted_time_pv += years_to_retire * pv_ret
         total_pvfb = pvfb_death + pvfb_disability + pvfb_resign + pv_ret
 
-        # --- PERHITUNGAN PBO & CSC FINAL DENGAN ISAK 35 ---
+        # --- PERHITUNGAN PBO & CSC FINAL BERDASARKAN ATRIBUSI IFRIC AD ---
         pbo_death_dis_res = (pvfb_death + pvfb_disability + pvfb_resign) * (past_service / total_service) if total_service > 0 else 0
         csc_death_dis_res = (pvfb_death + pvfb_disability + pvfb_resign) / total_service if total_service > 0 else 0
         
@@ -470,17 +469,17 @@ class PSAK219Engine:
         }
 
 # ==========================================
-# 5. GENERATOR PDF LAPORAN LENGKAP (LANDSCAPE DETAIL)
+# 5. GENERATOR PDF LAPORAN RESMI KKA NIRMALA (LANDSCAPE DETAIL)
 # ==========================================
 def draw_footer_landscape(canvas, doc):
     canvas.saveState()
-    canvas.setStrokeColor(colors.black)
+    canvas.setStrokeColor(colors.HexColor('#3A0C08'))
     canvas.setLineWidth(1)
     canvas.line(36, 45, landscape(letter)[0] - 36, 45) 
     canvas.setFont('Helvetica-Bold', 9)
-    canvas.drawCentredString(landscape(letter)[0]/2.0, 30, "Konsultan Aktuaria Setya Gunawan")
+    canvas.drawCentredString(landscape(letter)[0]/2.0, 30, "Kantor Konsultan Aktuaria Nirmala (KKA Nirmala)")
     canvas.setFont('Helvetica', 8)
-    canvas.drawCentredString(landscape(letter)[0]/2.0, 20, "Izin Perusahaan No. 4.21.0007 | Keputusan Menteri Keuangan RI No. 590/KM.1/2021 | AKAI - 21043")
+    canvas.drawCentredString(landscape(letter)[0]/2.0, 20, "Izin Badan Usaha No. 4.24.0021 | Keputusan Kemenkeu RI No. 782/KM.1/2024 | STTD-OJK: STTD-050/PD.021/STTD-KA/2025 | AKKAI: AKKAI-25064")
     canvas.restoreState()
 
 def generate_detailed_report(results_dict, salary_inc, ret_age, val_years, company_name, report_no):
@@ -489,31 +488,31 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_years, compa
     elements = []
     styles = getSampleStyleSheet()
     
-    title_style = ParagraphStyle('CoverTitle', parent=styles['Heading1'], fontSize=16, textColor=colors.black, alignment=1, spaceBefore=10, spaceAfter=10)
-    sub_style = ParagraphStyle('CoverSub', parent=styles['Normal'], fontSize=11, textColor=colors.black, alignment=1, spaceAfter=20)
-    h_style = ParagraphStyle('SecH', parent=styles['Heading2'], fontSize=12, textColor=colors.HexColor('#E85D25'), spaceBefore=15, spaceAfter=10)
+    title_style = ParagraphStyle('CoverTitle', parent=styles['Heading1'], fontSize=16, textColor=colors.HexColor('#3A0C08'), alignment=1, spaceBefore=10, spaceAfter=10)
+    sub_style = ParagraphStyle('CoverSub', parent=styles['Normal'], fontSize=11, textColor=colors.HexColor('#6B4B48'), alignment=1, spaceAfter=20)
+    h_style = ParagraphStyle('SecH', parent=styles['Heading2'], fontSize=12, textColor=colors.HexColor('#C2382D'), spaceBefore=15, spaceAfter=10)
     
     sorted_years = sorted(val_years, reverse=True)
     detail_tbl_style = TableStyle([
-        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#439A86')), 
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#3A0C08')), 
         ('TEXTCOLOR', (0,0), (-1,0), colors.white),
         ('ALIGN', (0,0), (-1,0), 'CENTER'),
         ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
         ('FONTSIZE', (0,0), (-1,-1), 8),
         ('BOTTOMPADDING', (0,0), (-1,0), 6),
-        ('GRID', (0,0), (-1,-1), 0.5, colors.black),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#D3C1BE')),
         ('ALIGN', (4,1), (-1,-1), 'RIGHT'), 
         ('ALIGN', (1,1), (2,-1), 'LEFT'),   
         ('VALIGN', (0,0), (-1,-1), 'MIDDLE')
     ])
     
     if os.path.exists("logo.png"):
-        logo = Image("logo.png", width=3*inch, height=3*inch)
+        logo = Image("logo.png", width=2.5*inch, height=2.5*inch)
         logo.hAlign = 'CENTER'
         elements.append(logo)
         
     elements.append(Paragraph(f"<b>PT. {company_name.upper()}</b>", title_style))
-    elements.append(Paragraph(f"<b>DETAIL CALCULATION OF ACTUARIAL VALUATION (PSAK 219 & ISAK 35)</b><br/>Report No: {report_no}", sub_style))
+    elements.append(Paragraph(f"<b>LAPORAN KERTAS KERJA VALUASI AKTUARIA (PSAK 219 & IFRIC AD)</b><br/>Nomor Laporan: {report_no}", sub_style))
     
     for yr in sorted_years:
         elements.append(Paragraph(f"<b>Rincian Perhitungan Tingkat Individu per 31 Desember {yr}</b>", h_style))
@@ -540,7 +539,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_years, compa
         t_detail = Table(table_data, colWidths=col_widths, repeatRows=1)
         
         row_style = detail_tbl_style
-        row_style.add('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#D5D8DC'))
+        row_style.add('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#EADCDA'))
         row_style.add('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold')
         t_detail.setStyle(row_style)
         elements.append(t_detail)
@@ -551,15 +550,16 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_years, compa
     return pdf_buffer
 
 # ==========================================
-# 6. KONSTANTA PERUSAHAAN & LOGO
+# 6. KONSTANTA KORPORAT KKA NIRMALA
 # ==========================================
-COMPANY_LEGAL_NAME = "Kantor Konsultan Aktuaria Setya Gunawan"
-COMPANY_LICENSE = "Izin Perusahaan No. 4.21.0007"
-COMPANY_MENKEU = "Keputusan Menteri Keuangan RI No. 590/KM.1/2021"
-COMPANY_AKAI = "AKAI - 21043"
-COMPANY_ADDRESS = "Cilandak 88 Condominium UNIT D-1, Jl. Margasatwa Barat No.88, Cilandak Timur, Pasar Minggu, Jakarta Selatan"
-COMPANY_PHONE = "(0812) 9090 9019"
-COMPANY_EMAIL = "kka_setyagunawan@yahoo.com"
+COMPANY_LEGAL_NAME = "Kantor Konsultan Aktuaria Nirmala"
+COMPANY_LICENSE = "Izin Badan Usaha Kemenkeu RI No. 4.24.0021"
+COMPANY_MENKEU = "Keputusan Kemenkeu RI No. 782/KM.1/2024"
+COMPANY_OJK = "STTD-OJK: STTD-050/PD.021/STTD-KA/2025"
+COMPANY_AKKAI = "AKKAI-25064"
+COMPANY_ADDRESS = "Menara Caraka, Lt. 6 Unit 627, Jl. Mega Kuningan Barat Blok E.4.7 No. 1, Jakarta Selatan 12950"
+COMPANY_PHONE = "+62 819 0813 0000"
+COMPANY_EMAIL = "nirmala@aktuarispublik.id"
 
 LOGO_PATH = "logo.png"
 
@@ -601,8 +601,8 @@ with st.sidebar:
     st.markdown(f"""
     <div class="sidebar-brand">
         {logo_img_html}
-        <div class="sidebar-brand-title" style="margin-top:10px;">Setya Gunawan</div>
-        <div class="sidebar-brand-sub">Konsultan Aktuaria</div>
+        <div class="sidebar-brand-title" style="margin-top:10px;">Nirmala</div>
+        <div class="sidebar-brand-sub">Kantor Konsultan Aktuaria</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -610,10 +610,10 @@ with st.sidebar:
 
     st.markdown(f"""
     <div class="sidebar-contact-box">
-        📍 Cilandak 88 Condominium, Jakarta Selatan<br/>
+        📍 Mega Kuningan, Jakarta Selatan<br/>
         📱 {COMPANY_PHONE}<br/>
         ✉️ {COMPANY_EMAIL}<br/><br/>
-        <span style="opacity:0.75; font-size:0.7rem;">{COMPANY_LICENSE}<br/>{COMPANY_AKAI}</span>
+        <span style="opacity:0.75; font-size:0.7rem;">{COMPANY_LICENSE}<br/>{COMPANY_OJK}<br/>AKKAI: {COMPANY_AKKAI}</span>
     </div>
     """, unsafe_allow_html=True)
 
@@ -626,18 +626,18 @@ if menu == "🏠 Beranda":
     st.markdown(f"""
     <div class="hero-section">
         {LOGO_CHIP_HTML}
-        <div class="badge-gold">✓ TERDAFTAR RESMI — {COMPANY_MENKEU}</div>
-        <div class="hero-title">Kepastian Aktuaria untuk<br/>Keputusan Bisnis yang Lebih Tepat</div>
+        <div class="badge-gold">✓ TERDAFTAR OJK & KEMENKEU — {COMPANY_MENKEU}</div>
+        <div class="hero-title">Kantor Konsultan Aktuaria Nirmala<br/>Solusi Profesional PSAK 219</div>
         <div class="hero-sub">
-            {COMPANY_LEGAL_NAME} menyediakan jasa valuasi aktuaria, konsultasi imbalan kerja,
-            dan pelaporan sesuai standar <b>PSAK 219 & ISAK 35</b> — didukung pencocokan kurva
-            <i>yield</i> zero-coupon resmi <b>PHEI</b> per tahun valuasi.
+            {COMPANY_LEGAL_NAME} menyediakan jasa valuasi aktuaria imbalan kerja,
+            konsultasi program pensiun, dan pelaporan keuangan sesuai standar <b>PSAK 219 & IFRIC AD</b> — 
+            didukung pencocokan kurva yield PHEI zero-coupon resmi per tahun valuasi.
         </div>
         <div>
-            <span class="badge-soft">📐 PSAK 219 & ISAK 35</span>
+            <span class="badge-soft">📐 PSAK 219 & IFRIC AD</span>
             <span class="badge-soft">📈 PHEI Yield Matching</span>
-            <span class="badge-soft">📄 Rincian Individu & Auditable</span>
-            <span class="badge-soft">🗂️ Data Multi-Tahun</span>
+            <span class="badge-soft">📄 Kertas Kerja Audit Ready</span>
+            <span class="badge-soft">🗂️ Integrasi API & Otomasi</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -647,33 +647,33 @@ if menu == "🏠 Beranda":
         if st.button("🚀 Coba Kalkulator Valuasi Sekarang", use_container_width=True):
             go_to("🧮 Kalkulator Valuasi Aktuaria")
     with c2:
-        if st.button("💼 Lihat Semua Layanan Kami", use_container_width=True):
+        if st.button("💼 Lihat Layanan Kami", use_container_width=True):
             go_to("💼 Layanan Kami")
 
     st.markdown("<hr class='divider-soft'/>", unsafe_allow_html=True)
 
     s1, s2, s3, s4 = st.columns(4)
     with s1:
-        st.markdown('<div class="stat-box"><div class="stat-num">100%</div><div class="stat-label">Sesuai PSAK 219 & ISAK 35</div></div>', unsafe_allow_html=True)
+        st.markdown('<div class="stat-box"><div class="stat-num">100%</div><div class="stat-label">Sesuai PSAK 219 & IFRIC AD</div></div>', unsafe_allow_html=True)
     with s2:
         st.markdown('<div class="stat-box"><div class="stat-num">30</div><div class="stat-label">Tenor Kurva PHEI (Tahun)</div></div>', unsafe_allow_html=True)
     with s3:
         st.markdown('<div class="stat-box"><div class="stat-num">Detail</div><div class="stat-label">Tampil Per Karyawan di Web</div></div>', unsafe_allow_html=True)
     with s4:
-        st.markdown('<div class="stat-box"><div class="stat-num">24 Jam</div><div class="stat-label">Estimasi Laporan Instan</div></div>', unsafe_allow_html=True)
+        st.markdown('<div class="stat-box"><div class="stat-num">24 Jam</div><div class="stat-label">Estimasi & Laporan Instan</div></div>', unsafe_allow_html=True)
 
     st.markdown("<hr class='divider-soft'/>", unsafe_allow_html=True)
-    st.markdown('<div class="section-title">Layanan Unggulan Kami</div><div class="section-sub">Solusi aktuaria menyeluruh, dari perhitungan rinci hingga laporan siap audit.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">Layanan Utama KKA Nirmala</div><div class="section-sub">Solusi aktuaria menyeluruh dari perhitungan rinci hingga kesiapan audit KAP.</div>', unsafe_allow_html=True)
 
     fc1, fc2 = st.columns([1.4, 1])
     with fc1:
         st.markdown("""
         <div class="flagship-card">
-            <div class="flagship-title">🧮 Valuasi Aktuaria PSAK 219 — Imbalan Kerja</div>
+            <div class="flagship-title">🧮 Valuasi Aktuaria Imbalan Kerja (PSAK 219)</div>
             <div class="flagship-desc">
-                Layanan unggulan kami dengan penerapan logika <b>ISAK 35 (Capping 24 Tahun)</b>. 
-                Sistem menghitung PBO, CSC, dan PVFB secara rinci untuk setiap karyawan, 
-                lalu mencocokkan suku bunga diskonto secara otomatis dengan kurva yield PHEI resmi per tahun valuasi.
+                Perhitungan kewajiban imbalan pascakerja menggunakan metode <i>Projected Unit Credit</i> 
+                dan penerapan interpretasi <b>IFRIC AD (Capping 24 Tahun Masa Kerja)</b>. 
+                Sistem mengintegrasikan asumsi demografi TMI IV, tingkat diskonto PHEI, serta analisis sensitivitas mendalam.
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -682,11 +682,11 @@ if menu == "🏠 Beranda":
     with fc2:
         st.markdown("""
         <div class="info-box">
-            <b>Fitur utama sistem ini:</b><br/><br/>
+            <b>Keunggulan Sistem KKA Nirmala:</b><br/><br/>
             📈 Pencocokan kurva yield PHEI otomatis<br/><br/>
-            ⚖️ Atribusi ISAK 35 (Capping 24 Tahun)<br/><br/>
+            ⚖️ Atribusi IFRIC AD / ISAK 35 (Capping)<br/><br/>
             👥 **Tabel rincian tingkat individu langsung di web**<br/><br/>
-            📄 Ekspor Laporan PDF Landscape Resmi
+            📄 Ekspor Laporan PDF Landscape Kertas Kerja Resmi
         </div>
         """, unsafe_allow_html=True)
 
@@ -699,8 +699,8 @@ elif menu == "🏢 Tentang Kami":
         {LOGO_CHIP_HTML}
         <div class="badge-gold">TENTANG KAMI</div>
         <div class="hero-title" style="font-size:2.1rem;">{COMPANY_LEGAL_NAME}</div>
-        <div class="hero-sub">Kantor konsultan aktuaria independen yang berfokus pada ketepatan perhitungan,
-        kepatuhan standar akuntansi, dan kejelasan pelaporan bagi klien korporasi di Indonesia.</div>
+        <div class="hero-sub">Kantor konsultan aktuaria independen yang terdaftar resmi dan berizin untuk memberikan
+        layanan aktuaria, konsultasi imbalan kerja, dan audit support bagi perusahaan di Indonesia.</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -708,29 +708,29 @@ elif menu == "🏢 Tentang Kami":
     with c1:
         st.markdown("""
         <div class="info-box">
-            <b>🎯 Visi</b><br/>
-            Menjadi mitra aktuaria tepercaya yang mendukung perusahaan di Indonesia dalam
-            mengelola kewajiban imbalan kerja secara akurat, transparan, dan sesuai regulasi.
+            <b>🎯 Visi KKA Nirmala</b><br/>
+            Menjadi kantor konsultan aktuaria terdepan yang andal, profesional, dan tepercaya
+            dalam mendukung pengelolaan liabilitas imbalan kerja korporasi di Indonesia.
         </div>
         """, unsafe_allow_html=True)
     with c2:
         st.markdown("""
         <div class="info-box">
-            <b>🚀 Misi</b><br/>
-            Menghadirkan layanan valuasi aktuaria berbasis teknologi — cepat, presisi, dan
-            selaras dengan standar PSAK 219, ISAK 35, serta kurva yield resmi PHEI.
+            <b>🚀 Misi KKA Nirmala</b><br/>
+            Menghadirkan layanan aktuaria berbasis teknologi tinggi, transparan, serta selaras
+            dengan standar akuntansi keuangan PSAK 219, IFRS, dan regulasi ketenagakerjaan nasional.
         </div>
         """, unsafe_allow_html=True)
 
     st.markdown("<hr class='divider-soft'/>", unsafe_allow_html=True)
-    st.markdown('<div class="section-title">Legalitas & Perizinan</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">Legalitas & Perizinan Resmi</div>', unsafe_allow_html=True)
     l1, l2, l3 = st.columns(3)
     with l1:
-        st.markdown(f'<div class="service-card"><div class="service-icon">📜</div><div class="service-title">Izin Perusahaan</div><div class="service-desc">{COMPANY_LICENSE}</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="service-card"><div class="service-icon">📜</div><div class="service-title">Izin Badan Usaha</div><div class="service-desc">{COMPANY_LICENSE}<br/>({COMPANY_MENKEU})</div></div>', unsafe_allow_html=True)
     with l2:
-        st.markdown(f'<div class="service-card"><div class="service-icon">🏛️</div><div class="service-title">Keputusan Menteri Keuangan</div><div class="service-desc">{COMPANY_MENKEU}</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="service-card"><div class="service-icon">🏛️</div><div class="service-title">Terdaftar di OJK</div><div class="service-desc">{COMPANY_OJK}</div></div>', unsafe_allow_html=True)
     with l3:
-        st.markdown(f'<div class="service-card"><div class="service-icon">🪪</div><div class="service-title">Nomor Anggota AKAI</div><div class="service-desc">{COMPANY_AKAI}</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="service-card"><div class="service-icon">🪪</div><div class="service-title">Keanggotaan AKKAI</div><div class="service-desc">Nomor: {COMPANY_AKKAI}</div></div>', unsafe_allow_html=True)
 
 # ==========================================
 # 10. HALAMAN: LAYANAN KAMI
@@ -740,18 +740,18 @@ elif menu == "💼 Layanan Kami":
     <div class="hero-section" style="padding:44px 44px;">
         {LOGO_CHIP_HTML}
         <div class="badge-gold">LAYANAN KAMI</div>
-        <div class="hero-title" style="font-size:2.1rem;">Solusi Aktuaria Menyeluruh</div>
-        <div class="hero-sub">Dari perhitungan liabilitas hingga pelaporan resmi — kami mendampingi
-        perusahaan Anda memenuhi kepatuhan standar akuntansi imbalan kerja.</div>
+        <div class="hero-title" style="font-size:2.1rem;">Layanan Konsultasi & Valuasi Aktuaria</div>
+        <div class="hero-sub">Mendampingi perusahaan menyusun laporan aktuaria imbalan pascakerja,
+        analisis sensitivitas, hingga tata kelola program dana pensiun (DPLK / DPPK).</div>
     </div>
     """, unsafe_allow_html=True)
 
     st.markdown("""
     <div class="flagship-card">
-        <div class="flagship-title">⭐ Layanan Unggulan: Kalkulator Valuasi Aktuaria PSAK 219 & ISAK 35</div>
+        <div class="flagship-title">⭐ Kalkulator & Valuasi Aktuaria PSAK 219 Terintegrasi</div>
         <div class="flagship-desc">
-            Hitung liabilitas imbalan kerja perusahaan Anda secara instan dengan metode
-            <i>Projected Unit Credit</i>, penerapan ISAK 35, dan perincian data individu lengkap di web.
+            Sistem valuasi otomatis berbasis web untuk menghitung PVDBO, CSC, Biaya Bunga, OCI, 
+            serta analisis jatuh tempo (Maturity Analysis) dan uji sensitivitas secara presisi.
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -766,8 +766,8 @@ elif menu == "📞 Kontak Kami":
     <div class="hero-section" style="padding:44px 44px;">
         {LOGO_CHIP_HTML}
         <div class="badge-gold">HUBUNGI KAMI</div>
-        <div class="hero-title" style="font-size:2.1rem;">Mari Diskusikan Kebutuhan Aktuaria Anda</div>
-        <div class="hero-sub">Tim kami siap membantu perhitungan valuasi, konsultasi, hingga pelaporan imbalan kerja Anda.</div>
+        <div class="hero-title" style="font-size:2.1rem;">Konsultasikan Kebutuhan Aktuaria Anda</div>
+        <div class="hero-sub">Tim aktuaris publik dan profesional KKA Nirmala siap melayani kebutuhan korporasi Anda.</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -775,28 +775,28 @@ elif menu == "📞 Kontak Kami":
     with c1:
         st.markdown(f"""
         <div class="contact-box">
-            <b>📍 Alamat Kantor</b><br/>
+            <b>📍 Alamat Kantor Utama</b><br/>
             {COMPANY_ADDRESS}<br/><br/>
             <b>📱 Telepon / WhatsApp</b><br/>
             {COMPANY_PHONE}<br/><br/>
-            <b>✉️ Email</b><br/>
+            <b>✉️ Email Resmi</b><br/>
             {COMPANY_EMAIL}<br/><br/>
-            <b>🏛️ Legalitas</b><br/>
+            <b>🏛️ Legalitas & Akreditasi</b><br/>
             {COMPANY_LICENSE}<br/>
-            {COMPANY_MENKEU}<br/>
-            {COMPANY_AKAI}
+            {COMPANY_OJK}<br/>
+            AKKAI: {COMPANY_AKKAI}
         </div>
         """, unsafe_allow_html=True)
     with c2:
-        st.markdown('<div class="section-title" style="font-size:1.3rem;">Kirim Pesan Singkat</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-title" style="font-size:1.3rem;">Kirim Pesan Konsultasi</div>', unsafe_allow_html=True)
         with st.form("contact_form"):
             st.text_input("Nama Lengkap")
             st.text_input("Nama Perusahaan")
-            st.text_input("Email")
-            st.text_area("Pesan / Kebutuhan Layanan", height=120)
+            st.text_input("Email Korporat")
+            st.text_area("Pesan / Kebutuhan Valuasi", height=120)
             submitted = st.form_submit_button("Kirim Pesan")
             if submitted:
-                st.success("Terima kasih! Pesan Anda telah dicatat.")
+                st.success("Terima kasih! Pesan Anda telah diterima oleh tim KKA Nirmala.")
 
 # ==========================================
 # 12. HALAMAN: KALKULATOR VALUASI AKTUARIA
@@ -805,17 +805,17 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria":
     st.markdown(f"""
     <div class="calc-header">
         {LOGO_CHIP_HTML}
-        <div class="badge-gold">LAYANAN UNGGULAN</div>
-        <div class="hero-title" style="font-size:1.9rem; margin-bottom:8px;">📄 Generator Laporan Aktuaria PSAK 219 (ISAK 35)</div>
-        <div class="hero-sub" style="font-size:0.98rem;">Menampilkan detail perhitungan per karyawan di web, lengkap dengan kurva yield PHEI.</div>
+        <div class="badge-gold">KKA NIRMALA — PORTAL AKTUARIA</div>
+        <div class="hero-title" style="font-size:1.9rem; margin-bottom:8px;">📄 Generator Laporan Aktuaria PSAK 219 (IFRIC AD)</div>
+        <div class="hero-sub" style="font-size:0.98rem;">Menampilkan rincian kalkulasi per karyawan di web, dilengkapi kurva yield PHEI & kertas kerja siap audit.</div>
     </div>
     """, unsafe_allow_html=True)
 
-    # Sistem Pembayaran / Paywall QRIS
+    # Sistem Pembayaran / Paywall QRIS KKA Nirmala
     if not st.session_state.payment_verified:
-        st.warning("🔒 **Akses Terkunci:** Silakan lakukan verifikasi pembayaran untuk menggunakan Kalkulator Aktuaria.")
+        st.warning("🔒 **Akses Terkunci:** Silakan lakukan verifikasi pembayaran administrasi layanan valuasi aktuaria KKA Nirmala.")
         st.markdown('<div class="qris-box">', unsafe_allow_html=True)
-        st.markdown("<h3 style='color:#E85D25;'>Biaya Akses Valuasi</h3>", unsafe_allow_html=True)
+        st.markdown("<h3 style='color:#C2382D;'>Biaya Akses Valuasi Korporat</h3>", unsafe_allow_html=True)
         st.markdown("<h2>Rp 5.000.000,-</h2>", unsafe_allow_html=True)
         st.image("https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg", width=200)
         ref_code = st.text_input("Masukkan Kode Referensi Transfer:")
@@ -826,22 +826,22 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria":
                     st.session_state.payment_verified = True
                     st.rerun()
             else:
-                st.error("Silakan masukkan kode referensi transfer.")
+                st.error("Silakan masukkan kode referensi transfer yang valid.")
         st.markdown('</div>', unsafe_allow_html=True)
     else:
-        st.success("🎉 Pembayaran Terverifikasi! Sistem Kalkulator ISAK 35 & Perincian Individu Aktif.")
+        st.success("🎉 Pembayaran Terverifikasi! Sistem Kalkulator PSAK 219 & Kertas Kerja Individu Aktif.")
 
         st.sidebar.markdown("---")
-        st.sidebar.header("⚙️ Pengaturan Dokumen & Klien")
-        input_perusahaan = st.sidebar.text_input("Nama Perusahaan Klien", "PT GATRA MAPAN INDONESIA")
-        tanggal_laporan = st.sidebar.date_input("Tanggal Laporan Diterbitkan", datetime.date.today())
-        nomor_laporan = st.sidebar.text_input("Nomor Laporan Baku", f"082/KAS-FR/PSAK/III/{tanggal_laporan.strftime('%Y')}")
+        st.sidebar.header("⚙️ Pengaturan Laporan KKA Nirmala")
+        input_perusahaan = st.sidebar.text_input("Nama Perusahaan Klien", "PT ABC SEJAHTERA")
+        tanggal_laporan = st.sidebar.date_input("Tanggal Penerbitan Laporan", datetime.date.today())
+        nomor_laporan = st.sidebar.text_input("Nomor Laporan Baku", f"082/KKA-NIRMALA/PSAK/III/{tanggal_laporan.strftime('%Y')}")
 
-        asumsi_gaji = st.sidebar.number_input("Kenaikan Gaji (%)", value=5.0, step=0.1) / 100
-        usia_pensiun = st.sidebar.number_input("Usia Pensiun Normal", value=56, step=1)
-        asumsi_resign = st.sidebar.number_input("Tingkat Pengunduran Diri / Resign (%)", value=0.0, step=0.1) / 100
+        asumsi_gaji = st.sidebar.number_input("Kenaikan Gaji Tahunan (%)", value=8.0, step=0.1) / 100
+        usia_pensiun = st.sidebar.number_input("Usia Pensiun Normal", value=55, step=1)
+        asumsi_resign = st.sidebar.number_input("Tingkat Pengunduran Diri / Resign (%)", value=2.0, step=0.1) / 100
 
-        st.sidebar.info("💡 **Standar Aktuaris:** Suku bunga diskonto ditentukan otomatis lewat *yield curve matching* PHEI sesuai tahun valuasi dan sisa masa kerja individual.")
+        st.sidebar.info("💡 **Standar Aktuaris KKA Nirmala:** Suku bunga diskonto ditentukan otomatis lewat *yield curve matching* PHEI sesuai sisa masa kerja individual.")
 
         metode_input = st.radio(
             "Pilih Metode Masukan Data Karyawan:",
@@ -883,7 +883,7 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria":
                 with tab_years[idx]:
                     if yr not in st.session_state.manual_datasets:
                         st.session_state.manual_datasets[yr] = pd.DataFrame([
-                            {"NIK": "001", "Nama": "Karyawan Contoh 1", "Tanggal Lahir": "1985-05-12", "Tgl. Mulai Bekerja": "2010-01-01", "Total Upah Bulanan (Gross)": 5000000.0, "Saldo DPLK": 0.0}
+                            {"NIK": "001", "Nama": "Karyawan Contoh 1", "Tanggal Lahir": "1990-01-21", "Tgl. Mulai Bekerja": "2023-10-15", "Total Upah Bulanan (Gross)": 10000000.0, "Saldo DPLK": 0.0}
                         ])
 
                     edited_df = st.data_editor(
@@ -903,8 +903,8 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria":
                     )
 
         st.markdown("---")
-        if st.button("Jalankan Valuasi Otomatis (ISAK 35 & Perincian Individu) 🚀") and datasets_to_process:
-            with st.spinner("Menghitung perincian aktuaria per karyawan dengan logika ISAK 35 dan kurva PHEI..."):
+        if st.button("Jalankan Valuasi Otomatis (PSAK 219 & IFRIC AD) 🚀") and datasets_to_process:
+            with st.spinner("Menghitung perincian aktuaria per karyawan dengan metode PUC dan IFRIC AD..."):
                 results_dict = {}
                 dplk_dict = {}
                 active_years = sorted(list(datasets_to_process.keys()))
@@ -954,7 +954,7 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria":
                 st.session_state.paid_dict = benefit_paid_dict
                 st.session_state.active_years = active_years
                 st.session_state.calculated_results = True
-                st.success("Valuasi Selesai! Perincian perhitungan tingkat individu kini ditampilkan di bawah.")
+                st.success("Valuasi Aktuaria Selesai! Rincian tingkat individu kini siap ditinjau.")
 
         if st.session_state.get("calculated_results"):
             res_dict = st.session_state.results_dict
@@ -962,7 +962,7 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria":
 
             st.markdown("---")
             st.subheader("👥 Rincian Perhitungan Tingkat Individu per Karyawan")
-            st.write("Berikut adalah rincian kalkulasi aktuaria per orang (mirip kertas kerja aktuaris):")
+            st.write("Berikut adalah rincian kalkulasi aktuaria per orang sesuai format kertas kerja KKA Nirmala:")
 
             for yr in sorted(act_yrs, reverse=True):
                 st.markdown(f"#### 📅 Data Valuasi Tahun {yr}")
@@ -986,16 +986,16 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria":
                 st.dataframe(df_display[cols_to_show], use_container_width=True)
 
             st.markdown("---")
-            st.subheader("📥 Unduh Laporan Resmi PDF")
+            st.subheader("📥 Unduh Kertas Kerja & Laporan Resmi KKA Nirmala")
             pdf_file = generate_detailed_report(
                 res_dict, asumsi_gaji, usia_pensiun,
                 act_yrs, input_perusahaan, nomor_laporan
             )
 
             st.download_button(
-                label="📥 Download Kertas Kerja Detail (PDF Landscape)",
+                label="📥 Download Laporan Aktuaria Resmi (PDF Landscape)",
                 data=pdf_file,
-                file_name=f"DETAIL_REPORT_PSAK219_{input_perusahaan.replace(' ', '_')}.pdf",
+                file_name=f"LAPORAN_AKTUARIA_PSAK219_{input_perusahaan.replace(' ', '_')}.pdf",
                 mime="application/pdf",
                 type="primary"
             )
