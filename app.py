@@ -472,6 +472,52 @@ class PSAK219Engine:
 # ==========================================
 # 5. GENERATOR PDF LAPORAN KKA Setya Gunawan (FORMAT BAKU OTOMATIS)
 # ==========================================
+# ==========================================
+# 5. GENERATOR PDF LAPORAN KKA Setya Gunawan (FORMAT COVER KUSTOM)
+# ==========================================
+def draw_cover_background(canvas_obj, doc_obj):
+    canvas_obj.saveState()
+    
+    # --- MENGGAMBAR AKSEN GEOMETRIS HIJAU DI SISI KIRI ---
+    # Segitiga/Poligon Hijau Tua Utama
+    p1 = canvas_obj.beginPath()
+    p1.moveTo(0, doc_obj.height + doc_obj.topMargin + doc_obj.bottomMargin)
+    p1.lineTo(210, 0)
+    p1.lineTo(0, 0)
+    p1.close()
+    canvas_obj.setFillColor(colors.HexColor('#2E8B57')) # Hijau Tua Daun
+    canvas_obj.drawPath(p1, fill=1, stroke=0)
+
+    # Segitiga Hijau Transparan / Muda 1
+    p2 = canvas_obj.beginPath()
+    p2.moveTo(0, doc_obj.height + doc_obj.topMargin + doc_obj.bottomMargin)
+    p2.lineTo(130, 280)
+    p2.lineTo(0, 160)
+    p2.close()
+    canvas_obj.setFillColor(colors.HexColor('#66CDAA')) # Hijau Muda
+    canvas_obj.drawPath(p2, fill=1, stroke=0)
+
+    # Segitiga Hijau Muda Bawah
+    p3 = canvas_obj.beginPath()
+    p3.moveTo(0, 240)
+    p3.lineTo(190, 480)
+    p3.lineTo(170, 0)
+    p3.lineTo(0, 0)
+    p3.close()
+    canvas_obj.setFillColor(colors.HexColor('#98FB98')) # Hijau Terang Transparan
+    canvas_obj.drawPath(p3, fill=1, stroke=0)
+
+    # Aksen Segitiga Kecil di Atas Tengah
+    p4 = canvas_obj.beginPath()
+    p4.moveTo(145, doc_obj.height + doc_obj.topMargin + 10)
+    p4.lineTo(180, doc_obj.height + doc_obj.topMargin - 40)
+    p4.lineTo(110, doc_obj.height + doc_obj.topMargin - 40)
+    p4.close()
+    canvas_obj.setFillColor(colors.HexColor('#C1FFC1'))
+    canvas_obj.drawPath(p4, fill=1, stroke=0)
+
+    canvas_obj.restoreState()
+
 def draw_footer_landscape(canvas, doc):
     canvas.saveState()
     canvas.setStrokeColor(colors.HexColor('#3A0C08'))
@@ -485,39 +531,114 @@ def draw_footer_landscape(canvas, doc):
 
 def generate_detailed_report(results_dict, salary_inc, ret_age, val_years, company_name, report_no, report_date):
     pdf_buffer = io.BytesIO()
-    doc = SimpleDocTemplate(pdf_buffer, pagesize=landscape(letter), rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=60)
+    # Menggunakan ukuran Portrait (Letter tegak) agar persis seperti desain cover yang diunggah
+    doc = SimpleDocTemplate(pdf_buffer, pagesize=letter, rightMargin=54, leftMargin=54, topMargin=54, bottomMargin=54)
     elements = []
     styles = getSampleStyleSheet()
     
-    title_style = ParagraphStyle('CoverTitle', parent=styles['Heading1'], fontSize=16, textColor=colors.HexColor('#3A0C08'), alignment=1, spaceBefore=10, spaceAfter=6)
-    sub_style = ParagraphStyle('CoverSub', parent=styles['Normal'], fontSize=10, textColor=colors.HexColor('#6B4B48'), alignment=1, spaceAfter=14)
+    # Gaya Huruf Khusus Cover Sesuai Gambar
+    cover_title_style = ParagraphStyle(
+        'CoverMainTitle', parent=styles['Normal'], 
+        fontName='Helvetica-Bold', fontSize=18, textColor=colors.HexColor('#D96B27'), 
+        alignment=2, spaceAfter=8, leading=22
+    )
+    cover_sub_style = ParagraphStyle(
+        'CoverSubTitle', parent=styles['Normal'], 
+        fontName='Helvetica-Bold', fontSize=13, textColor=colors.HexColor('#D96B27'), 
+        alignment=2, spaceAfter=24, leading=16
+    )
+    cover_desc_style = ParagraphStyle(
+        'CoverDesc', parent=styles['Normal'], 
+        fontName='Helvetica-Bold', fontSize=12, textColor=colors.HexColor('#D96B27'), 
+        alignment=2, spaceAfter=6, leading=16
+    )
+    cover_date_style = ParagraphStyle(
+        'CoverDate', parent=styles['Normal'], 
+        fontName='Helvetica-Bold', fontSize=10, textColor=colors.HexColor('#D96B27'), 
+        alignment=2, spaceAfter=80, leading=14
+    )
+    cover_address_style = ParagraphStyle(
+        'CoverAddressRight', parent=styles['Normal'], 
+        fontName='Helvetica', fontSize=9, textColor=colors.HexColor('#222222'), 
+        alignment=2, leading=14
+    )
+    
     h_style = ParagraphStyle('SecH', parent=styles['Heading2'], fontSize=11, textColor=colors.HexColor('#C2382D'), spaceBefore=12, spaceAfter=6)
     body_style = ParagraphStyle('BodyCustom', parent=styles['Normal'], fontSize=9, textColor=colors.HexColor('#222222'), spaceBefore=4, spaceAfter=8, leading=13)
 
     formatted_date = report_date.strftime('%d %B %Y') if hasattr(report_date, 'strftime') else str(report_date)
 
-    # 1. HALAMAN SAMPUL / COVER BAKU KKA
+    # 1. HALAMAN SAMPUL (COVER) SESUAI DESAIN GAMBAR
     if os.path.exists("logo.png"):
-        logo = Image("logo.png", width=1.8*inch, height=1.8*inch)
-        logo.hAlign = 'CENTER'
+        logo = Image("logo.png", width=1.6*inch, height=0.9*inch)
+        logo.hAlign = 'RIGHT'
         elements.append(logo)
-        elements.append(Spacer(1, 10))
-        
-    elements.append(Paragraph(f"<b>FINAL ACTUARIAL REPORT</b>", title_style))
-    elements.append(Paragraph(f"<b>PT. {company_name.upper()}</b><br/>EMPLOYEE BENEFITS LIABILITIES<br/>NO: {report_no}<br/>VALUATION DATE: DECEMBER, 31ST 2023", sub_style))
-    elements.append(Paragraph("<b>KKA SETYA GUNAWAN</b><br/>Cilandak 88 Condominium Unit D-1, Jl. Margasatwa Barat No. 88, Cilandak Timur, Pasar Minggu, Jakarta Selatan 12560.", ParagraphStyle('CoverAddress', parent=styles['Normal'], fontSize=8, alignment=1, textColor=colors.HexColor('#555555'))))
-    elements.append(PageBreak())
+        elements.append(Spacer(1, 40))
+    else:
+        elements.append(Spacer(1, 60))
 
-    # 2. STRUKTUR BAB OTOMATIS (DITENTUKAN OLEH KKA)
-    elements.append(Paragraph("<b>1. PENDAHULUAN / INTRODUCTION</b>", h_style))
-    elements.append(Paragraph(f"Laporan aktuaria ini disajikan untuk memenuhi permintaan <b>PT {company_name.upper()}</b> guna mengetahui Kewajiban dan Beban atas Imbalan Kerja Karyawan berdasarkan Undang-Undang Ketenagakerjaan (UU Cipta Kerja No. 11 Tahun 2020) dan PSAK 219.", body_style))
+    elements.append(Paragraph("FINAL ACTUARIAL REPORT", cover_title_style))
+    elements.append(Paragraph(f"PT {company_name.upper()}", cover_sub_style))
     
-    elements.append(Paragraph("<b>2. MANFAAT KARYAWAN / EMPLOYEE BENEFITS</b>", h_style))
-    elements.append(Paragraph("Valuasi mencakup Manfaat Pensiun, Manfaat Meninggal Dunia, Manfaat Mengundurkan Diri, Manfaat Sakit Berkepanjangan, serta Kompensasi PKWT sesuai regulasi yang berlaku.", body_style))
-
-    elements.append(Paragraph("<b>3. METODOLOGI & ASUMSI AKTUARIA</b>", h_style))
-    elements.append(Paragraph(f"Metode valuasi menggunakan <b>Projected Unit Credit (PUC)</b> dengan asumsi tingkat kenaikan gaji {salary_inc*100:.2f}% p.a., Usia Pensiun Normal {ret_age} tahun, serta tingkat diskonto berbasis kurva PHEI.", body_style))
+    elements.append(Spacer(1, 100))
+    
+    elements.append(Paragraph("EMPLOYEE BENEFITS LIABILITIES", cover_desc_style))
+    elements.append(Paragraph(f"NO. {report_no}", cover_desc_style))
+    elements.append(Spacer(1, 20))
+    elements.append(Paragraph(f"PERIOD DECEMBER, 31ST {val_years[0] if val_years else '2022'}", cover_date_style))
+    
+    elements.append(Spacer(1, 30))
+    address_block = (
+        "<b>KKA SETYA GUNAWAN</b><br/>"
+        "Cilandak 88 Condominium Unit D-1<br/>"
+        "Jl. Margasatwa Barat No. 88<br/>"
+        "Cilandak Timur, Pasar Minggu<br/>"
+        "Jakarta Selatan, 12560"
+    )
+    elements.append(Paragraph(address_block, cover_address_style))
     elements.append(PageBreak())
+
+    # 2. STRUKTUR ISI LAPORAN & LAMPIRAN (Menggunakan Landscape Letter untuk Tabel Detail)
+    # Catatan: Bagian isi laporan dan tabel tetap menggunakan format profesional yang Anda miliki
+    for yr in sorted(val_years, reverse=True):
+        df_yr = results_dict[yr]
+        if df_yr.empty: continue
+            
+        tot_salary = df_yr['Gross Salary'].sum()
+        tot_pvfb = df_yr['PVFB'].sum()
+        tot_pbo = df_yr['PBO'].sum()
+        tot_csc = df_yr['CSC'].sum()
+        num_emp = len(df_yr)
+
+        elements.append(Paragraph(f"<b>RINGKASAN HASIL VALUASI (PER 31 DESEMBER {yr})</b>", h_style))
+        t1_data = [
+            ["URAIAN (EXPLANATION)", f"Per 31 Des {yr} (Pasca Kerja)", f"Per 31 Des {yr} (Jangka Panjang Lainnya)"],
+            ["1. Jumlah Karyawan (Number of Employees)", str(num_emp), "0"],
+            ["2. Total Penghasilan Sebulan (Total Salary)", f"Rp {fmt_num(tot_salary)}", "Rp 0"],
+            ["3. Rata-rata Usia (Average Age)", f"{df_yr['Age Valuation'].mean():.2f}", "0.00"],
+            ["4. Rata-rata Masa Kerja Lalu (Past Service)", f"{df_yr['Past Service'].mean():.2f} tahun", "0.00 tahun"],
+            ["5. Tingkat Diskonto Akhir (Discount Rate)", f"{df_yr['Applied_Discount'].mean()*100:.2f}%", f"{df_yr['Applied_Discount'].mean()*100:.2f}%"],
+            ["6. Tingkat Kenaikan Gaji (Salary Increment)", f"{salary_inc*100:.2f}%", f"{salary_inc*100:.2f}%"],
+            ["7. Biaya Jasa Kini (Current Service Cost)", f"Rp {fmt_num(tot_csc)}", "Rp 0"],
+            ["8. Nilai Kini Kewajiban / PVDBO (Obligation)", f"Rp {fmt_num(tot_pbo)}", "Rp 0"]
+        ]
+        t1 = Table(t1_data, colWidths=[280, 150, 150])
+        t1.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#3A0C08')),
+            ('TEXTCOLOR', (0,0), (-1,0), colors.white),
+            ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0,0), (-1,-1), 7.5),
+            ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#D3C1BE')),
+            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+            ('ALIGN', (1,1), (-1,-1), 'RIGHT'),
+        ]))
+        elements.append(t1)
+        elements.append(Spacer(1, 15))
+        elements.append(PageBreak())
+
+    doc.build(elements, onFirstPage=draw_cover_background, onLaterPages=draw_footer_landscape)
+    pdf_buffer.seek(0)
+    return pdf_buffer
 
     # 3. RINGKASAN HASIL & TABEL BAKU KKA
     for yr in sorted(val_years, reverse=True):
