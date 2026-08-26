@@ -18,14 +18,14 @@ from reportlab.lib.units import inch
 # KONFIGURASI HALAMAN & IDENTITAS KKA NIRMALA
 # ==========================================
 st.set_page_config(
-    page_title="KKA Nirmala | Kantor Konsultan Aktuaria",
+    page_title="KKA Setya Gunawan | Kantor Konsultan Aktuaria",
     page_icon="📐",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
 # ==========================================
-# CUSTOM CSS & TEMA KORPORAT KKA NIRMALA
+# CUSTOM CSS & TEMA KORPORAT KKA Setya Gunawan
 # ==========================================
 st.markdown("""
 <style>
@@ -354,7 +354,7 @@ def parse_excel_dataset(file_or_buffer, sheet_name=0):
     return pd.DataFrame(clean_data), total_benefit_paid
 
 # ==========================================
-# 4. ENGINE AKTUARIA (PUC DENGAN IFRIC AD & FAKTOR NIRMALA)
+# 4. ENGINE AKTUARIA (PUC DENGAN IFRIC AD & FAKTOR )
 # ==========================================
 class PSAK219Engine:
     def __init__(self, valuation_year, salary_increase, retirement_age, resign_rate=0.0):
@@ -469,7 +469,7 @@ class PSAK219Engine:
         }
 
 # ==========================================
-# 5. GENERATOR PDF LAPORAN KKA NIRMALA (FORMAT BAKU OTOMATIS)
+# 5. GENERATOR PDF LAPORAN KKA Setya Gunawan (FORMAT BAKU OTOMATIS)
 # ==========================================
 def draw_footer_landscape(canvas, doc):
     canvas.saveState()
@@ -477,9 +477,9 @@ def draw_footer_landscape(canvas, doc):
     canvas.setLineWidth(1)
     canvas.line(36, 45, landscape(letter)[0] - 36, 45) 
     canvas.setFont('Helvetica-Bold', 9)
-    canvas.drawCentredString(landscape(letter)[0]/2.0, 30, "Kantor Konsultan Aktuaria Nirmala (KKA Nirmala)")
+    canvas.drawCentredString(landscape(letter)[0]/2.0, 30, "Kantor Konsultan Aktuaria Setya Gunawan (KKA Setya Gunawan)")
     canvas.setFont('Helvetica', 8)
-    canvas.drawCentredString(landscape(letter)[0]/2.0, 20, "Izin Badan Usaha No. 4.24.0021 | Keputusan Kemenkeu RI No. 782/KM.1/2024 | STTD-OJK: STTD-050/PD.021/STTD-KA/2025 | AKKAI: AKKAI-25064")
+    canvas.drawCentredString(landscape(letter)[0]/2.0, 20, "Izin Badan Usaha No. 4.21.0007 | Keputusan Kemenkeu RI No. 590/KM.1/2021 | STTD-OJK: STTD-039/NB.122/STTD-KA/2021 | AKKAI: AKKAI-21043")
     canvas.restoreState()
 
 def generate_detailed_report(results_dict, salary_inc, ret_age, val_years, company_name, report_no, report_date):
@@ -603,14 +603,14 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_years, compa
 # ==========================================
 # 6. KONSTANTA KORPORAT KKA NIRMALA
 # ==========================================
-COMPANY_LEGAL_NAME = "Kantor Konsultan Aktuaria Nirmala"
-COMPANY_LICENSE = "Izin Badan Usaha Kemenkeu RI No. 4.24.0021"
-COMPANY_MENKEU = "Keputusan Kemenkeu RI No. 782/KM.1/2024"
-COMPANY_OJK = "STTD-OJK: STTD-050/PD.021/STTD-KA/2025"
-COMPANY_AKKAI = "AKKAI-25064"
-COMPANY_ADDRESS = "Menara Caraka, Lt. 6 Unit 627, Jl. Mega Kuningan Barat Blok E.4.7 No. 1, Jakarta Selatan 12950"
-COMPANY_PHONE = "+62 819 0813 0000"
-COMPANY_EMAIL = "nirmala@aktuarispublik.id"
+COMPANY_LEGAL_NAME = "Kantor Konsultan Aktuaria Setya Gunawan"
+COMPANY_LICENSE = "Izin Badan Usaha Kemenkeu RI No. 4.21.0007"
+COMPANY_MENKEU = "Keputusan Kemenkeu RI No. 590/KM.1/2021"
+COMPANY_OJK = "STTD-OJK: STTD-039/NB.122/STTD-KA/2021"
+COMPANY_AKKAI = "AKKAI-21043"
+COMPANY_ADDRESS = "Cilandak 88 Condominium Unit D-1, Jl. Margasatwa Barat No. 88, Cilandak Timur, Pasar Minggu, Jakarta Selatan 12560"
+COMPANY_PHONE = "+62 81290909019"
+COMPANY_EMAIL = "kka_setyagunawan@yahoo.com"
 
 LOGO_PATH = "logo.png"
 
@@ -661,7 +661,7 @@ with st.sidebar:
 
     st.markdown(f"""
     <div class="sidebar-contact-box">
-        📍 Mega Kuningan, Jakarta Selatan<br/>
+        📍 Cilandak 88 Condominium Unit D-1, Jl. Margasatwa Barat No. 88, Cilandak Timur, Pasar Minggu, Jakarta Selatan 12560<br/>
         📱 {COMPANY_PHONE}<br/>
         ✉️ {COMPANY_EMAIL}<br/><br/>
         <span style="opacity:0.75; font-size:0.7rem;">{COMPANY_LICENSE}<br/>{COMPANY_OJK}<br/>AKKAI: {COMPANY_AKKAI}</span>
@@ -695,7 +695,7 @@ if menu == "🏠 Beranda":
 
     c1, c2 = st.columns([1, 1])
     with c1:
-        if st.button("🚀 Coba Kalkulator Valuasi Sekarang", use_container_width=True):
+        if st.button("Hitung Imbalan Kerja PSAK 219", use_container_width=True):
             go_to("🧮 Kalkulator Valuasi Aktuaria")
     with c2:
         if st.button("💼 Lihat Layanan Kami", use_container_width=True):
@@ -714,7 +714,7 @@ if menu == "🏠 Beranda":
         st.markdown('<div class="stat-box"><div class="stat-num">24 Jam</div><div class="stat-label">Estimasi & Laporan Instan</div></div>', unsafe_allow_html=True)
 
     st.markdown("<hr class='divider-soft'/>", unsafe_allow_html=True)
-    st.markdown('<div class="section-title">Layanan Utama KKA Nirmala</div><div class="section-sub">Solusi aktuaria menyeluruh dari perhitungan rinci hingga kesiapan audit KAP.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">Layanan Utama KKA Setya Gunawan</div><div class="section-sub">Layanan Valuasi Aktuaria berstandar.</div>', unsafe_allow_html=True)
 
     fc1, fc2 = st.columns([1.4, 1])
     with fc1:
@@ -733,11 +733,11 @@ if menu == "🏠 Beranda":
     with fc2:
         st.markdown("""
         <div class="info-box">
-            <b>Keunggulan Sistem KKA Nirmala:</b><br/><br/>
+            <b>Keunggulan Sistem KKA Setya Gunawan:</b><br/><br/>
             📈 Pencocokan kurva yield PHEI otomatis<br/><br/>
             ⚖️ Atribusi IFRIC AD / ISAK 35 (Capping)<br/><br/>
             👥 **Tabel rincian tingkat individu langsung di web**<br/><br/>
-            📄 Ekspor Laporan PDF Landscape Kertas Kerja Resmi
+            📄 Ekspor Laporan PDF sesuai dengan standar penyajian laporan KKA
         </div>
         """, unsafe_allow_html=True)
 
@@ -759,7 +759,7 @@ elif menu == "🏢 Tentang Kami":
     with c1:
         st.markdown("""
         <div class="info-box">
-            <b>🎯 Visi KKA Nirmala</b><br/>
+            <b>🎯 Visi KKA Setya Gunawan</b><br/>
             Menjadi kantor konsultan aktuaria terdepan yang andal, profesional, dan tepercaya
             dalam mendukung pengelolaan liabilitas imbalan kerja korporasi di Indonesia.
         </div>
@@ -767,7 +767,7 @@ elif menu == "🏢 Tentang Kami":
     with c2:
         st.markdown("""
         <div class="info-box">
-            <b>🚀 Misi KKA Nirmala</b><br/>
+            <b>🚀 Misi KKA Setya Gunawan</b><br/>
             Menghadirkan layanan aktuaria berbasis teknologi tinggi, transparan, serta selaras
             dengan standar akuntansi keuangan PSAK 219, IFRS, dan regulasi ketenagakerjaan nasional.
         </div>
@@ -818,7 +818,7 @@ elif menu == "📞 Kontak Kami":
         {LOGO_CHIP_HTML}
         <div class="badge-gold">HUBUNGI KAMI</div>
         <div class="hero-title" style="font-size:2.1rem;">Konsultasikan Kebutuhan Aktuaria Anda</div>
-        <div class="hero-sub">Tim aktuaris publik dan profesional KKA Nirmala siap melayani kebutuhan korporasi Anda.</div>
+        <div class="hero-sub">Tim aktuaris publik dan profesional KKA Setya Gunawan siap melayani kebutuhan korporasi Anda.</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -847,7 +847,7 @@ elif menu == "📞 Kontak Kami":
             st.text_area("Pesan / Kebutuhan Valuasi", height=120)
             submitted = st.form_submit_button("Kirim Pesan")
             if submitted:
-                st.success("Terima kasih! Pesan Anda telah diterima oleh tim KKA Nirmala.")
+                st.success("Terima kasih! Pesan Anda telah diterima oleh tim KKA Setya Gunawan.")
 
 # ==========================================
 # 12. HALAMAN: KALKULATOR VALUASI AKTUARIA
@@ -856,13 +856,13 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria":
     st.markdown(f"""
     <div class="calc-header">
         {LOGO_CHIP_HTML}
-        <div class="badge-gold">KKA NIRMALA — PORTAL AKTUARIA</div>
+        <div class="badge-gold">KKA Setya Gunawan — PORTAL AKTUARIA</div>
         <div class="hero-title" style="font-size:1.9rem; margin-bottom:8px;">📄 Generator Laporan Aktuaria PSAK 219 (IFRIC AD)</div>
         <div class="hero-sub" style="font-size:0.98rem;">Menampilkan rincian kalkulasi per karyawan di web, dilengkapi kurva yield PHEI & kertas kerja siap audit.</div>
     </div>
     """, unsafe_allow_html=True)
 
-    # Sistem Pembayaran / Paywall QRIS KKA Nirmala
+    # Sistem Pembayaran / Paywall QRIS KKA Setya Gunawan
     if not st.session_state.payment_verified:
         st.warning("🔒 **Akses Terkunci:** Silakan lakukan verifikasi pembayaran administrasi layanan valuasi aktuaria KKA Nirmala.")
         st.markdown('<div class="qris-box">', unsafe_allow_html=True)
@@ -883,16 +883,16 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria":
         st.success("🎉 Pembayaran Terverifikasi! Sistem Kalkulator PSAK 219 & Kertas Kerja Individu Aktif.")
 
         st.sidebar.markdown("---")
-        st.sidebar.header("⚙️ Pengaturan Laporan KKA Nirmala")
+        st.sidebar.header("⚙️ Pengaturan Laporan KKA Setya Gunawan")
         input_perusahaan = st.sidebar.text_input("Nama Perusahaan Klien", "PT ABC SEJAHTERA")
         tanggal_laporan = st.sidebar.date_input("Tanggal Penerbitan Laporan", datetime.date.today())
-        nomor_laporan = st.sidebar.text_input("Nomor Laporan Baku", f"082/KKA-NIRMALA/PSAK/III/{tanggal_laporan.strftime('%Y')}")
+        nomor_laporan = st.sidebar.text_input("Nomor Laporan Baku", f"082/FR-KAS/PSAK/III/{tanggal_laporan.strftime('%Y')}")
 
         asumsi_gaji = st.sidebar.number_input("Kenaikan Gaji Tahunan (%)", value=8.0, step=0.1) / 100
         usia_pensiun = st.sidebar.number_input("Usia Pensiun Normal", value=55, step=1)
         asumsi_resign = st.sidebar.number_input("Tingkat Pengunduran Diri / Resign (%)", value=2.0, step=0.1) / 100
 
-        st.sidebar.info("💡 **Standar Aktuaris KKA Nirmala:** Suku bunga diskonto ditentukan otomatis lewat *yield curve matching* PHEI sesuai sisa masa kerja individual.")
+        st.sidebar.info("💡 **Standar Aktuaris KKA Setya Gunawan:** Suku bunga diskonto ditentukan otomatis lewat *yield curve matching* PHEI sesuai sisa masa kerja individual.")
 
         metode_input = st.radio(
             "Pilih Metode Masukan Data Karyawan:",
@@ -1013,7 +1013,7 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria":
 
             st.markdown("---")
             st.subheader("👥 Rincian Perhitungan Tingkat Individu per Karyawan")
-            st.write("Berikut adalah rincian kalkulasi aktuaria per orang sesuai format kertas kerja KKA Nirmala:")
+            st.write("Berikut adalah rincian kalkulasi aktuaria per orang sesuai format kertas kerja KKA Setya Gunawan:")
 
             for yr in sorted(act_yrs, reverse=True):
                 st.markdown(f"#### 📅 Data Valuasi Tahun {yr}")
@@ -1037,14 +1037,14 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria":
                 st.dataframe(df_display[cols_to_show], use_container_width=True)
 
             st.markdown("---")
-            st.subheader("📥 Unduh Kertas Kerja & Laporan Resmi KKA Nirmala")
+            st.subheader("📥 Unduh Kertas Kerja & Laporan Resmi KKA Setya Gunawan")
             pdf_file = generate_detailed_report(
                 res_dict, asumsi_gaji, usia_pensiun,
                 act_yrs, input_perusahaan, nomor_laporan, tanggal_laporan
             )
 
             st.download_button(
-                label="📥 Download Laporan Aktuaria Resmi (PDF Landscape)",
+                label="📥 Download Laporan Aktuaria PSAK 219 (PDF Landscape)",
                 data=pdf_file,
                 file_name=f"LAPORAN_AKTUARIA_PSAK219_{input_perusahaan.replace(' ', '_')}.pdf",
                 mime="application/pdf",
