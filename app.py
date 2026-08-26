@@ -663,15 +663,35 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_years, compa
     elements.append(Paragraph(f"Jakarta, {formatted_date}<br/><b>KANTOR KONSULTAN AKTUARIA SETYA GUNAWAN</b><br/><br/><br/><br/><b>Tim Aktuaris Publik</b>", ParagraphStyle('SignBlock', parent=styles['Normal'], fontSize=9, alignment=2)))
         
     doc.build(
+       # Membangun dokumen dengan page template kustom untuk orientasi berbeda tiap halaman
+    from reportlab.platypus import PageTemplate, BaseDocTemplate, Frame
+    
+    # Buat custom DocTemplate yang mendukung pergantian ukuran/orientasi halaman
+    class MixedPageDocTemplate(SimpleDocTemplate):
+        def handle_pageBegin(self):
+            # Jika halaman lebih besar dari 1 (halaman isi & lampiran), ubah ke landscape A4
+            if self.page > 1:
+                self.pagesize = landscape(A4)
+            super().handle_pageBegin()
+
+    # Inisialisasi ulang doc menggunakan kelas custom agar aman
+    doc_mixed = MixedPageDocTemplate(
+        pdf_buffer, 
+        pagesize=A4, 
+        rightMargin=54, 
+        leftMargin=54, 
+        topMargin=54, 
+        bottomMargin=54
+    )
+    
+    doc_mixed.build(
         elements, 
         onFirstPage=draw_cover_background, 
-        onLaterPages=lambda canvas, doc: (
-            doc.setPageSize(landscape(A4)), 
-            draw_footer_landscape(canvas, doc)
-        )
+        onLaterPages=draw_footer_landscape
     )
     pdf_buffer.seek(0)
     return pdf_buffer
+
     # 3. RINGKASAN HASIL & TABEL BAKU KKA
     for yr in sorted(val_years, reverse=True):
         df_yr = results_dict[yr]
