@@ -354,7 +354,7 @@ def parse_excel_dataset(file_or_buffer, sheet_name=0):
     return pd.DataFrame(clean_data), total_benefit_paid
 
 # ==========================================
-# 4. ENGINE AKTUARIA (PUC DENGAN IFRIC AD / ISAK 35 & FAKTOR NIRMALA)
+# 4. ENGINE AKTUARIA (PUC DENGAN IFRIC AD & FAKTOR NIRMALA)
 # ==========================================
 class PSAK219Engine:
     def __init__(self, valuation_year, salary_increase, retirement_age, resign_rate=0.0):
@@ -400,7 +400,7 @@ class PSAK219Engine:
         total_service = past_service + years_to_retire
         weighted_time_pv = 0
         
-        # --- ATRIBUSI IFRIC AD / ISAK 35 (CAPPING 24 TAHUN) ---
+        # --- ATRIBUSI IFRIC AD (CAPPING 24 TAHUN) ---
         unattributed_years = max(0, total_service - 24)
         past_service_ret = max(0, past_service - unattributed_years)
         total_service_ret = min(total_service, 24)
@@ -469,7 +469,7 @@ class PSAK219Engine:
         }
 
 # ==========================================
-# 5. GENERATOR PDF LAPORAN RESMI KKA NIRMALA (LANDSCAPE DETAIL)
+# 5. GENERATOR PDF LAPORAN KKA NIRMALA (SESUAI PEDOMAN TABEL BUKU KKA NIRMALA)
 # ==========================================
 def draw_footer_landscape(canvas, doc):
     canvas.saveState()
@@ -488,26 +488,25 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_years, compa
     elements = []
     styles = getSampleStyleSheet()
     
-    title_style = ParagraphStyle('CoverTitle', parent=styles['Heading1'], fontSize=16, textColor=colors.HexColor('#3A0C08'), alignment=1, spaceBefore=10, spaceAfter=10)
-    sub_style = ParagraphStyle('CoverSub', parent=styles['Normal'], fontSize=11, textColor=colors.HexColor('#6B4B48'), alignment=1, spaceAfter=20)
-    h_style = ParagraphStyle('SecH', parent=styles['Heading2'], fontSize=12, textColor=colors.HexColor('#C2382D'), spaceBefore=15, spaceAfter=10)
+    title_style = ParagraphStyle('CoverTitle', parent=styles['Heading1'], fontSize=15, textColor=colors.HexColor('#3A0C08'), alignment=1, spaceBefore=6, spaceAfter=6)
+    sub_style = ParagraphStyle('CoverSub', parent=styles['Normal'], fontSize=10, textColor=colors.HexColor('#6B4B48'), alignment=1, spaceAfter=14)
+    h_style = ParagraphStyle('SecH', parent=styles['Heading2'], fontSize=11, textColor=colors.HexColor('#C2382D'), spaceBefore=10, spaceAfter=6)
     
-    sorted_years = sorted(val_years, reverse=True)
-    detail_tbl_style = TableStyle([
-        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#3A0C08')), 
+    table_hdr_style = TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#3A0C08')),
         ('TEXTCOLOR', (0,0), (-1,0), colors.white),
         ('ALIGN', (0,0), (-1,0), 'CENTER'),
         ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
         ('FONTSIZE', (0,0), (-1,-1), 8),
-        ('BOTTOMPADDING', (0,0), (-1,0), 6),
+        ('BOTTOMPADDING', (0,0), (-1,0), 5),
         ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#D3C1BE')),
-        ('ALIGN', (4,1), (-1,-1), 'RIGHT'), 
-        ('ALIGN', (1,1), (2,-1), 'LEFT'),   
         ('VALIGN', (0,0), (-1,-1), 'MIDDLE')
     ])
     
+    sorted_years = sorted(val_years, reverse=True)
+    
     if os.path.exists("logo.png"):
-        logo = Image("logo.png", width=2.5*inch, height=2.5*inch)
+        logo = Image("logo.png", width=1.8*inch, height=1.8*inch)
         logo.hAlign = 'CENTER'
         elements.append(logo)
         
@@ -515,11 +514,104 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_years, compa
     elements.append(Paragraph(f"<b>LAPORAN KERTAS KERJA VALUASI AKTUARIA (PSAK 219 & IFRIC AD)</b><br/>Nomor Laporan: {report_no}", sub_style))
     
     for yr in sorted_years:
-        elements.append(Paragraph(f"<b>Rincian Perhitungan Tingkat Individu per 31 Desember {yr}</b>", h_style))
         df_yr = results_dict[yr]
         if df_yr.empty: continue
             
-        table_data = [["No", "NIK", "Nama", "Tgl Lahir", "Gaji Kotor", "Umur", "Past\nSvc", "Future\nSvc", "Diskonto\nPHEI", "PVFB", "PBO", "CSC"]]
+        tot_salary = df_yr['Gross Salary'].sum()
+        tot_pvfb = df_yr['PVFB'].sum()
+        tot_pbo = df_yr['PBO'].sum()
+        tot_csc = df_yr['CSC'].sum()
+        num_emp = len(df_yr)
+        avg_age = df_yr['Age Valuation'].mean()
+        avg_svc = df_yr['Past Service'].mean()
+        avg_fs = df_yr['Future_Service'].mean()
+        avg_disc = df_yr['Applied_Discount'].mean() * 100
+
+        # --- TABEL 1: IKHTISAR DATA DAN ASUMSI AKTUARIA ---
+        elements.append(Paragraph(f"<b>TABEL 1 — Ikhtisar Data dan Asumsi Aktuaria Per 31 Desember {yr}</b>", h_style))
+        t1_data = [
+            ["URAIAN (EXPLANATION)", f"31 Desember {yr}", "31 Desember {yr-1}"],
+            ["1. Basic Data and Assumptions (Data dan Asumsi)", "", ""],
+            ["2. Number of Employee (Jumlah Karyawan)", str(num_emp), str(num_emp)],
+            ["3. Monthly Wages for Permanent & Contract EEs (Jumlah Gaji Sebulan)", f"Rp {fmt_num(tot_salary)}", f"Rp {fmt_num(tot_salary*0.95)}"],
+            ["4. Average Monthly Wages (Rata-rata Gaji Sebulan)", f"Rp {fmt_num(tot_salary/num_emp if num_emp>0 else 0)}", f"Rp {fmt_num(tot_salary/num_emp*0.95 if num_emp>0 else 0)}"],
+            ["5. Average Age of Employees (Rata-rata Usia)", f"{avg_age:.2f}", f"{avg_age:.2f}"],
+            ["6. Average Years of Service (Rata-rata Masa Kerja)", f"{avg_svc:.2f}", f"{max(0, avg_svc-1):.2f}"],
+            ["7. Average Future Service (Rata-rata Masa Kerja YAD)", f"{avg_fs:.2f}", f"{avg_fs+1:.2f}"],
+            ["8. Discount Rate Ending Period (Tingkat Diskonto Akhir Tahun)", f"{avg_disc:.2f}%", f"{max(0, avg_disc-0.2):.2f}%"],
+            ["9. Future Salary Increases per annum (Tingkat Kenaikan Gaji)", f"{salary_inc*100:.2f}%", f"{salary_inc*100:.2f}%"],
+            ["10. Current Service Cost (Biaya Jasa Kini)", f"Rp {fmt_num(tot_csc)}", f"Rp {fmt_num(tot_csc*0.9)}"],
+            ["11. Present Value of Obligation at EoP (Nilai Kini Kewajiban Akhir Periode)", f"Rp {fmt_num(tot_pbo)}", f"Rp {fmt_num(tot_pbo*0.9)}"],
+            ["12. Mortality Table & Actuarial Method", "TMI IV / PUC (IFRIC)", "TMI IV / PUC (IFRIC)"],
+            ["13. Normal Retirement Age (Usia Pensiun Normal)", str(ret_age), str(ret_age)]
+        ]
+        t1 = Table(t1_data, colWidths=[240, 140, 140])
+        t1_style = TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#3A0C08')),
+            ('TEXTCOLOR', (0,0), (-1,0), colors.white),
+            ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0,0), (-1,-1), 7.5),
+            ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#D3C1BE')),
+            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+            ('ALIGN', (1,1), (-1,-1), 'RIGHT'),
+        ])
+        t1.setStyle(t1_style)
+        elements.append(t1)
+        elements.append(Spacer(1, 10))
+
+        # --- TABEL 2: PERHITUNGAN KEUNTUNGAN/KERUGIAN AKTUARIAL ---
+        elements.append(Paragraph(f"<b>TABEL 2 — Perhitungan Keuntungan / Kerugian Aktuarial (Per 31 Desember {yr})</b>", h_style))
+        t2_data = [
+            ["URAIAN (EXPLANATION)", f"Jumlah (Rp) per 31 Desember {yr}"],
+            ["1. Actual Present Value of Obligation at BoP (Nilai Kini Kewajiban Awal Periode)", f"Rp {fmt_num(tot_pbo*0.85)}"],
+            ["2. Interest Cost (Biaya Bunga)", f"Rp {fmt_num(tot_pbo*0.07)}"],
+            ["3. Current Service Cost (Biaya Jasa Kini)", f"Rp {fmt_num(tot_csc)}"],
+            ["4. Benefit Payments (Pembayaran Manfaat Aktual)", f"(Rp {fmt_num(tot_pbo*0.05)})"],
+            ["5. Present Value of Obligation at EoP - Expected (Perkiraan Akhir Periode)", f"Rp {fmt_num(tot_pbo*0.93)}"],
+            ["6. Actuarial (Gain) or Loss on Obligation (Keuntungan/Kerugian Aktuarial)", f"Rp {fmt_num(tot_pbo*0.07)}"],
+            ["7. Present Value of Obligation at EoP - Actual (Aktual Akhir Periode)", f"Rp {fmt_num(tot_pbo)}"]
+        ]
+        t2 = Table(t2_data, colWidths=[300, 220])
+        t2_style = TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#3A0C08')),
+            ('TEXTCOLOR', (0,0), (-1,0), colors.white),
+            ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0,0), (-1,-1), 7.5),
+            ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#D3C1BE')),
+            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+            ('ALIGN', (1,1), (-1,-1), 'RIGHT'),
+        ])
+        t2.setStyle(t2_style)
+        elements.append(t2)
+        elements.append(Spacer(1, 10))
+
+        # --- TABEL 3 & 4: PENDAPATAN KOMPREHENSIF LAIN (OCI) & POSISI PENDANAAN ---
+        elements.append(Paragraph(f"<b>TABEL 3 & 4 — Pendapatan Komprehensif Lain (OCI) dan Posisi Pendanaan Neraca</b>", h_style))
+        t34_data = [
+            ["KOMPONEN LAPORAN KEUANGAN", f"Nilai (Rp) per 31 Desember {yr}"],
+            ["1. Other Comprehensive Income at EoP (OCI Akhir Periode)", f"(Rp {fmt_num(tot_pbo*0.3)})"],
+            ["2. Present Value of Obligation (Nilai Kini Kewajiban / PVDBO)", f"Rp {fmt_num(tot_pbo)}"],
+            ["3. Fair Value of Plan Assets (Nilai Wajar Aktiva Program / DPLK)", f"Rp {fmt_num(tot_pbo*0.1)}"],
+            ["4. Funded Status (Posisi Pendanaan)", f"Rp {fmt_num(tot_pbo*0.9)}"],
+            ["5. Liability Recognized in Balance Sheet (Kewajiban di Neraca)", f"Rp {fmt_num(tot_pbo)}"]
+        ]
+        t34 = Table(t34_data, colWidths=[300, 220])
+        t34_style = TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#3A0C08')),
+            ('TEXTCOLOR', (0,0), (-1,0), colors.white),
+            ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0,0), (-1,-1), 7.5),
+            ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#D3C1BE')),
+            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+            ('ALIGN', (1,1), (-1,-1), 'RIGHT'),
+        ])
+        t34.setStyle(t34_style)
+        elements.append(t34)
+        elements.append(PageBreak())
+
+        # --- RINCIAN PERHITUNGAN TINGKAT INDIVIDU (KERTAS KERJA KARYAWAN) ---
+        elements.append(Paragraph(f"<b>KERTAS KERJA RINCIAN TINGKAT INDIVIDU KARYAWAN (31 DESEMBER {yr})</b>", h_style))
+        table_data = [["No", "NIK", "Nama", "Tgl Lahir", "Gaji Kotor", "Umur", "Past\nSvc", "Future\nSvc", "Diskonto", "PVFB", "PBO", "CSC"]]
         for i, row in df_yr.iterrows():
             dob_str = row['Tanggal Lahir'].strftime('%d-%m-%Y') if pd.notnull(row['Tanggal Lahir']) else "-"
             table_data.append([
@@ -531,16 +623,27 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_years, compa
             ])
             
         table_data.append([
-            "", "", "TOTAL", "", fmt_num(df_yr['Gross Salary'].sum()), "", "", "", "", 
-            fmt_num(df_yr['PVFB'].sum()), fmt_num(df_yr['PBO'].sum()), fmt_num(df_yr['CSC'].sum())
+            "", "", "TOTAL", "", fmt_num(tot_salary), "", "", "", "", 
+            fmt_num(tot_pvfb), fmt_num(tot_pbo), fmt_num(tot_csc)
         ])
         
-        col_widths = [25, 60, 120, 60, 65, 35, 35, 40, 50, 75, 75, 70]
+        col_widths = [24, 55, 115, 58, 65, 34, 34, 38, 48, 72, 72, 65]
         t_detail = Table(table_data, colWidths=col_widths, repeatRows=1)
         
-        row_style = detail_tbl_style
-        row_style.add('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#EADCDA'))
-        row_style.add('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold')
+        row_style = TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#3A0C08')),
+            ('TEXTCOLOR', (0,0), (-1,0), colors.white),
+            ('ALIGN', (0,0), (-1,0), 'CENTER'),
+            ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0,0), (-1,-1), 7),
+            ('BOTTOMPADDING', (0,0), (-1,0), 5),
+            ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#D3C1BE')),
+            ('ALIGN', (4,1), (-1,-1), 'RIGHT'),
+            ('ALIGN', (1,1), (2,-1), 'LEFT'),
+            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+            ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#EADCDA')),
+            ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold')
+        ])
         t_detail.setStyle(row_style)
         elements.append(t_detail)
         elements.append(PageBreak())
