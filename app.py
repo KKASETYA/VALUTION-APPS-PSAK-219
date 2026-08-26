@@ -663,7 +663,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_years, compa
     elements.append(Paragraph(f"Jakarta, {formatted_date}<br/><b>KANTOR KONSULTAN AKTUARIA SETYA GUNAWAN</b><br/><br/><br/><br/><b>Tim Aktuaris Publik</b>", ParagraphStyle('SignBlock', parent=styles['Normal'], fontSize=9, alignment=2)))
         
     doc.build(
-       # Membangun dokumen dengan page template kustom untuk orientasi berbeda tiap halaman
+      # Membangun dokumen dengan page template kustom untuk orientasi berbeda tiap halaman
     from reportlab.platypus import PageTemplate, BaseDocTemplate, Frame
     
     # Buat custom DocTemplate yang mendukung pergantian ukuran/orientasi halaman
