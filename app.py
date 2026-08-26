@@ -531,12 +531,11 @@ def draw_footer_landscape(canvas, doc):
 
 def generate_detailed_report(results_dict, salary_inc, ret_age, val_years, company_name, report_no, report_date):
     pdf_buffer = io.BytesIO()
-    # Menggunakan ukuran Portrait (Letter tegak) agar persis seperti desain cover yang diunggah
-    doc = SimpleDocTemplate(pdf_buffer, pagesize=letter, rightMargin=54, leftMargin=54, topMargin=54, bottomMargin=54)
+    # Mengubah ukuran halaman Cover menjadi A4 Portrait (Tegak)
+    doc = SimpleDocTemplate(pdf_buffer, pagesize=A4, rightMargin=54, leftMargin=54, topMargin=54, bottomMargin=54)
     elements = []
     styles = getSampleStyleSheet()
     
-    # Gaya Huruf Khusus Cover Sesuai Gambar
     cover_title_style = ParagraphStyle(
         'CoverMainTitle', parent=styles['Normal'], 
         fontName='Helvetica-Bold', fontSize=18, textColor=colors.HexColor('#D96B27'), 
@@ -564,11 +563,11 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_years, compa
     )
     
     h_style = ParagraphStyle('SecH', parent=styles['Heading2'], fontSize=11, textColor=colors.HexColor('#C2382D'), spaceBefore=12, spaceAfter=6)
-    body_style = ParagraphStyle('BodyCustom', parent=styles['Normal'], fontSize=9, textColor=colors.HexColor('#222222'), spaceBefore=4, spaceAfter=8, leading=13)
+    body_style = ParagraphStyle('BodyCustom', parent=styles['Normal'], fontSize=9, textColor=colors.HexColor('#222222'], spaceBefore=4, spaceAfter=8, leading=13)
 
     formatted_date = report_date.strftime('%d %B %Y') if hasattr(report_date, 'strftime') else str(report_date)
 
-    # 1. HALAMAN SAMPUL (COVER) SESUAI DESAIN GAMBAR
+    # 1. HALAMAN SAMPUL (COVER) DENGAN UKURAN A4
     if os.path.exists("logo.png"):
         logo = Image("logo.png", width=1.6*inch, height=0.9*inch)
         logo.hAlign = 'RIGHT'
@@ -579,15 +578,13 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_years, compa
 
     elements.append(Paragraph("FINAL ACTUARIAL REPORT", cover_title_style))
     elements.append(Paragraph(f"PT {company_name.upper()}", cover_sub_style))
-    
     elements.append(Spacer(1, 100))
-    
     elements.append(Paragraph("EMPLOYEE BENEFITS LIABILITIES", cover_desc_style))
     elements.append(Paragraph(f"NO. {report_no}", cover_desc_style))
     elements.append(Spacer(1, 20))
     elements.append(Paragraph(f"PERIOD DECEMBER, 31ST {val_years[0] if val_years else '2022'}", cover_date_style))
-    
     elements.append(Spacer(1, 30))
+    
     address_block = (
         "<b>KKA SETYA GUNAWAN</b><br/>"
         "Cilandak 88 Condominium Unit D-1<br/>"
@@ -598,8 +595,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_years, compa
     elements.append(Paragraph(address_block, cover_address_style))
     elements.append(PageBreak())
 
-    # 2. STRUKTUR ISI LAPORAN & LAMPIRAN (Menggunakan Landscape Letter untuk Tabel Detail)
-    # Catatan: Bagian isi laporan dan tabel tetap menggunakan format profesional yang Anda miliki
+    # 2. HALAMAN ISI & LAMPIRAN (Menggunakan ukuran A4 Landscape agar tabel muat dengan rapi)
     for yr in sorted(val_years, reverse=True):
         df_yr = results_dict[yr]
         if df_yr.empty: continue
@@ -622,7 +618,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_years, compa
             ["7. Biaya Jasa Kini (Current Service Cost)", f"Rp {fmt_num(tot_csc)}", "Rp 0"],
             ["8. Nilai Kini Kewajiban / PVDBO (Obligation)", f"Rp {fmt_num(tot_pbo)}", "Rp 0"]
         ]
-        t1 = Table(t1_data, colWidths=[280, 150, 150])
+        t1 = Table(t1_data, colWidths=[280, 200, 200])
         t1.setStyle(TableStyle([
             ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#3A0C08')),
             ('TEXTCOLOR', (0,0), (-1,0), colors.white),
@@ -636,10 +632,17 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_years, compa
         elements.append(Spacer(1, 15))
         elements.append(PageBreak())
 
-    doc.build(elements, onFirstPage=draw_cover_background, onLaterPages=draw_footer_landscape)
+    # Build dokumen dengan orientasi campuran (Cover A4 Portrait, Isi A4 Landscape)
+    doc.build(
+        elements, 
+        onFirstPage=draw_cover_background, 
+        onLaterPages=lambda canvas, doc: (
+            doc.setPageSize(landscape(A4)), 
+            draw_footer_landscape(canvas, doc)
+        )
+    )
     pdf_buffer.seek(0)
     return pdf_buffer
-
     # 3. RINGKASAN HASIL & TABEL BAKU KKA
     for yr in sorted(val_years, reverse=True):
         df_yr = results_dict[yr]
