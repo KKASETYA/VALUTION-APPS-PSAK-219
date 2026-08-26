@@ -674,7 +674,7 @@ menu = st.session_state["menu"]
 # 8. HALAMAN: BERANDA
 # ==========================================
 if menu == "🏠 Beranda":
-    st.markdown(f"""
+    html_content = f"""
     <div class="hero-section">
         {LOGO_CHIP_HTML}
         <div class="badge-gold">✓ TERDAFTAR OJK & KEMENKEU — {COMPANY_MENKEU}</div>
@@ -691,7 +691,8 @@ if menu == "🏠 Beranda":
             <span class="badge-soft">🗂️ Integrasi API & Otomasi</span>
         </div>
     </div>
-    """, unsafe_allow_html=True)
+    """
+    st.markdown(html_content, unsafe_allow_html=True)
 
     c1, c2 = st.columns([1, 1])
     with c1:
