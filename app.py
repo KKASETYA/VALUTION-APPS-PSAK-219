@@ -15,7 +15,7 @@ from reportlab.lib import colors
 from reportlab.lib.units import inch
 
 # ==========================================
-# KONFIGURASI HALAMAN & IDENTITAS KKA NIRMALA
+# KONFIGURASI HALAMAN & IDENTITAS KKA Setya Gunawan
 # ==========================================
 st.set_page_config(
     page_title="KKA Setya Gunawan | Kantor Konsultan Aktuaria",
@@ -40,7 +40,7 @@ header[data-testid="stHeader"] { background: transparent; }
 
 .main .block-container { padding-top: 1.5rem; padding-bottom: 3rem; max-width: 1180px; }
 
-/* ---------- Sidebar KKA Nirmala ---------- */
+/* ---------- Sidebar KKA Setya Gunawan ---------- */
 [data-testid="stSidebar"] {
     background: linear-gradient(180deg, #3A0C08 0%, #7A1C14 60%, #A82B20 100%);
 }
@@ -601,7 +601,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_years, compa
     return pdf_buffer
 
 # ==========================================
-# 6. KONSTANTA KORPORAT KKA NIRMALA
+# 6. KONSTANTA KORPORAT KKA Setya Gunawan
 # ==========================================
 COMPANY_LEGAL_NAME = "Kantor Konsultan Aktuaria Setya Gunawan"
 COMPANY_LICENSE = "Izin Badan Usaha Kemenkeu RI No. 4.21.0007"
@@ -679,7 +679,7 @@ if menu == "🏠 Beranda":
         <div class="hero-section">
             {LOGO_CHIP_HTML}
             <div class="badge-gold">✓ TERDAFTAR OJK & KEMENKEU — {COMPANY_MENKEU}</div>
-            <div class="hero-title">Kantor Konsultan Aktuaria Nirmala<br/>Solusi Profesional PSAK 219</div>
+            <div class="hero-title">Kantor Konsultan Aktuaria Setya Gunawan<br/>Solusi Profesional PSAK 219</div>
             <div class="hero-sub">
                 {COMPANY_LEGAL_NAME} menyediakan jasa valuasi aktuaria imbalan kerja,
                 konsultasi program pensiun, dan pelaporan keuangan sesuai standar <b>PSAK 219 & IFRIC AD</b> — 
