@@ -652,7 +652,7 @@ with st.sidebar:
     st.markdown(f"""
     <div class="sidebar-brand">
         {logo_img_html}
-        <div class="sidebar-brand-title" style="margin-top:10px;">Nirmala</div>
+        <div class="sidebar-brand-title" style="margin-top:10px;">Setya Gunawan</div>
         <div class="sidebar-brand-sub">Kantor Konsultan Aktuaria</div>
     </div>
     """, unsafe_allow_html=True)
