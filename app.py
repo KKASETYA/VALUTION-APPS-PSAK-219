@@ -6,7 +6,7 @@ import datetime
 import os
 import re
 
-from reportlab.lib.pagesizes import letter
+from reportlab.lib.pagesizes import letter, landscape
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, Image
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
@@ -47,22 +47,16 @@ MULTI_YEAR_PHEI_CURVE = {
 }
 
 def get_individual_phei_rate(duration, valuation_year):
-    """Fungsi mengambil diskonto individual matching spesifik per sisa masa kerja."""
-    # Pastikan tahun ada dalam database, jika tidak gunakan batas terdekat
     if valuation_year not in MULTI_YEAR_PHEI_CURVE:
         valuation_year = max(MULTI_YEAR_PHEI_CURVE.keys()) if valuation_year > max(MULTI_YEAR_PHEI_CURVE.keys()) else min(MULTI_YEAR_PHEI_CURVE.keys())
     
     curve = MULTI_YEAR_PHEI_CURVE[valuation_year]
     dur_int = int(round(duration))
 
-    if dur_int in curve:
-        return curve[dur_int]
-    elif dur_int < 1:
-        return curve[0.1]
-    elif dur_int > 30:
-        return curve[30]
+    if dur_int in curve: return curve[dur_int]
+    elif dur_int < 1: return curve[0.1]
+    elif dur_int > 30: return curve[30]
     else:
-        # Interpolasi linear jika ada kebutuhan
         lower = max([t for t in curve.keys() if t <= duration])
         upper = min([t for t in curve.keys() if t >= duration])
         if lower == upper: return curve[lower]
@@ -96,34 +90,29 @@ def parse_excel_dataset(file_or_buffer, sheet_name=0):
         dob = row.iloc[3]
         doe = row.iloc[4]
         salary = row.iloc[5]
-        dplk = row.iloc[6] if len(row) > 6 else 0.0
         
         if pd.isna(nik) and pd.isna(nama): continue
             
         try: salary_val = float(salary) if not pd.isna(salary) else 0.0
         except: salary_val = 0.0
             
-        try: dplk_val = float(dplk) if not pd.isna(dplk) else 0.0
-        except: dplk_val = 0.0
-            
         clean_data.append({
             'NIK': str(nik).strip() if not pd.isna(nik) else '',
             'Nama': str(nama).strip() if not pd.isna(nama) else '',
             'Tanggal Lahir': dob,
             'Tgl. Mulai Bekerja': doe,
-            'Total Upah Bulanan (Gross)': salary_val,
-            'Saldo DPLK': dplk_val
+            'Total Upah Bulanan (Gross)': salary_val
         })
         
     return pd.DataFrame(clean_data)
 
 
 # ==========================================
-# 2. ENGINE AKTUARIA (PHEI INDIVIDUAL MATCHING)
+# 2. ENGINE AKTUARIA (DENGAN OUTPUT DETAIL)
 # ==========================================
 class PSAK219Engine:
     def __init__(self, valuation_year, salary_increase, retirement_age):
-        self.val_year = valuation_year # Tahun valuasi disimpan di init
+        self.val_year = valuation_year 
         self.salary_inc = salary_increase
         self.ret_age = retirement_age
         
@@ -163,15 +152,12 @@ class PSAK219Engine:
     def calculate_puc(self, current_age, past_service, current_salary):
         years_to_retire = self.ret_age - current_age
         if pd.isna(current_age) or pd.isna(past_service) or pd.isna(current_salary) or years_to_retire <= 0:
-            return {'PBO': 0, 'CSC': 0, 'Applied_Discount': 0, 'Undiscounted_PBO': 0, 'Tenor_Bracket': '> 5'}
+            return {'Future Service': 0, 'Total Service': past_service, 'Applied_Discount': 0, 'PVFB': 0, 'PBO': 0, 'CSC': 0}
             
-        # [MODIFIKASI]: Ambil diskonto spesifik per individu berdasarkan tenor (future service)
         discount_rate = get_individual_phei_rate(years_to_retire, self.val_year)
-        
         total_service = past_service + years_to_retire
         pvfb_death, pvfb_disability = 0, 0
         p_survival = 1.0 
-        undiscounted_benefit = 0
         
         for t in range(int(years_to_retire)):
             age_t = current_age + t
@@ -186,7 +172,6 @@ class PSAK219Engine:
             
             pvfb_death += b_death * v * (p_survival * q_m)
             pvfb_disability += b_disab * v * (p_survival * q_d)
-            undiscounted_benefit += (b_death * (p_survival * q_m)) + (b_disab * (p_survival * q_d))
             p_survival *= (1 - (q_m + q_d + q_w))
             
         salary_ret = current_salary * ((1 + self.salary_inc) ** years_to_retire)
@@ -195,291 +180,235 @@ class PSAK219Engine:
         v_ret = 1 / ((1 + discount_rate) ** years_to_retire)
         pvfb_ret = b_ret * v_ret * p_survival
         
-        undiscounted_benefit += b_ret * p_survival
         total_pvfb = pvfb_death + pvfb_disability + pvfb_ret
         pbo = total_pvfb * (past_service / total_service)
         csc = total_pvfb / total_service
         
-        if years_to_retire < 1: tenor = "< 1"
-        elif years_to_retire <= 2: tenor = "1 - 2"
-        elif years_to_retire <= 5: tenor = "2 - 5"
-        else: tenor = "> 5"
-        
-        # Simpan diskonto yang digunakan agar bisa ditinjau di tabel
         return {
-            'PBO': pbo, 'CSC': csc, 
+            'Future Service': years_to_retire,
+            'Total Service': total_service,
             'Applied_Discount': discount_rate,
-            'Undiscounted_PBO': undiscounted_benefit * (past_service/total_service), 
-            'Tenor_Bracket': tenor, 'Retirement_Benefit': b_ret
+            'PVFB': total_pvfb,
+            'PBO': pbo,
+            'CSC': csc
         }
 
 
 # ==========================================
-# 3. GENERATOR PDF MULTI-TAHUN
+# 3. GENERATOR PDF DETAIL (LANDSCAPE)
 # ==========================================
-def draw_footer(canvas, doc):
+def draw_footer_landscape(canvas, doc):
     canvas.saveState()
     canvas.setStrokeColor(colors.black)
     canvas.setLineWidth(1)
-    canvas.line(36, 65, 576, 65)
-    
-    footer_text1 = "Konsultan Aktuaria Setya Gunawan"
-    footer_text2 = "Izin Perusahaan No. 4.21.0007 | Keputusan Menteri Keuangan RI No. 590/KM.1/2021 | AKAI - 21043"
-    footer_text3 = "Cilandak 88 Condominium UNIT D-1, Jl. Margasatwa Barat No.88, Cilandak Timur, Pasar Minggu,"
-    footer_text4 = "Jakarta Selatan, DKI Jakarta 12560 | HP/WA (0812) 9090 9019 | Email: kka_setyagunawan@yahoo.com"
+    canvas.line(36, 45, landscape(letter)[0] - 36, 45) # Disesuaikan lebar landscape
     
     canvas.setFont('Helvetica-Bold', 9)
-    canvas.drawCentredString(letter[0]/2.0, 50, footer_text1)
+    canvas.drawCentredString(landscape(letter)[0]/2.0, 30, "Konsultan Aktuaria Setya Gunawan")
     canvas.setFont('Helvetica', 8)
-    canvas.drawCentredString(letter[0]/2.0, 40, footer_text2)
-    canvas.drawCentredString(letter[0]/2.0, 30, footer_text3)
-    canvas.drawCentredString(letter[0]/2.0, 20, footer_text4)
+    canvas.drawCentredString(landscape(letter)[0]/2.0, 20, "Izin Perusahaan No. 4.21.0007 | Keputusan Menteri Keuangan RI No. 590/KM.1/2021 | AKAI - 21043")
     canvas.restoreState()
 
-def generate_multiyear_report(results_dict, dplk_dict, salary_inc, ret_age, val_years, report_date, company_name, report_no, pic_name, pic_title):
+def generate_detailed_report(results_dict, salary_inc, ret_age, val_years, company_name, report_no):
     pdf_buffer = io.BytesIO()
-    doc = SimpleDocTemplate(pdf_buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=80)
+    # Menggunakan orientasi LANDSCAPE agar tabel rinci muat
+    doc = SimpleDocTemplate(pdf_buffer, pagesize=landscape(letter), rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=60)
     elements = []
     styles = getSampleStyleSheet()
     
-    h_style = ParagraphStyle('SecH', parent=styles['Heading2'], fontSize=11, textColor=colors.black, spaceBefore=15, spaceAfter=8)
-    title_style = ParagraphStyle('CoverTitle', parent=styles['Heading1'], fontSize=16, textColor=colors.black, alignment=1, spaceBefore=20, spaceAfter=10)
-    sub_style = ParagraphStyle('CoverSub', parent=styles['Normal'], fontSize=12, textColor=colors.black, alignment=1, spaceAfter=20)
+    title_style = ParagraphStyle('CoverTitle', parent=styles['Heading1'], fontSize=16, textColor=colors.black, alignment=1, spaceBefore=10, spaceAfter=10)
+    sub_style = ParagraphStyle('CoverSub', parent=styles['Normal'], fontSize=11, textColor=colors.black, alignment=1, spaceAfter=20)
+    h_style = ParagraphStyle('SecH', parent=styles['Heading2'], fontSize=12, textColor=colors.HexColor('#1E3A8A'), spaceBefore=15, spaceAfter=10)
     
     sorted_years = sorted(val_years, reverse=True)
     
-    std_tbl_style = TableStyle([
-        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#F2F2F2')),
-        ('TEXTCOLOR', (0,0), (-1,0), colors.black),
+    detail_tbl_style = TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#2E86C1')),
+        ('TEXTCOLOR', (0,0), (-1,0), colors.white),
         ('ALIGN', (0,0), (-1,0), 'CENTER'),
         ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0,0), (-1,-1), 8),
         ('BOTTOMPADDING', (0,0), (-1,0), 6),
         ('GRID', (0,0), (-1,-1), 0.5, colors.black),
-        ('ALIGN', (1,1), (-1,-1), 'RIGHT'),
-        ('FONTSIZE', (0,0), (-1,-1), 9),
+        ('ALIGN', (4,1), (-1,-1), 'RIGHT'), # Ratakan angka ke kanan
+        ('ALIGN', (1,1), (2,-1), 'LEFT'),   # NIK & Nama rata kiri
         ('VALIGN', (0,0), (-1,-1), 'MIDDLE')
     ])
     
-    if os.path.exists("logo.png"):
-        logo = Image("logo.png", width=3*inch, height=3*inch)
-        logo.hAlign = 'CENTER'
-        elements.append(logo)
-    
-    elements.append(Spacer(1, 20))
     elements.append(Paragraph(f"<b>PT. {company_name.upper()}</b>", title_style))
-    elements.append(Paragraph(f"<b>MULTI-YEAR ACTUARIAL VALUATION BASED ON<br/>PSAK 219 EMPLOYEE BENEFIT</b><br/><br/>Valuation Years: {', '.join(map(str, sorted_years))}<br/><i>Discount Rate Method: Individual Yield Curve Matching (PHEI)</i><br/><br/><b>FINAL REPORT NO. {report_no}</b>", sub_style))
-    elements.append(PageBreak())
+    elements.append(Paragraph(f"<b>DETAIL CALCULATION OF ACTUARIAL VALUATION (PSAK 219)</b><br/>Report No: {report_no}", sub_style))
     
-    elements.append(Paragraph(f"<b>IV. Employee Data Information (Multi-Year Comparison)</b>", h_style))
-    header_info = ["No.", "Description"] + [f"Dec 31, {yr}" for yr in sorted_years]
-    info_rows = [
-        header_info,
-        ["1", "Total Participant (Person)"] + [fmt_num(len(results_dict[yr])) for yr in sorted_years],
-        ["2", "Average Age (year)"] + [fmt_num(results_dict[yr]['Age Valuation'].mean() if not results_dict[yr].empty else 0, 2) for yr in sorted_years],
-        ["3", "Average Past Service (year)"] + [fmt_num(results_dict[yr]['Past Service'].mean() if not results_dict[yr].empty else 0, 2) for yr in sorted_years],
-        ["4", "Future Service (year)"] + [fmt_num(ret_age - results_dict[yr]['Age Valuation'].mean() if not results_dict[yr].empty else 0, 2) for yr in sorted_years],
-        ["5", "Total Monthly Payroll (Rp.)"] + [fmt_num(results_dict[yr]['Gross Salary'].sum() if not results_dict[yr].empty else 0) for yr in sorted_years],
-        ["6", "Saldo DPLK (Rp.)"] + [fmt_num(dplk_dict.get(yr, 0.0)) for yr in sorted_years]
-    ]
-    col_w = [35, 215] + [85 for _ in sorted_years]
-    t_info = Table(info_rows, colWidths=col_w)
-    t_info.setStyle(std_tbl_style)
-    t_info.setStyle(TableStyle([('ALIGN', (1,1), (1,-1), 'LEFT'), ('ALIGN', (0,1), (0,-1), 'CENTER')]))
-    elements.append(t_info)
-    elements.append(PageBreak())
-    
-    elements.append(Paragraph("<b>1. Liabilities Recognized in Balance Sheet</b>", h_style))
-    bs_rows = [
-        ["DESCRIPTION"] + [f"Dec 31, {yr}" for yr in sorted_years],
-        ["Present value of define benefit obligation"] + [fmt_num(results_dict[yr]['PBO'].sum() if not results_dict[yr].empty else 0) for yr in sorted_years],
-        ["Fair value of plan asset (Saldo DPLK)"] + [fmt_num(dplk_dict.get(yr, 0.0)) for yr in sorted_years],
-        ["Funded Status"] + [fmt_num((results_dict[yr]['PBO'].sum() if not results_dict[yr].empty else 0) - dplk_dict.get(yr, 0.0)) for yr in sorted_years],
-        ["The Effect of the Assets Limitation"] + ["-" for _ in sorted_years],
-        ["(Assets) / Liability in Balance Sheet"] + [fmt_num((results_dict[yr]['PBO'].sum() if not results_dict[yr].empty else 0) - dplk_dict.get(yr, 0.0)) for yr in sorted_years]
-    ]
-    col_w2 = [240] + [85 for _ in sorted_years]
-    t_bs = Table(bs_rows, colWidths=col_w2)
-    t_bs.setStyle(std_tbl_style)
-    t_bs.setStyle(TableStyle([('ALIGN', (0,1), (0,-1), 'LEFT'), ('FONTNAME', (0,3), (-1,3), 'Helvetica-Bold'), ('FONTNAME', (0,5), (-1,5), 'Helvetica-Bold')]))
-    elements.append(t_bs)
-    elements.append(Spacer(1, 15))
-    
-    doc.build(elements, onFirstPage=draw_footer, onLaterPages=draw_footer)
+    for yr in sorted_years:
+        elements.append(Paragraph(f"<b>Rincian Perhitungan Tingkat Individu per 31 Desember {yr}</b>", h_style))
+        
+        df_yr = results_dict[yr]
+        if df_yr.empty:
+            continue
+            
+        # Membuat Header Tabel (Mirip Kertas Kerja Aktuaris)
+        table_data = [["No", "NIK", "Nama", "Tgl Lahir", "Gaji Kotor", "Umur", "Past\nSvc", "Future\nSvc", "Diskonto\nPHEI", "PVFB", "PBO", "CSC"]]
+        
+        for i, row in df_yr.iterrows():
+            dob_str = row['Tanggal Lahir'].strftime('%d-%m-%Y') if pd.notnull(row['Tanggal Lahir']) else "-"
+            table_data.append([
+                str(i + 1),
+                str(row['NIK']),
+                str(row['Name'])[:20], # Potong nama jika terlalu panjang
+                dob_str,
+                fmt_num(row['Gross Salary']),
+                fmt_num(row['Age Valuation'], 2),
+                fmt_num(row['Past Service'], 2),
+                fmt_num(row['Future Service'], 2),
+                f"{row['Applied_Discount']*100:.2f}%",
+                fmt_num(row['PVFB']),
+                fmt_num(row['PBO']),
+                fmt_num(row['CSC'])
+            ])
+            
+        # Total Row
+        table_data.append([
+            "", "", "TOTAL", "", 
+            fmt_num(df_yr['Gross Salary'].sum()), 
+            "", "", "", "", 
+            fmt_num(df_yr['PVFB'].sum()), 
+            fmt_num(df_yr['PBO'].sum()), 
+            fmt_num(df_yr['CSC'].sum())
+        ])
+        
+        # Lebar Kolom Disesuaikan untuk Landscape Letter (Total Lebar ~720 points)
+        col_widths = [25, 65, 120, 60, 70, 35, 35, 40, 50, 75, 75, 70]
+        t_detail = Table(table_data, colWidths=col_widths, repeatRows=1)
+        
+        # Style khusus untuk baris Total
+        row_style = detail_tbl_style
+        row_style.add('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#D5D8DC'))
+        row_style.add('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold')
+        
+        t_detail.setStyle(row_style)
+        elements.append(t_detail)
+        elements.append(PageBreak())
+        
+    doc.build(elements, onFirstPage=draw_footer_landscape, onLaterPages=draw_footer_landscape)
     pdf_buffer.seek(0)
     return pdf_buffer
 
 
 # ==========================================
-# 4. STREAMLIT WEB INTERFACE (DUAL MODE)
+# 4. STREAMLIT WEB INTERFACE 
 # ==========================================
-st.set_page_config(page_title="Valuasi Aktuaria Multi-Tahun", layout="wide")
-st.title("📄 Generator Laporan Aktuaria Multi-Tahun (PHEI Individual Matching)")
+st.set_page_config(page_title="Valuasi Aktuaria Terperinci", layout="wide")
+st.title("📄 Generator Laporan Aktuaria Tingkat Individu (Individual Duration Matching)")
 
-st.sidebar.header("⚙️ Pengaturan Dokumen & Klien")
+st.sidebar.header("⚙️ Pengaturan Parameter")
 input_perusahaan = st.sidebar.text_input("Nama Perusahaan Klien", "PT GATRA MAPAN INDONESIA")
-nama_pic = st.sidebar.text_input("Nama PIC Klien", "Toar P.A. Weku")
-jabatan_pic = st.sidebar.text_input("Jabatan PIC Klien", "Direktur Keuangan")
-
-st.sidebar.markdown("---")
-tanggal_laporan = st.sidebar.date_input("Tanggal Laporan Diterbitkan", datetime.date(2026, 3, 27))
-auto_report_no = f"082/KAS-FR/PSAK/III/{tanggal_laporan.strftime('%Y')}"
-nomor_laporan = st.sidebar.text_input("Nomor Laporan Baku", auto_report_no)
-
-st.sidebar.info("💡 **Tingkat Diskonto:** Diambil secara otomatis berdasarkan Kurva PHEI (2022-2025) untuk setiap individu sesuai dengan tenor masa depan mereka.")
+tanggal_laporan = st.sidebar.date_input("Tanggal Laporan Diterbitkan", datetime.date.today())
+nomor_laporan = st.sidebar.text_input("Nomor Laporan Baku", f"082/KAS-FR/PSAK/III/{tanggal_laporan.strftime('%Y')}")
 
 asumsi_gaji = st.sidebar.number_input("Kenaikan Gaji (%)", value=5.0, step=0.1) / 100
-usia_pensiun = st.sidebar.number_input("Usia Pensiun Normal", value=60, step=1)
+usia_pensiun = st.sidebar.number_input("Usia Pensiun Normal", value=56, step=1) # Disesuaikan dengan gambar referensi
 
-metode_utama = st.radio(
-    "Pilih Metode Masukan Data:", 
-    ["Upload Excel Multi-Tahun (Auto-Detect Sheet 2021-2025)", "Input / Edit Manual Langsung di Web (Multi-Tab Tahun)"]
-)
+st.info("Unggah Data Karyawan untuk melihat rincian Aktuaria per Individu seperti Nilai PVFB, PBO, dan CSC dengan tingkat diskonto PHEI yang presisi.")
 
+uploaded_file = st.file_uploader("Unggah File Excel Berisi Sensus (Contoh: Sheet 2022)", type=["xlsx", "xls"])
 datasets_to_process = {}
 
-if metode_utama == "Upload Excel Multi-Tahun (Auto-Detect Sheet 2021-2025)":
-    st.subheader("Unggah File Excel Berisi Sheet Multi-Tahun")
-    uploaded_file = st.file_uploader("Pilih file Excel (.xlsx / .xls)", type=["xlsx", "xls"])
-    
-    if uploaded_file is not None:
-        try:
-            xl_file = pd.ExcelFile(uploaded_file)
-            sheet_names = xl_file.sheet_names
-            st.success(f"Berhasil mendeteksi {len(sheet_names)} sheet: {sheet_names}")
+if uploaded_file is not None:
+    try:
+        xl_file = pd.ExcelFile(uploaded_file)
+        for sh in xl_file.sheet_names:
+            match = re.search(r'(20\d{2})', sh)
+            if match:
+                yr = int(match.group(1))
+                datasets_to_process[yr] = parse_excel_dataset(uploaded_file, sheet_name=sh)
+                
+        if not datasets_to_process: # Fallback jika nama sheet tidak ada tahunnya
+            datasets_to_process[2022] = parse_excel_dataset(uploaded_file, sheet_name=0)
             
-            detected_years = []
-            sheet_map = {}
-            for sh in sheet_names:
-                match = re.search(r'(20\d{2})', sh)
-                if match:
-                    yr = int(match.group(1))
-                    detected_years.append(yr)
-                    sheet_map[yr] = sh
-                    
-            if detected_years:
-                detected_years = sorted(list(set(detected_years)))
-                st.info(f"Tahun terdeteksi secara otomatis dari nama sheet: {detected_years}")
-                for yr in detected_years:
-                    datasets_to_process[yr] = parse_excel_dataset(uploaded_file, sheet_name=sheet_map[yr])
-            else:
-                st.warning("Nama sheet tidak mengandung tahun. Menggunakan tahun 2025 sebagai default.")
-                datasets_to_process[2025] = parse_excel_dataset(uploaded_file, sheet_name=0)
-        except Exception as e:
-            st.error(f"Gagal membaca file Excel: {e}")
-else:
-    st.subheader("Input / Edit Manual Data Sensus per Tahun")
-    tahun_list = [2025, 2024, 2023, 2022]
-    tabs = st.tabs([f"Tahun {yr}" for yr in tahun_list])
-    
-    default_data_dict = {
-        2025: pd.DataFrame([{"NIK": "2051205860", "Nama": "MOHAMAD RAHMAT", "Tanggal Lahir": datetime.date(1986, 5, 12), "Tgl. Mulai Bekerja": datetime.date(2018, 4, 18), "Total Upah Bulanan (Gross)": 3650000.0, "Saldo DPLK": 0.0}]),
-        2024: pd.DataFrame([{"NIK": "2051205860", "Nama": "MOHAMAD RAHMAT", "Tanggal Lahir": datetime.date(1986, 5, 12), "Tgl. Mulai Bekerja": datetime.date(2018, 4, 18), "Total Upah Bulanan (Gross)": 3400000.0, "Saldo DPLK": 0.0}]),
-        2023: pd.DataFrame([{"NIK": "2051205860", "Nama": "MOHAMAD RAHMAT", "Tanggal Lahir": datetime.date(1986, 5, 12), "Tgl. Mulai Bekerja": datetime.date(2018, 4, 18), "Total Upah Bulanan (Gross)": 3100000.0, "Saldo DPLK": 0.0}]),
-        2022: pd.DataFrame([{"NIK": "2051205860", "Nama": "MOHAMAD RAHMAT", "Tanggal Lahir": datetime.date(1986, 5, 12), "Tgl. Mulai Bekerja": datetime.date(2018, 4, 18), "Total Upah Bulanan (Gross)": 2800000.0, "Saldo DPLK": 0.0}])
-    }
-    
-    for i, yr in enumerate(tahun_list):
-        with tabs[i]:
-            st.write(f"Masukkan data karyawan per 31 Desember {yr}:")
-            datasets_to_process[yr] = st.data_editor(default_data_dict[yr], num_rows="dynamic", key=f"manual_edit_{yr}", use_container_width=True)
+        st.success(f"Berhasil mendeteksi Sensus Karyawan untuk tahun: {list(datasets_to_process.keys())}")
+    except Exception as e:
+        st.error(f"Gagal membaca file: {e}")
 
 st.markdown("---")
-st.subheader("Proses & Unduh Hasil Perhitungan")
 
-if "calculated_results" not in st.session_state:
-    st.session_state.calculated_results = None
-
-if st.button("Jalankan Valuasi & Tampilkan Hasil 🚀") and datasets_to_process:
-    with st.spinner("Memproses perhitungan aktuaria..."):
+if st.button("🚀 Jalankan Valuasi Detail & Buat Laporan", type="primary") and datasets_to_process:
+    with st.spinner("Menarik data Kurva PHEI dan menghitung PVFB, PBO, CSC per karyawan..."):
         results_dict = {}
-        dplk_dict = {}
         active_years = sorted(list(datasets_to_process.keys()))
         
         for yr in active_years:
             val_date_dt = datetime.datetime(yr, 12, 31)
             df_input = datasets_to_process[yr]
             hasil_valuasi = []
-            total_dplk_yr = 0.0
             
-            for _, row in df_input.iterrows():
-                dob_val = row.get("Tanggal Lahir")
-                doe_val = row.get("Tgl. Mulai Bekerja")
-                gross_salary = row.get("Total Upah Bulanan (Gross)", 0)
-                dplk_val = row.get("Saldo DPLK", 0.0)
-                
+            for idx, row in df_input.iterrows():
                 try:
-                    dob = pd.to_datetime(dob_val)
-                    doe = pd.to_datetime(doe_val)
-                    gross_salary = float(gross_salary)
-                    dplk_val = float(dplk_val) if not pd.isna(dplk_val) else 0.0
-                except:
-                    continue
+                    dob = pd.to_datetime(row.get("Tanggal Lahir"))
+                    doe = pd.to_datetime(row.get("Tgl. Mulai Bekerja"))
+                    gross_salary = float(row.get("Total Upah Bulanan (Gross)", 0))
+                except: continue
                     
-                if pd.isna(dob) or pd.isna(doe) or gross_salary <= 0:
-                    continue
+                if pd.isna(dob) or pd.isna(doe) or gross_salary <= 0: continue
                     
-                total_dplk_yr += dplk_val
                 current_age = (val_date_dt - dob).days / 365.25
                 past_service = (val_date_dt - doe).days / 365.25
                 
-                # Masukkan parameter TAHUN agar mesin mengekstrak diskonto yang tepat
                 engine = PSAK219Engine(valuation_year=yr, salary_increase=asumsi_gaji, retirement_age=usia_pensiun)
                 kalkulasi = engine.calculate_puc(current_age, past_service, gross_salary)
                 
                 hasil_valuasi.append({
                     "NIK": row.get("NIK", "N/A"), 
                     "Name": row.get("Nama", "Unknown"),
+                    "Tanggal Lahir": dob,
+                    "Gross Salary": gross_salary,
                     "Age Valuation": current_age, 
                     "Past Service": past_service,
-                    "Gross Salary": gross_salary, 
                     **kalkulasi
                 })
                 
             results_dict[yr] = pd.DataFrame(hasil_valuasi)
-            dplk_dict[yr] = total_dplk_yr
             
         st.session_state.results_dict = results_dict
-        st.session_state.dplk_dict = dplk_dict
         st.session_state.active_years = active_years
-        st.session_state.calculated_results = True
-        st.success("Perhitungan Aktuaria Berhasil Dijalankan! Penarikan diskonto individu aktif.")
+        st.session_state.calculated = True
 
-if st.session_state.get("calculated_results"):
-    st.subheader("📊 Ringkasan Hasil Kalkulasi di Website")
+if st.session_state.get("calculated"):
+    st.success("✅ Perhitungan Selesai! Berikut adalah rincian tingkat individu:")
+    
     res_dict = st.session_state.results_dict
-    dp_dict = st.session_state.dplk_dict
     act_yrs = st.session_state.active_years
     
-    summary_data = []
+    # Menampilkan DataFrame terperinci di antarmuka Web
     for yr in sorted(act_yrs, reverse=True):
-        df_y = res_dict[yr]
-        pbo_y = df_y['PBO'].sum() if not df_y.empty else 0
-        csc_y = df_y['CSC'].sum() if not df_y.empty else 0
-        payroll_y = df_y['Gross Salary'].sum() if not df_y.empty else 0
-        dplk_y = dp_dict[yr]
-        avg_discount = df_y['Applied_Discount'].mean() if not df_y.empty else 0
+        st.subheader(f"Data Valuasi Aktuaria - Tahun {yr}")
         
-        summary_data.append({
-            "Periode Tahun": f"31 Dec {yr}",
-            "Sistem Diskonto": f"PHEI Matched (~{avg_discount*100:.2f}%)",
-            "Total Peserta": len(df_y),
-            "Total Payroll Bulanan": f"Rp {payroll_y:,.0f}".replace(",", "."),
-            "Present Value of DBO (PBO)": f"Rp {pbo_y:,.0f}".replace(",", "."),
-            "Current Service Cost (CSC)": f"Rp {csc_y:,.0f}".replace(",", "."),
-            "Saldo DPLK": f"Rp {dplk_y:,.0f}".replace(",", "."),
-            "Liabilitas Netto": f"Rp {pbo_y - dplk_y:,.0f}".replace(",", ".")
-        })
+        df_display = res_dict[yr].copy()
+        
+        # Formatting untuk tampilan web yang enak dibaca
+        df_display['Tanggal Lahir'] = df_display['Tanggal Lahir'].dt.strftime('%d-%m-%Y')
+        df_display['Gross Salary'] = df_display['Gross Salary'].apply(lambda x: f"Rp {x:,.0f}".replace(",", "."))
+        df_display['Age Valuation'] = df_display['Age Valuation'].apply(lambda x: f"{x:.2f}")
+        df_display['Past Service'] = df_display['Past Service'].apply(lambda x: f"{x:.2f}")
+        df_display['Future Service'] = df_display['Future Service'].apply(lambda x: f"{x:.2f}")
+        df_display['Discount Rate'] = df_display['Applied_Discount'].apply(lambda x: f"{x*100:.2f}%")
+        df_display['PVFB'] = df_display['PVFB'].apply(lambda x: f"Rp {x:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+        df_display['PBO'] = df_display['PBO'].apply(lambda x: f"Rp {x:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+        df_display['CSC'] = df_display['CSC'].apply(lambda x: f"Rp {x:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+        
+        # Atur urutan kolom yang ditampilkan agar persis kertas kerja aktuaris
+        kolom_pilihan = ['NIK', 'Name', 'Tanggal Lahir', 'Gross Salary', 'Age Valuation', 'Past Service', 'Future Service', 'Discount Rate', 'PVFB', 'PBO', 'CSC']
+        
+        st.dataframe(df_display[kolom_pilihan], use_container_width=True)
     
-    st.dataframe(pd.DataFrame(summary_data), use_container_width=True)
-    
-    pdf_file = generate_multiyear_report(
-        res_dict, dp_dict, asumsi_gaji, usia_pensiun, 
-        act_yrs, tanggal_laporan, input_perusahaan, nomor_laporan, nama_pic, jabatan_pic
+    # Tombol Unduh PDF Terperinci Landscape
+    pdf_file = generate_detailed_report(
+        res_dict, asumsi_gaji, usia_pensiun, act_yrs, input_perusahaan, nomor_laporan
     )
     
+    st.markdown("<br>", unsafe_allow_html=True)
     st.download_button(
-        label="📥 Download Laporan PDF Resmi Multi-Tahun",
+        label="📥 UNDUH LAPORAN DETAIL (PDF LANDSCAPE)",
         data=pdf_file,
-        file_name=f"FINAL_REPORT_PSAK219_{input_perusahaan.replace(' ', '_')}.pdf",
-        mime="application/pdf"
+        file_name=f"DETAIL_PSAK219_{input_perusahaan.replace(' ', '_')}.pdf",
+        mime="application/pdf",
+        type="primary"
     )
