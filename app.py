@@ -13,6 +13,7 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 from reportlab.lib.units import inch
+from streamlit_option_menu import option_menu
 
 # ==========================================
 # KONFIGURASI HALAMAN & IDENTITAS KKA Setya Gunawan
@@ -627,57 +628,60 @@ LOGO_CHIP_HTML = (
 ) if LOGO_B64 else ""
 
 # ==========================================
-# 7. NAVIGASI STATE SIDEBAR
+# 7. NAVIGASI HORIZONTAL NAVBAR ATAS
 # ==========================================
-MENU_OPTIONS = [
-    "🏠 Beranda",
-    "🏢 Tentang Kami",
-    "💼 Layanan Kami",
-    "🧮 Kalkulator Valuasi Aktuaria",
-    "📞 Kontak Kami",
-]
-
 if "menu" not in st.session_state:
-    st.session_state["menu"] = MENU_OPTIONS[0]
+    st.session_state["menu"] = "Beranda"
 
 def go_to(page_name):
     st.session_state["menu"] = page_name
     st.rerun()
 
-with st.sidebar:
-    logo_img_html = (
-        f'<img src="data:image/png;base64,{LOGO_B64}" style="max-width:150px;width:100%;border-radius:14px;background:#ffffff;padding:10px;box-shadow:0 6px 16px rgba(0,0,0,0.25);"/>'
-        if LOGO_B64 else "📐"
+with st.container():
+    if LOGO_B64:
+        st.markdown(f"""
+        <div style="text-align: center; margin-bottom: 5px;">
+            <img src="data:image/png;base64,{LOGO_B64}" style="height: 45px; vertical-align: middle;"/>
+            <span style="font-family:'Poppins',sans-serif; font-weight:800; font-size:1.1rem; margin-left:10px; vertical-align: middle; color:#3A0C08;">KKA Setya Gunawan</span>
+        </div>
+        """, unsafe_allow_html=True)
+
+    selected_nav = option_menu(
+        menu_title=None,
+        options=["Beranda", "Tentang Kami", "Layanan Kami", "Kalkulator Valuasi Aktuaria", "Kontak Kami"],
+        icons=["house", "building", "briefcase", "calculator", "envelope"],
+        menu_icon="cast",
+        default_index=["Beranda", "Tentang Kami", "Layanan Kami", "Kalkulator Valuasi Aktuaria", "Kontak Kami"].index(st.session_state["menu"]) if st.session_state["menu"] in ["Beranda", "Tentang Kami", "Layanan Kami", "Kalkulator Valuasi Aktuaria", "Kontak Kami"] else 0,
+        orientation="horizontal",
+        styles={
+            "container": {"padding": "0!important", "background-color": "#FAF1F0", "border-radius": "10px", "margin-bottom": "25px"},
+            "icon": {"color": "#C2382D", "font-size": "13px"}, 
+            "nav-link": {
+                "font-size": "13.5px",
+                "text-align": "center",
+                "margin": "0px 4px",
+                "font-family": "Inter, sans-serif",
+                "font-weight": "600",
+                "color": "#3A0C08",
+            },
+            "nav-link-selected": {"background-color": "#3A0C08", "color": "white !important"},
+        }
     )
-    st.markdown(f"""
-    <div class="sidebar-brand">
-        {logo_img_html}
-        <div class="sidebar-brand-title" style="margin-top:10px;">Setya Gunawan</div>
-        <div class="sidebar-brand-sub">Kantor Konsultan Aktuaria</div>
-    </div>
-    """, unsafe_allow_html=True)
 
-    st.radio("Navigasi", MENU_OPTIONS, key="menu", label_visibility="collapsed")
+menu_mapping = {
+    "Beranda": "🏠 Beranda",
+    "Tentang Kami": "🏢 Tentang Kami",
+    "Layanan Kami": "💼 Layanan Kami",
+    "Kalkulator Valuasi Aktuaria": "🧮 Kalkulator Valuasi Aktuaria",
+    "Kontak Kami": "📞 Kontak Kami"
+}
+menu = menu_mapping.get(selected_nav, "🏠 Beranda")
+st.session_state["menu"] = selected_nav
 
-    st.markdown(f"""
-    <div class="sidebar-contact-box">
-        📍 Cilandak 88 Condominium Unit D-1, Jl. Margasatwa Barat No. 88, Cilandak Timur, Pasar Minggu, Jakarta Selatan 12560<br/>
-        📱 {COMPANY_PHONE}<br/>
-        ✉️ {COMPANY_EMAIL}<br/><br/>
-        <span style="opacity:0.75; font-size:0.7rem;">{COMPANY_LICENSE}<br/>{COMPANY_OJK}<br/>AKKAI: {COMPANY_AKKAI}</span>
-    </div>
-    """, unsafe_allow_html=True)
-
-menu = st.session_state["menu"]
-
-# ==========================================
-# 8. HALAMAN: BERANDA
-# ==========================================
 # ==========================================
 # 8. HALAMAN: BERANDA
 # ==========================================
 if menu == "🏠 Beranda":
-    # Menggunakan container asli Streamlit agar aman dari error render HTML
     with st.container():
         st.success(f"✓ TERDAFTAR OJK & KEMENKEU — {COMPANY_MENKEU}")
         st.title(f"Kantor Konsultan Aktuaria Setya Gunawan\nSolusi Profesional PSAK 219")
@@ -693,10 +697,10 @@ if menu == "🏠 Beranda":
     c1, c2 = st.columns([1, 1])
     with c1:
         if st.button("Hitung Imbalan Kerja PSAK 219", use_container_width=True):
-            go_to("🧮 Kalkulator Valuasi Aktuaria")
+            go_to("Kalkulator Valuasi Aktuaria")
     with c2:
         if st.button("💼 Lihat Layanan Kami", use_container_width=True):
-            go_to("💼 Layanan Kami")
+            go_to("Layanan Kami")
 
     st.markdown("<hr class='divider-soft'/>", unsafe_allow_html=True)
 
@@ -724,7 +728,7 @@ if menu == "🏠 Beranda":
                 "Sistem mengintegrasikan asumsi demografi TMI IV, tingkat diskonto PHEI, serta analisis sensitivitas mendalam."
             )
             if st.button("🚀 Buka Kalkulator Valuasi Aktuaria", key="cta_flagship"):
-                go_to("🧮 Kalkulator Valuasi Aktuaria")
+                go_to("Kalkulator Valuasi Aktuaria")
     with fc2:
         with st.container(border=True):
             st.markdown("<b>Keunggulan Sistem KKA Setya Gunawan:</b>", unsafe_allow_html=True)
@@ -733,9 +737,6 @@ if menu == "🏠 Beranda":
             st.write("👥 **Tabel rincian tingkat individu langsung di web**")
             st.write("📄 Ekspor Laporan PDF sesuai dengan standar penyajian laporan KKA")
 
-# ==========================================
-# 9. HALAMAN: TENTANG KAMI
-# ==========================================
 # ==========================================
 # 9. HALAMAN: TENTANG KAMI
 # ==========================================
@@ -786,7 +787,7 @@ elif menu == "💼 Layanan Kami":
         st.subheader("⭐ Kalkulator & Valuasi Aktuaria PSAK 219 Terintegrasi")
         st.write("Sistem valuasi otomatis berbasis web untuk menghitung PVDBO, CSC, Biaya Bunga, OCI, serta analisis jatuh tempo (Maturity Analysis) dan uji sensitivitas secara presisi.")
         if st.button("🚀 Gunakan Kalkulator Sekarang", key="cta_service_page"):
-            go_to("🧮 Kalkulator Valuasi Aktuaria")
+            go_to("Kalkulator Valuasi Aktuaria")
 
 # ==========================================
 # 11. HALAMAN: KONTAK KAMI
@@ -847,17 +848,18 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria":
     else:
         st.success("🎉 Pembayaran Terverifikasi! Sistem Kalkulator PSAK 219 & Kertas Kerja Individu Aktif.")
 
-        st.sidebar.markdown("---")
-        st.sidebar.header("⚙️ Pengaturan Laporan KKA Setya Gunawan")
-        input_perusahaan = st.sidebar.text_input("Nama Perusahaan Klien", "PT ABC SEJAHTERA")
-        tanggal_laporan = st.sidebar.date_input("Tanggal Penerbitan Laporan", datetime.date.today())
-        nomor_laporan = st.sidebar.text_input("Nomor Laporan Baku", f"082/FR-KAS/PSAK/III/{tanggal_laporan.strftime('%Y')}")
-
-        asumsi_gaji = st.sidebar.number_input("Kenaikan Gaji Tahunan (%)", value=8.0, step=0.1) / 100
-        usia_pensiun = st.sidebar.number_input("Usia Pensiun Normal", value=55, step=1)
-        asumsi_resign = st.sidebar.number_input("Tingkat Pengunduran Diri / Resign (%)", value=2.0, step=0.1) / 100
-
-        st.sidebar.info("💡 **Standar Aktuaris KKA Setya Gunawan:** Suku bunga diskonto ditentukan otomatis lewat *yield curve matching* PHEI sesuai sisa masa kerja individual.")
+        # Pengaturan Laporan dipindah ke bagian utama halaman karena sidebar tidak dipakai
+        with st.expander("⚙️ Pengaturan Laporan & Asumsi Aktuaria (Klik untuk Mengatur)", expanded=True):
+            col_set1, col_set2 = st.columns(2)
+            with col_set1:
+                input_perusahaan = st.text_input("Nama Perusahaan Klien", "PT ABC SEJAHTERA")
+                tanggal_laporan = st.date_input("Tanggal Penerbitan Laporan", datetime.date.today())
+                nomor_laporan = st.text_input("Nomor Laporan Baku", f"082/FR-KAS/PSAK/III/{tanggal_laporan.strftime('%Y')}")
+            with col_set2:
+                asumsi_gaji = st.number_input("Kenaikan Gaji Tahunan (%)", value=8.0, step=0.1) / 100
+                usia_pensiun = st.number_input("Usia Pensiun Normal", value=55, step=1)
+                asumsi_resign = st.number_input("Tingkat Pengunduran Diri / Resign (%)", value=2.0, step=0.1) / 100
+            st.info("💡 **Standar Aktuaris KKA Setya Gunawan:** Suku bunga diskonto ditentukan otomatis lewat *yield curve matching* PHEI sesuai sisa masa kerja individual.")
 
         metode_input = st.radio(
             "Pilih Metode Masukan Data Karyawan:",
