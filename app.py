@@ -736,102 +736,80 @@ if menu == "🏠 Beranda":
 # ==========================================
 # 9. HALAMAN: TENTANG KAMI
 # ==========================================
+# ==========================================
+# 9. HALAMAN: TENTANG KAMI
+# ==========================================
 elif menu == "🏢 Tentang Kami":
-    st.markdown(f"""
-    <div class="hero-section" style="padding:44px 44px;">
-        {LOGO_CHIP_HTML}
-        <div class="badge-gold">TENTANG KAMI</div>
-        <div class="hero-title" style="font-size:2.1rem;">{COMPANY_LEGAL_NAME}</div>
-        <div class="hero-sub">Kantor konsultan aktuaria independen yang terdaftar resmi dan berizin untuk memberikan
-        layanan aktuaria, konsultasi imbalan kerja, dan audit support bagi perusahaan di Indonesia.</div>
-    </div>
-    """, unsafe_allow_html=True)
+    with st.container():
+        st.success("TENTANG KAMI")
+        st.title(f"{COMPANY_LEGAL_NAME}")
+        st.write("Kantor konsultan aktuaria independen yang terdaftar resmi dan berizin untuk memberikan layanan aktuaria, konsultasi imbalan kerja, dan audit support bagi perusahaan di Indonesia.")
+
+    st.markdown("---")
 
     c1, c2 = st.columns(2)
     with c1:
-        st.markdown("""
-        <div class="info-box">
-            <b>🎯 Visi KKA Setya Gunawan</b><br/>
-            Menjadi kantor konsultan aktuaria terdepan yang andal, profesional, dan tepercaya
-            dalam mendukung pengelolaan liabilitas imbalan kerja korporasi di Indonesia.
-        </div>
-        """, unsafe_allow_html=True)
+        with st.container(border=True):
+            st.subheader("🎯 Visi KKA Setya Gunawan")
+            st.write("Menjadi kantor konsultan aktuaria terdepan yang andal, profesional, dan tepercaya dalam mendukung pengelolaan liabilitas imbalan kerja korporasi di Indonesia.")
     with c2:
-        st.markdown("""
-        <div class="info-box">
-            <b>🚀 Misi KKA Setya Gunawan</b><br/>
-            Menghadirkan layanan aktuaria berbasis teknologi tinggi, transparan, serta selaras
-            dengan standar akuntansi keuangan PSAK 219, IFRS, dan regulasi ketenagakerjaan nasional.
-        </div>
-        """, unsafe_allow_html=True)
+        with st.container(border=True):
+            st.subheader("🚀 Misi KKA Setya Gunawan")
+            st.write("Menghadirkan layanan aktuaria berbasis teknologi tinggi, transparan, serta selaras dengan standar akuntansi keuangan PSAK 219, IFRS, dan regulasi ketenagakerjaan nasional.")
 
-    st.markdown("<hr class='divider-soft'/>", unsafe_allow_html=True)
-    st.markdown('<div class="section-title">Legalitas & Perizinan Resmi</div>', unsafe_allow_html=True)
+    st.markdown("---")
+    st.subheader("Legalitas & Perizinan Resmi")
     l1, l2, l3 = st.columns(3)
     with l1:
-        st.markdown(f'<div class="service-card"><div class="service-icon">📜</div><div class="service-title">Izin Badan Usaha</div><div class="service-desc">{COMPANY_LICENSE}<br/>({COMPANY_MENKEU})</div></div>', unsafe_allow_html=True)
+        with st.container(border=True):
+            st.markdown("📜 **Izin Badan Usaha**")
+            st.write(f"{COMPANY_LICENSE}\n\n({COMPANY_MENKEU})")
     with l2:
-        st.markdown(f'<div class="service-card"><div class="service-icon">🏛️</div><div class="service-title">Terdaftar di OJK</div><div class="service-desc">{COMPANY_OJK}</div></div>', unsafe_allow_html=True)
+        with st.container(border=True):
+            st.markdown("🏛️ **Terdaftar di OJK**")
+            st.write(COMPANY_OJK)
     with l3:
-        st.markdown(f'<div class="service-card"><div class="service-icon">🪪</div><div class="service-title">Keanggotaan AKKAI</div><div class="service-desc">Nomor: {COMPANY_AKKAI}</div></div>', unsafe_allow_html=True)
+        with st.container(border=True):
+            st.markdown("🪪 **Keanggotaan AKKAI**")
+            st.write(f"Nomor: {COMPANY_AKKAI}")
 
 # ==========================================
 # 10. HALAMAN: LAYANAN KAMI
 # ==========================================
 elif menu == "💼 Layanan Kami":
-    st.markdown(f"""
-    <div class="hero-section" style="padding:44px 44px;">
-        {LOGO_CHIP_HTML}
-        <div class="badge-gold">LAYANAN KAMI</div>
-        <div class="hero-title" style="font-size:2.1rem;">Layanan Konsultasi & Valuasi Aktuaria</div>
-        <div class="hero-sub">Mendampingi perusahaan menyusun laporan aktuaria imbalan pascakerja,
-        analisis sensitivitas, hingga tata kelola program dana pensiun (DPLK / DPPK).</div>
-    </div>
-    """, unsafe_allow_html=True)
+    with st.container():
+        st.success("LAYANAN KAMI")
+        st.title("Layanan Konsultasi & Valuasi Aktuaria")
+        st.write("Mendampingi perusahaan menyusun laporan aktuaria imbalan pascakerja, analisis sensitivitas, hingga tata kelola program dana pensiun (DPLK / DPPK).")
 
-    st.markdown("""
-    <div class="flagship-card">
-        <div class="flagship-title">⭐ Kalkulator & Valuasi Aktuaria PSAK 219 Terintegrasi</div>
-        <div class="flagship-desc">
-            Sistem valuasi otomatis berbasis web untuk menghitung PVDBO, CSC, Biaya Bunga, OCI, 
-            serta analisis jatuh tempo (Maturity Analysis) dan uji sensitivitas secara presisi.
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-    if st.button("🚀 Gunakan Kalkulator Sekarang", key="cta_service_page"):
-        go_to("🧮 Kalkulator Valuasi Aktuaria")
+    with st.container(border=True):
+        st.subheader("⭐ Kalkulator & Valuasi Aktuaria PSAK 219 Terintegrasi")
+        st.write("Sistem valuasi otomatis berbasis web untuk menghitung PVDBO, CSC, Biaya Bunga, OCI, serta analisis jatuh tempo (Maturity Analysis) dan uji sensitivitas secara presisi.")
+        if st.button("🚀 Gunakan Kalkulator Sekarang", key="cta_service_page"):
+            go_to("🧮 Kalkulator Valuasi Aktuaria")
 
 # ==========================================
 # 11. HALAMAN: KONTAK KAMI
 # ==========================================
 elif menu == "📞 Kontak Kami":
-    st.markdown(f"""
-    <div class="hero-section" style="padding:44px 44px;">
-        {LOGO_CHIP_HTML}
-        <div class="badge-gold">HUBUNGI KAMI</div>
-        <div class="hero-title" style="font-size:2.1rem;">Konsultasikan Kebutuhan Aktuaria Anda</div>
-        <div class="hero-sub">Tim aktuaris publik dan profesional KKA Setya Gunawan siap melayani kebutuhan korporasi Anda.</div>
-    </div>
-    """, unsafe_allow_html=True)
+    with st.container():
+        st.success("HUBUNGI KAMI")
+        st.title("Konsultasikan Kebutuhan Aktuaria Anda")
+        st.write("Tim aktuaris publik dan profesional KKA Setya Gunawan siap melayani kebutuhan korporasi Anda.")
 
     c1, c2 = st.columns([1, 1.1])
     with c1:
-        st.markdown(f"""
-        <div class="contact-box">
-            <b>📍 Alamat Kantor Utama</b><br/>
-            {COMPANY_ADDRESS}<br/><br/>
-            <b>📱 Telepon / WhatsApp</b><br/>
-            {COMPANY_PHONE}<br/><br/>
-            <b>✉️ Email Resmi</b><br/>
-            {COMPANY_EMAIL}<br/><br/>
-            <b>🏛️ Legalitas & Akreditasi</b><br/>
-            {COMPANY_LICENSE}<br/>
-            {COMPANY_OJK}<br/>
-            AKKAI: {COMPANY_AKKAI}
-        </div>
-        """, unsafe_allow_html=True)
+        with st.container(border=True):
+            st.subheader("📍 Alamat Kantor Utama")
+            st.write(COMPANY_ADDRESS)
+            st.markdown("📱 **Telepon / WhatsApp**")
+            st.write(COMPANY_PHONE)
+            st.markdown("✉️ **Email Resmi**")
+            st.write(COMPANY_EMAIL)
+            st.markdown("🏛️ **Legalitas & Akreditasi**")
+            st.write(f"{COMPANY_LICENSE}\n{COMPANY_OJK}\nAKKAI: {COMPANY_AKKAI}")
     with c2:
-        st.markdown('<div class="section-title" style="font-size:1.3rem;">Kirim Pesan Konsultasi</div>', unsafe_allow_html=True)
+        st.subheader("Kirim Pesan Konsultasi")
         with st.form("contact_form"):
             st.text_input("Nama Lengkap")
             st.text_input("Nama Perusahaan")
@@ -845,32 +823,27 @@ elif menu == "📞 Kontak Kami":
 # 12. HALAMAN: KALKULATOR VALUASI AKTUARIA
 # ==========================================
 elif menu == "🧮 Kalkulator Valuasi Aktuaria":
-    st.markdown(f"""
-    <div class="calc-header">
-        {LOGO_CHIP_HTML}
-        <div class="badge-gold">KKA Setya Gunawan — PORTAL AKTUARIA</div>
-        <div class="hero-title" style="font-size:1.9rem; margin-bottom:8px;">📄 Generator Laporan Aktuaria PSAK 219 (IFRIC AD)</div>
-        <div class="hero-sub" style="font-size:0.98rem;">Menampilkan rincian kalkulasi per karyawan di web, dilengkapi kurva yield PHEI & kertas kerja siap audit.</div>
-    </div>
-    """, unsafe_allow_html=True)
+    with st.container():
+        st.success("KKA Setya Gunawan — PORTAL AKTUARIA")
+        st.title("📄 Generator Laporan Aktuaria PSAK 219 (IFRIC AD)")
+        st.write("Menampilkan rincian kalkulasi per karyawan di web, dilengkapi kurva yield PHEI & kertas kerja siap audit.")
 
     # Sistem Pembayaran / Paywall QRIS KKA Setya Gunawan
     if not st.session_state.payment_verified:
         st.warning("🔒 **Akses Terkunci:** Silakan lakukan verifikasi pembayaran administrasi layanan valuasi aktuaria KKA Nirmala.")
-        st.markdown('<div class="qris-box">', unsafe_allow_html=True)
-        st.markdown("<h3 style='color:#C2382D;'>Biaya Akses Valuasi Korporat</h3>", unsafe_allow_html=True)
-        st.markdown("<h2>Rp 5.000.000,-</h2>", unsafe_allow_html=True)
-        st.image("https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg", width=200)
-        ref_code = st.text_input("Masukkan Kode Referensi Transfer:")
-        if st.button("✅ Verifikasi Pembayaran", use_container_width=True):
-            if ref_code:
-                with st.spinner("Memeriksa status pembayaran..."):
-                    time.sleep(1.5)
-                    st.session_state.payment_verified = True
-                    st.rerun()
-            else:
-                st.error("Silakan masukkan kode referensi transfer yang valid.")
-        st.markdown('</div>', unsafe_allow_html=True)
+        with st.container(border=True):
+            st.subheader("Biaya Akses Valuasi Korporat")
+            st.markdown("## Rp 5.000.000,-")
+            st.image("https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg", width=200)
+            ref_code = st.text_input("Masukkan Kode Referensi Transfer:")
+            if st.button("✅ Verifikasi Pembayaran", use_container_width=True):
+                if ref_code:
+                    with st.spinner("Memeriksa status pembayaran..."):
+                        time.sleep(1.5)
+                        st.session_state.payment_verified = True
+                        st.rerun()
+                else:
+                    st.error("Silakan masukkan kode referensi transfer yang valid.")
     else:
         st.success("🎉 Pembayaran Terverifikasi! Sistem Kalkulator PSAK 219 & Kertas Kerja Individu Aktif.")
 
