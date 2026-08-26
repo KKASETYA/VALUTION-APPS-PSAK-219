@@ -505,7 +505,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_years, compa
         
     elements.append(Paragraph(f"<b>FINAL ACTUARIAL REPORT</b>", title_style))
     elements.append(Paragraph(f"<b>PT. {company_name.upper()}</b><br/>EMPLOYEE BENEFITS LIABILITIES<br/>NO: {report_no}<br/>VALUATION DATE: DECEMBER, 31ST 2023", sub_style))
-    elements.append(Paragraph("<b>KKA NIRMALA</b><br/>Menara Caraka, Lt. 6 Unit 627, Jl. Mega Kuningan Barat Blok E.4.7 No. 1, Jakarta Selatan 12950", ParagraphStyle('CoverAddress', parent=styles['Normal'], fontSize=8, alignment=1, textColor=colors.HexColor('#555555'))))
+    elements.append(Paragraph("<b>KKA SETYA GUNAWAN</b><br/>Cilandak 88 Condominium Unit D-1, Jl. Margasatwa Barat No. 88, Cilandak Timur, Pasar Minggu, Jakarta Selatan 12560.", ParagraphStyle('CoverAddress', parent=styles['Normal'], fontSize=8, alignment=1, textColor=colors.HexColor('#555555'))))
     elements.append(PageBreak())
 
     # 2. STRUKTUR BAB OTOMATIS (DITENTUKAN OLEH KKA)
@@ -593,9 +593,9 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_years, compa
 
     # 5. BAB PENUTUP OTOMATIS
     elements.append(Paragraph("<b>5. PENUTUP / CLOSING</b>", h_style))
-    elements.append(Paragraph(f"Demikian laporan aktuaria ini disusun secara independen oleh KKA Nirmala untuk dipergunakan sebagaimana mestinya oleh manajemen <b>PT {company_name.upper()}</b> dan pihak Auditor independen.", body_style))
+    elements.append(Paragraph(f"Demikian laporan aktuaria ini disusun secara independen oleh KKA Setya Gunawan untuk dipergunakan sebagaimana mestinya oleh manajemen <b>PT {company_name.upper()}</b> dan pihak Auditor independen.", body_style))
     elements.append(Spacer(1, 20))
-    elements.append(Paragraph(f"Jakarta, {formatted_date}<br/><b>KANTOR KONSULTAN AKTUARIA NIRMALA</b><br/><br/><br/><br/><b>Tim Aktuaris Publik</b>", ParagraphStyle('SignBlock', parent=styles['Normal'], fontSize=9, alignment=2)))
+    elements.append(Paragraph(f"Jakarta, {formatted_date}<br/><b>KANTOR KONSULTAN AKTUARIA SETYA GUNAWAN</b><br/><br/><br/><br/><b>Tim Aktuaris Publik</b>", ParagraphStyle('SignBlock', parent=styles['Normal'], fontSize=9, alignment=2)))
         
     doc.build(elements, onFirstPage=draw_footer_landscape, onLaterPages=draw_footer_landscape)
     pdf_buffer.seek(0)
