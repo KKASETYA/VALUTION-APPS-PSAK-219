@@ -674,25 +674,27 @@ menu = st.session_state["menu"]
 # 8. HALAMAN: BERANDA
 # ==========================================
 if menu == "🏠 Beranda":
-    html_content = f"""
-    <div class="hero-section">
-        {LOGO_CHIP_HTML}
-        <div class="badge-gold">✓ TERDAFTAR OJK & KEMENKEU — {COMPANY_MENKEU}</div>
-        <div class="hero-title">Kantor Konsultan Aktuaria Nirmala<br/>Solusi Profesional PSAK 219</div>
-        <div class="hero-sub">
-            {COMPANY_LEGAL_NAME} menyediakan jasa valuasi aktuaria imbalan kerja,
-            konsultasi program pensiun, dan pelaporan keuangan sesuai standar <b>PSAK 219 & IFRIC AD</b> — 
-            didukung pencocokan kurva yield PHEI zero-coupon resmi per tahun valuasi.
+    st.markdown(
+        f"""
+        <div class="hero-section">
+            {LOGO_CHIP_HTML}
+            <div class="badge-gold">✓ TERDAFTAR OJK & KEMENKEU — {COMPANY_MENKEU}</div>
+            <div class="hero-title">Kantor Konsultan Aktuaria Nirmala<br/>Solusi Profesional PSAK 219</div>
+            <div class="hero-sub">
+                {COMPANY_LEGAL_NAME} menyediakan jasa valuasi aktuaria imbalan kerja,
+                konsultasi program pensiun, dan pelaporan keuangan sesuai standar <b>PSAK 219 & IFRIC AD</b> — 
+                didukung pencocokan kurva yield PHEI zero-coupon resmi per tahun valuasi.
+            </div>
+            <div>
+                <span class="badge-soft">📐 PSAK 219 & IFRIC AD</span>
+                <span class="badge-soft">📈 PHEI Yield Matching</span>
+                <span class="badge-soft">📄 Kertas Kerja Audit Ready</span>
+                <span class="badge-soft">🗂️ Integrasi API & Otomasi</span>
+            </div>
         </div>
-        <div>
-            <span class="badge-soft">📐 PSAK 219 & IFRIC AD</span>
-            <span class="badge-soft">📈 PHEI Yield Matching</span>
-            <span class="badge-soft">📄 Kertas Kerja Audit Ready</span>
-            <span class="badge-soft">🗂️ Integrasi API & Otomasi</span>
-        </div>
-    </div>
-    """
-    st.markdown(html_content, unsafe_allow_html=True)
+        """,
+        unsafe_allow_html=True
+    )
 
     c1, c2 = st.columns([1, 1])
     with c1:
