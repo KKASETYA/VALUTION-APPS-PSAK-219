@@ -40,6 +40,7 @@ header[data-testid="stHeader"] { background: transparent; }
 
 .main .block-container { padding-top: 1.5rem; padding-bottom: 3rem; max-width: 1180px; }
 
+/* ---------- Sidebar ---------- */
 [data-testid="stSidebar"] {
     background: linear-gradient(180deg, #241A12 0%, #6E3210 60%, #B8410D 100%);
 }
@@ -96,6 +97,7 @@ header[data-testid="stHeader"] { background: transparent; }
     margin-top: 18px;
 }
 
+/* ---------- Hero ---------- */
 .hero-section {
     background: linear-gradient(135deg, #241A12 0%, #B8410D 45%, #E85D25 100%);
     padding: 56px 44px;
@@ -131,6 +133,7 @@ header[data-testid="stHeader"] { background: transparent; }
     margin: 4px 6px 4px 0;
 }
 
+/* ---------- Cards ---------- */
 .service-card {
     background: #ffffff;
     border-radius: 18px;
@@ -291,7 +294,7 @@ def fmt_num(num, decimals=0):
         return formatted.replace(",", "X").replace(".", ",").replace("X", ".")
 
 # ==========================================
-# 3. PARSER EXCEL PRESISI (MENGAMBIL FAKTOR DARI EXCEL)
+# 3. PARSER EXCEL PRESISI (DENGAN SAFE FLOAT)
 # ==========================================
 def parse_excel_dataset(file_or_buffer, sheet_name=0):
     df = pd.read_excel(file_or_buffer, sheet_name=sheet_name, header=None)
@@ -304,40 +307,40 @@ def parse_excel_dataset(file_or_buffer, sheet_name=0):
     clean_data = []
     total_benefit_paid = 0.0
 
+    def safe_float(val, default=0.0):
+        try:
+            if pd.isna(val):
+                return default
+            cleaned = re.sub(r'[^0-9.\-]', '', str(val))
+            if cleaned == '' or cleaned == '-':
+                return default
+            return float(cleaned)
+        except:
+            return default
+
     for idx in range(data_start_idx, len(df)):
         row = df.iloc[idx]
         nik = row.iloc[1] if len(row) > 1 else None
         nama = row.iloc[2] if len(row) > 2 else None
         dob = row.iloc[3] if len(row) > 3 else None
         doe = row.iloc[4] if len(row) > 4 else None
-        salary = row.iloc[5] if len(row) > 5 else 0.0
-        dplk = row.iloc[6] if len(row) > 6 else 0.0
+        
+        salary = safe_float(row.iloc[5] if len(row) > 5 else 0.0, 0.0)
+        dplk = safe_float(row.iloc[6] if len(row) > 6 else 0.0, 0.0)
 
-        # Membaca faktor pengali spesifik langsung dari kolom Excel jika tersedia
-        # Berdasarkan format tabel aktuaris: Kolom 12 (Pensiun), 13 (Cacat), 14 (Death), 15 (Resign)
-        pension_mult = float(row.iloc[12]) if len(row) > 12 and not pd.isna(row.iloc[12]) else 1.75
-        disability_mult = float(row.iloc[13]) if len(row) > 13 and not pd.isna(row.iloc[13]) else 2.0
-        death_mult = float(row.iloc[14]) if len(row) > 14 and not pd.isna(row.iloc[14]) else 2.0
-        resign_mult = float(row.iloc[15]) if len(row) > 15 and not pd.isna(row.iloc[15]) else 1.0
+        pension_mult = safe_float(row.iloc[12] if len(row) > 12 else 1.75, 1.75)
+        disability_mult = safe_float(row.iloc[13] if len(row) > 13 else 2.0, 2.0)
+        death_mult = safe_float(row.iloc[14] if len(row) > 14 else 2.0, 2.0)
+        resign_mult = safe_float(row.iloc[15] if len(row) > 15 else 1.0, 1.0)
 
         if not pd.isna(nik) or not pd.isna(nama):
-            try:
-                salary_val = float(salary) if not pd.isna(salary) else 0.0
-            except:
-                salary_val = 0.0
-
-            try:
-                dplk_val = float(dplk) if not pd.isna(dplk) else 0.0
-            except:
-                dplk_val = 0.0
-
             clean_data.append({
                 'NIK': str(nik).strip() if not pd.isna(nik) else '',
                 'Nama': str(nama).strip() if not pd.isna(nama) else '',
                 'Tanggal Lahir': dob,
                 'Tgl. Mulai Bekerja': doe,
-                'Total Upah Bulanan (Gross)': salary_val,
-                'Saldo DPLK': dplk_val,
+                'Total Upah Bulanan (Gross)': salary,
+                'Saldo DPLK': dplk,
                 'Pension_Mult': pension_mult,
                 'Disability_Mult': disability_mult,
                 'Death_Mult': death_mult,
@@ -345,12 +348,9 @@ def parse_excel_dataset(file_or_buffer, sheet_name=0):
             })
 
         if len(row) > 11:
-            val_paid = row.iloc[11]
-            try:
-                if not pd.isna(val_paid) and isinstance(val_paid, (int, float)):
-                    total_benefit_paid += float(val_paid)
-            except:
-                pass
+            val_paid = safe_float(row.iloc[11], 0.0)
+            if val_paid > 0:
+                total_benefit_paid += val_paid
 
     return pd.DataFrame(clean_data), total_benefit_paid
 
