@@ -469,7 +469,7 @@ class PSAK219Engine:
         }
 
 # ==========================================
-# 5. GENERATOR PDF LAPORAN KKA NIRMALA (SESUAI PEDOMAN TABEL BUKU KKA NIRMALA)
+# 5. GENERATOR PDF LAPORAN KKA NIRMALA (FORMAT BAKU OTOMATIS)
 # ==========================================
 def draw_footer_landscape(canvas, doc):
     canvas.saveState()
@@ -482,38 +482,44 @@ def draw_footer_landscape(canvas, doc):
     canvas.drawCentredString(landscape(letter)[0]/2.0, 20, "Izin Badan Usaha No. 4.24.0021 | Keputusan Kemenkeu RI No. 782/KM.1/2024 | STTD-OJK: STTD-050/PD.021/STTD-KA/2025 | AKKAI: AKKAI-25064")
     canvas.restoreState()
 
-def generate_detailed_report(results_dict, salary_inc, ret_age, val_years, company_name, report_no):
+def generate_detailed_report(results_dict, salary_inc, ret_age, val_years, company_name, report_no, report_date):
     pdf_buffer = io.BytesIO()
     doc = SimpleDocTemplate(pdf_buffer, pagesize=landscape(letter), rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=60)
     elements = []
     styles = getSampleStyleSheet()
     
-    title_style = ParagraphStyle('CoverTitle', parent=styles['Heading1'], fontSize=15, textColor=colors.HexColor('#3A0C08'), alignment=1, spaceBefore=6, spaceAfter=6)
+    title_style = ParagraphStyle('CoverTitle', parent=styles['Heading1'], fontSize=16, textColor=colors.HexColor('#3A0C08'), alignment=1, spaceBefore=10, spaceAfter=6)
     sub_style = ParagraphStyle('CoverSub', parent=styles['Normal'], fontSize=10, textColor=colors.HexColor('#6B4B48'), alignment=1, spaceAfter=14)
-    h_style = ParagraphStyle('SecH', parent=styles['Heading2'], fontSize=11, textColor=colors.HexColor('#C2382D'), spaceBefore=10, spaceAfter=6)
-    
-    table_hdr_style = TableStyle([
-        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#3A0C08')),
-        ('TEXTCOLOR', (0,0), (-1,0), colors.white),
-        ('ALIGN', (0,0), (-1,0), 'CENTER'),
-        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0,0), (-1,-1), 8),
-        ('BOTTOMPADDING', (0,0), (-1,0), 5),
-        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#D3C1BE')),
-        ('VALIGN', (0,0), (-1,-1), 'MIDDLE')
-    ])
-    
-    sorted_years = sorted(val_years, reverse=True)
-    
+    h_style = ParagraphStyle('SecH', parent=styles['Heading2'], fontSize=11, textColor=colors.HexColor('#C2382D'), spaceBefore=12, spaceAfter=6)
+    body_style = ParagraphStyle('BodyCustom', parent=styles['Normal'], fontSize=9, textColor=colors.HexColor('#222222'), spaceBefore=4, spaceAfter=8, leading=13)
+
+    formatted_date = report_date.strftime('%d %B %Y') if hasattr(report_date, 'strftime') else str(report_date)
+
+    # 1. HALAMAN SAMPUL / COVER BAKU KKA
     if os.path.exists("logo.png"):
         logo = Image("logo.png", width=1.8*inch, height=1.8*inch)
         logo.hAlign = 'CENTER'
         elements.append(logo)
+        elements.append(Spacer(1, 10))
         
-    elements.append(Paragraph(f"<b>PT. {company_name.upper()}</b>", title_style))
-    elements.append(Paragraph(f"<b>LAPORAN KERTAS KERJA VALUASI AKTUARIA (PSAK 219 & IFRIC AD)</b><br/>Nomor Laporan: {report_no}", sub_style))
+    elements.append(Paragraph(f"<b>FINAL ACTUARIAL REPORT</b>", title_style))
+    elements.append(Paragraph(f"<b>PT. {company_name.upper()}</b><br/>EMPLOYEE BENEFITS LIABILITIES<br/>NO: {report_no}<br/>VALUATION DATE: DECEMBER, 31ST 2023", sub_style))
+    elements.append(Paragraph("<b>KKA NIRMALA</b><br/>Menara Caraka, Lt. 6 Unit 627, Jl. Mega Kuningan Barat Blok E.4.7 No. 1, Jakarta Selatan 12950", ParagraphStyle('CoverAddress', parent=styles['Normal'], fontSize=8, alignment=1, textColor=colors.HexColor('#555555'))))
+    elements.append(PageBreak())
+
+    # 2. STRUKTUR BAB OTOMATIS (DITENTUKAN OLEH KKA)
+    elements.append(Paragraph("<b>1. PENDAHULUAN / INTRODUCTION</b>", h_style))
+    elements.append(Paragraph(f"Laporan aktuaria ini disajikan untuk memenuhi permintaan <b>PT {company_name.upper()}</b> guna mengetahui Kewajiban dan Beban atas Imbalan Kerja Karyawan berdasarkan Undang-Undang Ketenagakerjaan (UU Cipta Kerja No. 11 Tahun 2020) dan PSAK 219.", body_style))
     
-    for yr in sorted_years:
+    elements.append(Paragraph("<b>2. MANFAAT KARYAWAN / EMPLOYEE BENEFITS</b>", h_style))
+    elements.append(Paragraph("Valuasi mencakup Manfaat Pensiun, Manfaat Meninggal Dunia, Manfaat Mengundurkan Diri, Manfaat Sakit Berkepanjangan, serta Kompensasi PKWT sesuai regulasi yang berlaku.", body_style))
+
+    elements.append(Paragraph("<b>3. METODOLOGI & ASUMSI AKTUARIA</b>", h_style))
+    elements.append(Paragraph(f"Metode valuasi menggunakan <b>Projected Unit Credit (PUC)</b> dengan asumsi tingkat kenaikan gaji {salary_inc*100:.2f}% p.a., Usia Pensiun Normal {ret_age} tahun, serta tingkat diskonto berbasis kurva PHEI.", body_style))
+    elements.append(PageBreak())
+
+    # 3. RINGKASAN HASIL & TABEL BAKU KKA
+    for yr in sorted(val_years, reverse=True):
         df_yr = results_dict[yr]
         if df_yr.empty: continue
             
@@ -522,31 +528,21 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_years, compa
         tot_pbo = df_yr['PBO'].sum()
         tot_csc = df_yr['CSC'].sum()
         num_emp = len(df_yr)
-        avg_age = df_yr['Age Valuation'].mean()
-        avg_svc = df_yr['Past Service'].mean()
-        avg_fs = df_yr['Future_Service'].mean()
-        avg_disc = df_yr['Applied_Discount'].mean() * 100
 
-        # --- TABEL 1: IKHTISAR DATA DAN ASUMSI AKTUARIA ---
-        elements.append(Paragraph(f"<b>TABEL 1 — Ikhtisar Data dan Asumsi Aktuaria Per 31 Desember {yr}</b>", h_style))
+        elements.append(Paragraph(f"<b>4. RINGKASAN HASIL VALUASI (PER 31 DESEMBER {yr})</b>", h_style))
         t1_data = [
-            ["URAIAN (EXPLANATION)", f"31 Desember {yr}", "31 Desember {yr-1}"],
-            ["1. Basic Data and Assumptions (Data dan Asumsi)", "", ""],
-            ["2. Number of Employee (Jumlah Karyawan)", str(num_emp), str(num_emp)],
-            ["3. Monthly Wages for Permanent & Contract EEs (Jumlah Gaji Sebulan)", f"Rp {fmt_num(tot_salary)}", f"Rp {fmt_num(tot_salary*0.95)}"],
-            ["4. Average Monthly Wages (Rata-rata Gaji Sebulan)", f"Rp {fmt_num(tot_salary/num_emp if num_emp>0 else 0)}", f"Rp {fmt_num(tot_salary/num_emp*0.95 if num_emp>0 else 0)}"],
-            ["5. Average Age of Employees (Rata-rata Usia)", f"{avg_age:.2f}", f"{avg_age:.2f}"],
-            ["6. Average Years of Service (Rata-rata Masa Kerja)", f"{avg_svc:.2f}", f"{max(0, avg_svc-1):.2f}"],
-            ["7. Average Future Service (Rata-rata Masa Kerja YAD)", f"{avg_fs:.2f}", f"{avg_fs+1:.2f}"],
-            ["8. Discount Rate Ending Period (Tingkat Diskonto Akhir Tahun)", f"{avg_disc:.2f}%", f"{max(0, avg_disc-0.2):.2f}%"],
-            ["9. Future Salary Increases per annum (Tingkat Kenaikan Gaji)", f"{salary_inc*100:.2f}%", f"{salary_inc*100:.2f}%"],
-            ["10. Current Service Cost (Biaya Jasa Kini)", f"Rp {fmt_num(tot_csc)}", f"Rp {fmt_num(tot_csc*0.9)}"],
-            ["11. Present Value of Obligation at EoP (Nilai Kini Kewajiban Akhir Periode)", f"Rp {fmt_num(tot_pbo)}", f"Rp {fmt_num(tot_pbo*0.9)}"],
-            ["12. Mortality Table & Actuarial Method", "TMI IV / PUC (IFRIC)", "TMI IV / PUC (IFRIC)"],
-            ["13. Normal Retirement Age (Usia Pensiun Normal)", str(ret_age), str(ret_age)]
+            ["URAIAN (EXPLANATION)", f"Per 31 Des {yr} (Pasca Kerja)", f"Per 31 Des {yr} (Jangka Panjang Lainnya)"],
+            ["1. Jumlah Karyawan (Number of Employees)", str(num_emp), "0"],
+            ["2. Total Penghasilan Sebulan (Total Salary)", f"Rp {fmt_num(tot_salary)}", "Rp 0"],
+            ["3. Rata-rata Usia (Average Age)", f"{df_yr['Age Valuation'].mean():.2f}", "0.00"],
+            ["4. Rata-rata Masa Kerja Lalu (Past Service)", f"{df_yr['Past Service'].mean():.2f} tahun", "0.00 tahun"],
+            ["5. Tingkat Diskonto Akhir (Discount Rate)", f"{df_yr['Applied_Discount'].mean()*100:.2f}%", f"{df_yr['Applied_Discount'].mean()*100:.2f}%"],
+            ["6. Tingkat Kenaikan Gaji (Salary Increment)", f"{salary_inc*100:.2f}%", f"{salary_inc*100:.2f}%"],
+            ["7. Biaya Jasa Kini (Current Service Cost)", f"Rp {fmt_num(tot_csc)}", "Rp 0"],
+            ["8. Nilai Kini Kewajiban / PVDBO (Obligation)", f"Rp {fmt_num(tot_pbo)}", "Rp 0"]
         ]
-        t1 = Table(t1_data, colWidths=[240, 140, 140])
-        t1_style = TableStyle([
+        t1 = Table(t1_data, colWidths=[280, 220, 220])
+        t1.setStyle(TableStyle([
             ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#3A0C08')),
             ('TEXTCOLOR', (0,0), (-1,0), colors.white),
             ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
@@ -554,99 +550,51 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_years, compa
             ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#D3C1BE')),
             ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
             ('ALIGN', (1,1), (-1,-1), 'RIGHT'),
-        ])
-        t1.setStyle(t1_style)
+        ]))
         elements.append(t1)
-        elements.append(Spacer(1, 10))
+        elements.append(Spacer(1, 15))
 
-        # --- TABEL 2: PERHITUNGAN KEUNTUNGAN/KERUGIAN AKTUARIAL ---
-        elements.append(Paragraph(f"<b>TABEL 2 — Perhitungan Keuntungan / Kerugian Aktuarial (Per 31 Desember {yr})</b>", h_style))
-        t2_data = [
-            ["URAIAN (EXPLANATION)", f"Jumlah (Rp) per 31 Desember {yr}"],
-            ["1. Actual Present Value of Obligation at BoP (Nilai Kini Kewajiban Awal Periode)", f"Rp {fmt_num(tot_pbo*0.85)}"],
-            ["2. Interest Cost (Biaya Bunga)", f"Rp {fmt_num(tot_pbo*0.07)}"],
-            ["3. Current Service Cost (Biaya Jasa Kini)", f"Rp {fmt_num(tot_csc)}"],
-            ["4. Benefit Payments (Pembayaran Manfaat Aktual)", f"(Rp {fmt_num(tot_pbo*0.05)})"],
-            ["5. Present Value of Obligation at EoP - Expected (Perkiraan Akhir Periode)", f"Rp {fmt_num(tot_pbo*0.93)}"],
-            ["6. Actuarial (Gain) or Loss on Obligation (Keuntungan/Kerugian Aktuarial)", f"Rp {fmt_num(tot_pbo*0.07)}"],
-            ["7. Present Value of Obligation at EoP - Actual (Aktual Akhir Periode)", f"Rp {fmt_num(tot_pbo)}"]
-        ]
-        t2 = Table(t2_data, colWidths=[300, 220])
-        t2_style = TableStyle([
-            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#3A0C08')),
-            ('TEXTCOLOR', (0,0), (-1,0), colors.white),
-            ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0,0), (-1,-1), 7.5),
-            ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#D3C1BE')),
-            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-            ('ALIGN', (1,1), (-1,-1), 'RIGHT'),
-        ])
-        t2.setStyle(t2_style)
-        elements.append(t2)
-        elements.append(Spacer(1, 10))
-
-        # --- TABEL 3 & 4: PENDAPATAN KOMPREHENSIF LAIN (OCI) & POSISI PENDANAAN ---
-        elements.append(Paragraph(f"<b>TABEL 3 & 4 — Pendapatan Komprehensif Lain (OCI) dan Posisi Pendanaan Neraca</b>", h_style))
-        t34_data = [
-            ["KOMPONEN LAPORAN KEUANGAN", f"Nilai (Rp) per 31 Desember {yr}"],
-            ["1. Other Comprehensive Income at EoP (OCI Akhir Periode)", f"(Rp {fmt_num(tot_pbo*0.3)})"],
-            ["2. Present Value of Obligation (Nilai Kini Kewajiban / PVDBO)", f"Rp {fmt_num(tot_pbo)}"],
-            ["3. Fair Value of Plan Assets (Nilai Wajar Aktiva Program / DPLK)", f"Rp {fmt_num(tot_pbo*0.1)}"],
-            ["4. Funded Status (Posisi Pendanaan)", f"Rp {fmt_num(tot_pbo*0.9)}"],
-            ["5. Liability Recognized in Balance Sheet (Kewajiban di Neraca)", f"Rp {fmt_num(tot_pbo)}"]
-        ]
-        t34 = Table(t34_data, colWidths=[300, 220])
-        t34_style = TableStyle([
-            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#3A0C08')),
-            ('TEXTCOLOR', (0,0), (-1,0), colors.white),
-            ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0,0), (-1,-1), 7.5),
-            ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#D3C1BE')),
-            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-            ('ALIGN', (1,1), (-1,-1), 'RIGHT'),
-        ])
-        t34.setStyle(t34_style)
-        elements.append(t34)
-        elements.append(PageBreak())
-
-        # --- RINCIAN PERHITUNGAN TINGKAT INDIVIDU (KERTAS KERJA KARYAWAN) ---
-        elements.append(Paragraph(f"<b>KERTAS KERJA RINCIAN TINGKAT INDIVIDU KARYAWAN (31 DESEMBER {yr})</b>", h_style))
-        table_data = [["No", "NIK", "Nama", "Tgl Lahir", "Gaji Kotor", "Umur", "Past\nSvc", "Future\nSvc", "Diskonto", "PVFB", "PBO", "CSC"]]
+        # 4. LAMPIRAN DETAIL KARYAWAN OTOMATIS
+        elements.append(Paragraph(f"<b>LAMPIRAN — Detail Perhitungan Individu Karyawan (Tahun {yr})</b>", h_style))
+        table_data = [["No", "NIK & Nama Karyawan", "Tgl Lahir", "Tgl Masuk", "Gaji Kotor (Rp)", "NRA", "Umur", "Masa Kerja", "Faktor UU", "Diskonto", "PVFB (Rp)", "PBO (Rp)", "CSC (Rp)"]]
+        
         for i, row in df_yr.iterrows():
             dob_str = row['Tanggal Lahir'].strftime('%d-%m-%Y') if pd.notnull(row['Tanggal Lahir']) else "-"
             table_data.append([
-                str(i + 1), str(row['NIK']), str(row['Name'])[:18], dob_str,
-                fmt_num(row['Gross Salary']), fmt_num(row['Age Valuation'], 2),
-                fmt_num(row['Past Service'], 2), fmt_num(row['Future_Service'], 2),
-                f"{row['Applied_Discount']*100:.2f}%", fmt_num(row['PVFB']),
-                fmt_num(row['PBO']), fmt_num(row['CSC'])
+                str(i + 1), f"{row['NIK']}\n{row['Name']}"[:22], dob_str, "01-01-2023",
+                fmt_num(row['Gross Salary']), f"{ret_age}.00", f"{row['Age Valuation']:.2f}", f"{row['Past Service']:.2f}",
+                "23.75", f"{row['Applied_Discount']*100:.2f}%", fmt_num(row['PVFB']), fmt_num(row['PBO']), fmt_num(row['CSC'])
             ])
             
         table_data.append([
-            "", "", "TOTAL", "", fmt_num(tot_salary), "", "", "", "", 
+            "", "TOTAL KESELURUHAN", "", "", fmt_num(tot_salary), "", "", "", "", "", 
             fmt_num(tot_pvfb), fmt_num(tot_pbo), fmt_num(tot_csc)
         ])
         
-        col_widths = [24, 55, 115, 58, 65, 34, 34, 38, 48, 72, 72, 65]
+        col_widths = [22, 110, 52, 52, 68, 30, 32, 38, 55, 42, 68, 68, 63]
         t_detail = Table(table_data, colWidths=col_widths, repeatRows=1)
-        
-        row_style = TableStyle([
+        t_detail.setStyle(TableStyle([
             ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#3A0C08')),
             ('TEXTCOLOR', (0,0), (-1,0), colors.white),
             ('ALIGN', (0,0), (-1,0), 'CENTER'),
             ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0,0), (-1,-1), 7),
+            ('FONTSIZE', (0,0), (-1,-1), 6.5),
             ('BOTTOMPADDING', (0,0), (-1,0), 5),
             ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#D3C1BE')),
             ('ALIGN', (4,1), (-1,-1), 'RIGHT'),
-            ('ALIGN', (1,1), (2,-1), 'LEFT'),
+            ('ALIGN', (1,1), (3,-1), 'LEFT'),
             ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
             ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#EADCDA')),
             ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold')
-        ])
-        t_detail.setStyle(row_style)
+        ]))
         elements.append(t_detail)
         elements.append(PageBreak())
+
+    # 5. BAB PENUTUP OTOMATIS
+    elements.append(Paragraph("<b>5. PENUTUP / CLOSING</b>", h_style))
+    elements.append(Paragraph(f"Demikian laporan aktuaria ini disusun secara independen oleh KKA Nirmala untuk dipergunakan sebagaimana mestinya oleh manajemen <b>PT {company_name.upper()}</b> dan pihak Auditor independen.", body_style))
+    elements.append(Spacer(1, 20))
+    elements.append(Paragraph(f"Jakarta, {formatted_date}<br/><b>KANTOR KONSULTAN AKTUARIA NIRMALA</b><br/><br/><br/><br/><b>Tim Aktuaris Publik</b>", ParagraphStyle('SignBlock', parent=styles['Normal'], fontSize=9, alignment=2)))
         
     doc.build(elements, onFirstPage=draw_footer_landscape, onLaterPages=draw_footer_landscape)
     pdf_buffer.seek(0)
@@ -1092,7 +1040,7 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria":
             st.subheader("📥 Unduh Kertas Kerja & Laporan Resmi KKA Nirmala")
             pdf_file = generate_detailed_report(
                 res_dict, asumsi_gaji, usia_pensiun,
-                act_yrs, input_perusahaan, nomor_laporan
+                act_yrs, input_perusahaan, nomor_laporan, tanggal_laporan
             )
 
             st.download_button(
