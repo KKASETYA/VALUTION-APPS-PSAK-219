@@ -792,7 +792,7 @@ elif menu == "📞 Kontak Kami" or menu == "Kontak Kami":
 elif menu == "🔐 Admin Dashboard":
     st.success("PANEL KONTROL INTERNAL KKA SETYA GUNAWAN")
     st.title("🔐 Admin Dashboard & Data Pulling Center")
-    st.write("Area kontrol terbatas untuk memantau data yang diunggah klien dan menarik hasil kalkulasi.")
+    st.write("Area kontrol terbatas untuk memantau data mentah klien dan hasil kalkulasi aktuaria.")
 
     if not st.session_state.admin_logged_in:
         with st.form("admin_login_form"):
@@ -813,28 +813,50 @@ elif menu == "🔐 Admin Dashboard":
             st.rerun()
 
         st.markdown("---")
-        st.subheader("📊 Monitoring Data & Hasil Valuasi Klien")
+        st.subheader("📊 Monitoring Data Mentah & Hasil Valuasi Klien")
 
         if st.session_state.get("calculated_results") and st.session_state.results_dict:
             res_dict = st.session_state.results_dict
+            raw_dict = st.session_state.get("raw_datasets", {})
             act_yrs = st.session_state.active_years
             client_name = st.session_state.get("input_perusahaan", "Perusahaan Klien")
 
             st.info(f"Klien Aktif Terakhir: **{client_name}**")
 
             for yr in sorted(act_yrs, reverse=True):
-                st.markdown(f"#### 📅 Data Klien Tahun Valuasi {yr}")
+                st.markdown(f"### 📅 Tahun Valuasi {yr}")
+                
+                # 1. Tampilkan & Tarik Data Mentah
+                if yr in raw_dict:
+                    st.markdown(f"**📁 Data Mentah (Excel/Input Asli) Tahun {yr}**")
+                    df_raw = raw_dict[yr]
+                    st.dataframe(df_raw, use_container_width=True)
+                    
+                    csv_raw = df_raw.to_csv(index=False).encode('utf-8')
+                    st.download_button(
+                        label=f"📥 Tarik Data MENTAH Klien ({yr}) - CSV",
+                        data=csv_raw,
+                        file_name=f"Data_Mentah_{client_name.replace(' ', '_')}_{yr}.csv",
+                        mime="text/csv",
+                        key=f"pull_raw_csv_{yr}"
+                    )
+                
+                st.markdown("---")
+                
+                # 2. Tampilkan & Tarik Hasil Perhitungan Aktuaria
+                st.markdown(f"**📈 Hasil Perhitungan Aktuaria (Output) Tahun {yr}**")
                 df_client = res_dict[yr]
                 st.dataframe(df_client, use_container_width=True)
 
-                csv_bytes = df_client.to_csv(index=False).encode('utf-8')
+                csv_res = df_client.to_csv(index=False).encode('utf-8')
                 st.download_button(
-                    label=f"📥 Tarik Data Klien (Tahun {yr}) - CSV",
-                    data=csv_bytes,
-                    file_name=f"Data_Pulling_{client_name.replace(' ', '_')}_{yr}.csv",
+                    label=f"📥 Tarik Hasil PERHITUNGAN Aktuaria ({yr}) - CSV",
+                    data=csv_res,
+                    file_name=f"Hasil_Aktuaria_{client_name.replace(' ', '_')}_{yr}.csv",
                     mime="text/csv",
-                    key=f"pull_csv_{yr}"
+                    key=f"pull_res_csv_{yr}"
                 )
+                st.markdown("═══════════════════════════════════════════════════════════")
         else:
             st.warning("⚠️ Belum ada data kalkulasi atau unggahan dari klien yang tersimpan. Pastikan Anda telah menjalankan kalkulasi di menu **Kalkulator Valuasi Aktuaria** pada sesi ini.")
 
