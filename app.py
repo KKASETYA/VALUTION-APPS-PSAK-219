@@ -51,6 +51,15 @@ def init_db():
             PRIMARY KEY (company_name, valuation_year)
         )
     ''')
+    # Tabel tambahan untuk menyimpan PDF laporan per perusahaan agar admin bisa mendownloadnya
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS report_pdfs (
+            company_name TEXT PRIMARY KEY,
+            pdf_bytes BLOB,
+            filename TEXT,
+            timestamp TEXT
+        )
+    ''')
     conn.commit()
     conn.close()
 
@@ -603,7 +612,7 @@ elif menu == "📞 Kontak Kami" or menu == "Kontak Kami":
         st.write(f"Email: {COMPANY_EMAIL} | Telepon: {COMPANY_PHONE}<br/>Alamat: {COMPANY_ADDRESS}", unsafe_allow_html=True)
 
 # ==========================================
-# 12. HALAMAN: ADMIN DASHBOARD (MULTI-TENANT & TABEL KHUSUS)
+# 12. HALAMAN: ADMIN DASHBOARD (MULTI-TENANT & 5 KOLOM SESUAI PERMINTAAN)
 # ==========================================
 elif menu == "🔐 Admin Dashboard":
     st.success("PANEL KONTROL INTERNAL KKA SETYA GUNAWAN")
@@ -629,20 +638,23 @@ elif menu == "🔐 Admin Dashboard":
             st.rerun()
 
         st.markdown("---")
-        st.subheader("📊 Monitoring Data Mentah & Periode Klien Multi-Perusahaan")
+        st.subheader("📊 Monitoring Data Klien Multi-Perusahaan")
 
         conn = sqlite3.connect("kka_actuarial.db", check_same_thread=False)
         
-        # Ambil data gabungan dari tabel raw_files dan calculation_results
+        # Query gabungan mencakup raw_files, calculation_results, dan report_pdfs
         query = '''
             SELECT 
                 r.timestamp AS tanggal,
                 r.company_name AS nama_perusahaan,
-                COALESCE(GROUP_CONCAT(c.valuation_year), 'Belum Kalkulasi') AS periode_perhitungan,
-                r.filename AS filename,
-                r.file_bytes AS file_bytes
+                COALESCE(GROUP_CONCAT(DISTINCT c.valuation_year), 'Belum Kalkulasi') AS periode_perhitungan,
+                r.filename AS raw_filename,
+                r.file_bytes AS raw_bytes,
+                p.pdf_bytes AS pdf_bytes,
+                p.filename AS pdf_filename
             FROM raw_files r
             LEFT JOIN calculation_results c ON r.company_name = c.company_name
+            LEFT JOIN report_pdfs p ON r.company_name = p.company_name
             GROUP BY r.company_name
         '''
         df_admin_summary = pd.read_sql(query, conn)
@@ -650,28 +662,45 @@ elif menu == "🔐 Admin Dashboard":
         if not df_admin_summary.empty:
             st.markdown("### Daftar Arsip Perusahaan Klien Aktif")
             
-            # Tampilkan dalam format tabel interaktif baris per baris sesuai permintaan
+            # Tampilkan dalam format tabel 5 kolom sesuai permintaan:
+            # Kolom 1: Tanggal/Waktu
+            # Kolom 2: Nama Perusahaan
+            # Kolom 3: Periode Perhitungan
+            # Kolom 4: Data Mentah Asli yang Diupload Klien
+            # Kolom 5: Laporan PDF Perusahaan Tersebut
             for index, row in df_admin_summary.iterrows():
                 with st.container(border=True):
-                    col1, col2, col3, col4 = st.columns([1.5, 2, 1.5, 2])
+                    col1, col2, col3, col4, col5 = st.columns([1.2, 1.8, 1.2, 1.9, 1.9])
                     with col1:
-                        st.markdown(f"**🕒 Tanggal/Waktu:**<br/>{row['tanggal']}", unsafe_allow_html=True)
+                        st.markdown(f"**1. Tanggal/Waktu:**<br/>{row['tanggal']}", unsafe_allow_html=True)
                     with col2:
-                        st.markdown(f"**🏢 Nama Perusahaan:**<br/>`{row['nama_perusahaan']}`", unsafe_allow_html=True)
+                        st.markdown(f"**2. Nama Perusahaan:**<br/>`{row['nama_perusahaan']}`", unsafe_allow_html=True)
                     with col3:
-                        st.markdown(f"**📅 Periode (Tahun):**<br/>{row['periode_perhitungan']}", unsafe_allow_html=True)
+                        st.markdown(f"**3. Periode Perhitungan:**<br/>{row['periode_perhitungan']}", unsafe_allow_html=True)
                     with col4:
-                        st.markdown(f"**📥 Download File Mentah Asli:**")
-                        if row['file_bytes']:
+                        st.markdown(f"**4. Data Mentah Asli:**")
+                        if row['raw_bytes']:
                             st.download_button(
-                                label=f"Unduh {row['filename']}",
-                                data=row['file_bytes'],
-                                file_name=row['filename'],
+                                label=f"📥 Download Excel",
+                                data=row['raw_bytes'],
+                                file_name=row['raw_filename'] or f"Data_{row['nama_perusahaan']}.xlsx",
                                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                                key=f"admin_dl_{index}_{row['nama_perusahaan']}"
+                                key=f"admin_raw_{index}_{row['nama_perusahaan']}"
                             )
                         else:
-                            st.write("File tidak tersedia")
+                            st.write("Belum ada file")
+                    with col5:
+                        st.markdown(f"**5. Laporan PDF Klien:**")
+                        if row['pdf_bytes']:
+                            st.download_button(
+                                label=f"📥 Download PDF",
+                                data=row['pdf_bytes'],
+                                file_name=row['pdf_filename'] or f"LAPORAN_AKTUARIA_{row['nama_perusahaan'].replace(' ', '_')}.pdf",
+                                mime="application/pdf",
+                                key=f"admin_pdf_{index}_{row['nama_perusahaan']}"
+                            )
+                        else:
+                            st.write("Belum digenerate")
         else:
             st.warning("⚠️ Belum ada data perusahaan yang tersimpan di database server.")
         
@@ -844,6 +873,26 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
                         datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     ))
 
+                # Generate juga file PDF secara otomatis agar tersimpan ke database report_pdfs untuk diakses Admin
+                temp_pdf_buffer = generate_detailed_report(
+                    results_dict=results_dict, 
+                    salary_inc=asumsi_gaji, 
+                    ret_age=usia_pensiun, 
+                    val_years=active_years, 
+                    company_name=input_perusahaan, 
+                    report_no=nomor_laporan, 
+                    report_date=tanggal_laporan
+                )
+                pdf_filename_str = f"LAPORAN_AKTUARIA_PSAK219_{input_perusahaan.replace(' ', '_')}.pdf"
+                
+                cursor.execute('''
+                    INSERT OR REPLACE INTO report_pdfs (company_name, pdf_bytes, filename, timestamp)
+                    VALUES (?, ?, ?, ?)
+                ''', (
+                    input_perusahaan, temp_pdf_buffer.getvalue(), pdf_filename_str,
+                    datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                ))
+
                 conn.commit()
                 conn.close()
 
@@ -858,7 +907,7 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
                 st.session_state.nomor_laporan = nomor_laporan
                 st.session_state.tanggal_laporan = tanggal_laporan
                 st.session_state.calculated_results = True
-                st.success(f"Valuasi Aktuaria untuk **{input_perusahaan}** Selesai! Data kalkulasi tersimpan aman di Database Server.")
+                st.success(f"Valuasi Aktuaria untuk **{input_perusahaan}** Selesai! Data kalkulasi dan laporan PDF tersimpan aman di Database Server.")
 
         if st.session_state.get("calculated_results"):
             res_dict = st.session_state.results_dict
