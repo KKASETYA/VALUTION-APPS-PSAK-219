@@ -41,63 +41,6 @@ header[data-testid="stHeader"] { background: transparent; }
 
 .main .block-container { padding-top: 1.5rem; padding-bottom: 3rem; max-width: 1180px; }
 
-/* ---------- Sidebar KKA Setya Gunawan ---------- */
-[data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #3A0C08 0%, #7A1C14 60%, #A82B20 100%);
-}
-[data-testid="stSidebar"] label,
-[data-testid="stSidebar"] .stMarkdown,
-[data-testid="stSidebar"] .stMarkdown p,
-[data-testid="stSidebar"] h1,
-[data-testid="stSidebar"] h2,
-[data-testid="stSidebar"] h3,
-[data-testid="stSidebar"] h4,
-[data-testid="stSidebar"] .stRadio label,
-[data-testid="stSidebar"] .stCaption,
-[data-testid="stSidebar"] small {
-    color: #FDF3F2 !important;
-}
-[data-testid="stSidebar"] .stRadio > label { font-weight: 600; }
-[data-testid="stSidebar"] hr { border-color: rgba(255,255,255,0.15); }
-
-[data-testid="stSidebar"] input,
-[data-testid="stSidebar"] textarea,
-[data-testid="stSidebar"] select,
-[data-testid="stSidebar"] .stTextInput input,
-[data-testid="stSidebar"] .stNumberInput input,
-[data-testid="stSidebar"] .stDateInput input,
-[data-testid="stSidebar"] div[data-baseweb="input"] input,
-[data-testid="stSidebar"] div[data-baseweb="select"] * {
-    color: #111111 !important;
-    -webkit-text-fill-color: #111111 !important;
-    background-color: #ffffff !important;
-}
-[data-testid="stSidebar"] div[data-baseweb="input"],
-[data-testid="stSidebar"] div[data-baseweb="select"] > div,
-[data-testid="stSidebar"] .stTextInput > div,
-[data-testid="stSidebar"] .stNumberInput > div,
-[data-testid="stSidebar"] .stDateInput > div {
-    background-color: #ffffff !important;
-    border-radius: 8px;
-}
-.sidebar-brand {
-    text-align:center;
-    padding: 6px 0 18px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.15);
-    margin-bottom: 14px;
-}
-.sidebar-brand-title { font-family:'Poppins',sans-serif; font-weight:800; font-size:1.05rem; line-height:1.3; }
-.sidebar-brand-sub { font-size:0.72rem; opacity:0.75; letter-spacing:0.5px; text-transform:uppercase; }
-.sidebar-contact-box {
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.12);
-    border-radius: 12px;
-    padding: 12px 14px;
-    font-size: 0.78rem;
-    line-height: 1.6;
-    margin-top: 18px;
-}
-
 /* ---------- Hero ---------- */
 .hero-section {
     background: linear-gradient(135deg, #3A0C08 0%, #8A2017 45%, #C2382D 100%);
@@ -111,82 +54,6 @@ header[data-testid="stHeader"] { background: transparent; }
 }
 .hero-title { font-size: 2.5rem; font-weight: 800; margin-bottom: 14px; line-height:1.2; }
 .hero-sub { font-size: 1.08rem; font-weight: 400; opacity: 0.92; max-width: 680px; line-height:1.7; margin-bottom: 6px;}
-.badge-gold {
-    display:inline-block;
-    background: linear-gradient(135deg,#F2A65A,#FFCB9A);
-    color:#1a1a1a;
-    padding:6px 18px;
-    border-radius:30px;
-    font-weight:700;
-    font-size:0.78rem;
-    letter-spacing:0.4px;
-    margin-bottom:18px;
-}
-.badge-soft {
-    display:inline-block;
-    background: rgba(255,255,255,0.12);
-    border: 1px solid rgba(255,255,255,0.25);
-    color:#fff;
-    padding:5px 14px;
-    border-radius:30px;
-    font-weight:600;
-    font-size:0.74rem;
-    margin: 4px 6px 4px 0;
-}
-
-/* ---------- Cards ---------- */
-.service-card {
-    background: #ffffff;
-    border-radius: 18px;
-    padding: 26px 22px;
-    box-shadow: 0 6px 20px rgba(15,30,60,0.06);
-    border: 1px solid #F5D6D3;
-    transition: all 0.25s ease;
-    height: 100%;
-    margin-bottom: 6px;
-}
-.service-card:hover {
-    transform: translateY(-6px);
-    box-shadow: 0 18px 34px rgba(58,12,8,0.14);
-    border-color:#C2382D;
-}
-.service-icon { font-size: 2rem; margin-bottom: 10px; }
-.service-title { font-size: 1.08rem; font-weight: 700; color:#3A0C08; margin-bottom: 6px; }
-.service-desc { color:#6B4B48; font-size: 0.88rem; line-height:1.6; }
-
-.flagship-card {
-    background: linear-gradient(135deg, #3A0C08 0%, #C2382D 100%);
-    border-radius: 22px;
-    padding: 34px 34px;
-    color: white;
-    box-shadow: 0 20px 40px rgba(58,12,8,0.32);
-    margin-bottom: 10px;
-}
-.flagship-title { font-size:1.5rem; font-weight:800; margin-bottom:10px; }
-.flagship-desc { opacity:0.92; line-height:1.7; font-size:0.95rem; }
-
-.stat-box { text-align:center; padding: 10px 6px; }
-.stat-num { font-size: 1.9rem; font-weight: 800; color:#C2382D; font-family:'Poppins',sans-serif;}
-.stat-label { color:#6B4B48; font-size: 0.8rem; margin-top:2px;}
-
-.section-title { font-size: 1.7rem; font-weight: 800; color:#3A0C08; margin-bottom: 4px;}
-.section-sub { color:#6B4B48; margin-bottom: 26px; font-size:0.95rem;}
-
-.info-box {
-    background:#FDF5F4;
-    border-radius: 16px;
-    padding: 22px 24px;
-    border: 1px solid #F5D6D3;
-    margin-bottom: 14px;
-}
-.info-box b { color:#3A0C08; }
-
-.contact-box {
-    background:#FDF5F4;
-    border-radius: 18px;
-    padding: 26px;
-    border: 1px solid #F5D6D3;
-}
 
 .divider-soft { border: none; border-top: 1px solid #F5D6D3; margin: 30px 0; }
 
@@ -212,15 +79,6 @@ header[data-testid="stHeader"] { background: transparent; }
     border-radius: 12px;
     font-weight: 700;
 }
-
-.calc-header {
-    background: linear-gradient(135deg, #3A0C08 0%, #C2382D 100%);
-    border-radius: 20px;
-    padding: 30px 34px;
-    color: white;
-    margin-bottom: 28px;
-}
-.qris-box { border: 2px dashed #C2382D; padding: 20px; border-radius: 15px; text-align: center; background-color: #FAF1F0; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -233,6 +91,9 @@ if 'admin_logged_in' not in st.session_state:
 
 if 'results_dict' not in st.session_state:
     st.session_state.results_dict = {}
+
+if 'raw_datasets' not in st.session_state:
+    st.session_state.raw_datasets = {}
 
 if 'active_years' not in st.session_state:
     st.session_state.active_years = []
@@ -461,7 +322,6 @@ class PSAK219Engine:
         weighted_time_pv += years_to_retire * pv_ret
         total_pvfb = pvfb_death + pvfb_disability + pvfb_resign + pv_ret
 
-        # --- PERHITUNGAN PBO & CSC FINAL BERDASARKAN ATRIBUSI IFRIC AD ---
         pbo_death_dis_res = (pvfb_death + pvfb_disability + pvfb_resign) * (past_service / total_service) if total_service > 0 else 0
         csc_death_dis_res = (pvfb_death + pvfb_disability + pvfb_resign) / total_service if total_service > 0 else 0
         
@@ -691,7 +551,6 @@ def go_to(page_name):
     st.session_state["menu"] = page_name
     st.rerun()
 
-# Deteksi URL parameter rahasia: ?role=admin
 query_params = st.query_params
 is_url_admin = query_params.get("role") == "admin"
 
@@ -792,7 +651,7 @@ elif menu == "📞 Kontak Kami" or menu == "Kontak Kami":
 elif menu == "🔐 Admin Dashboard":
     st.success("PANEL KONTROL INTERNAL KKA SETYA GUNAWAN")
     st.title("🔐 Admin Dashboard & Data Pulling Center")
-    st.write("Area kontrol terbatas untuk memantau data mentah klien dan hasil kalkulasi aktuaria.")
+    st.write("Area kontrol terbatas untuk memantau data mentah yang diunggah klien dan hasil kalkulasi aktuaria.")
 
     if not st.session_state.admin_logged_in:
         with st.form("admin_login_form"):
@@ -828,7 +687,7 @@ elif menu == "🔐 Admin Dashboard":
                 
                 # 1. Tampilkan & Tarik Data Mentah
                 if yr in raw_dict:
-                    st.markdown(f"**📁 Data Mentah (Excel/Input Asli) Tahun {yr}**")
+                    st.markdown(f"**📁 Data Mentah Asli (Upload/Input Klien) Tahun {yr}**")
                     df_raw = raw_dict[yr]
                     st.dataframe(df_raw, use_container_width=True)
                     
@@ -904,6 +763,7 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
         )
 
         datasets_to_process = {}
+        raw_datasets_collected = {}
         benefit_paid_dict = {}
 
         if metode_input == "Upload File Excel Multi-Tahun":
@@ -915,6 +775,10 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
                         match = re.search(r'(20\d{2})', sh)
                         if match:
                             yr = int(match.group(1))
+                            # Simpan DataFrame mentah dari sheet Excel
+                            df_raw_sheet = pd.read_excel(uploaded_file, sheet_name=sh)
+                            raw_datasets_collected[yr] = df_raw_sheet
+                            
                             df_emp, total_paid = parse_excel_dataset(uploaded_file, sheet_name=sh)
                             datasets_to_process[yr] = df_emp
                             benefit_paid_dict[yr] = total_paid
@@ -948,6 +812,7 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
                     )
                     st.session_state.manual_datasets[yr] = edited_df
                     datasets_to_process[yr] = edited_df
+                    raw_datasets_collected[yr] = edited_df
 
                     benefit_paid_dict[yr] = st.number_input(
                         f"Total Benefit Paid Aktual Tahun {yr} (Rp)",
@@ -1005,6 +870,7 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
 
                 # Simpan permanen ke session_state global
                 st.session_state.results_dict = results_dict
+                st.session_state.raw_datasets = raw_datasets_collected
                 st.session_state.dplk_dict = dplk_dict
                 st.session_state.paid_dict = benefit_paid_dict
                 st.session_state.active_years = active_years
@@ -1014,7 +880,7 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
                 st.session_state.nomor_laporan = nomor_laporan
                 st.session_state.tanggal_laporan = tanggal_laporan
                 st.session_state.calculated_results = True
-                st.success("Valuasi Aktuaria Selesai! Data kini tersimpan dan dapat ditarik melalui Admin Dashboard.")
+                st.success("Valuasi Aktuaria Selesai! Data mentah dan hasil kalkulasi kini tersimpan di Admin Dashboard.")
 
         if st.session_state.get("calculated_results"):
             res_dict = st.session_state.results_dict
