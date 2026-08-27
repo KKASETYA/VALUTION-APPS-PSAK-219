@@ -470,37 +470,58 @@ class PSAK219Engine:
         }
 
 # ==========================================
-# 5. GENERATOR PDF LAPORAN KKA Setya Gunawan (FORMAT BAKU OTOMATIS)
-# ==========================================
-# ==========================================
-# 5. GENERATOR PDF LAPORAN KKA Setya Gunawan (FORMAT COVER KUSTOM)
-# ==========================================
-# ==========================================
-# 5. GENERATOR PDF LAPORAN KKA Setya Gunawan (FORMAT COVER KUSTOM & DETAIL LENGKAP A4)
-# ==========================================
-# ==========================================
-# 1. FUNGSI RENDER LATAR BELAKANG COVER
+# 5. GENERATOR PDF LAPORAN KKA SETYA GUNAWAN (FORMAT COVER KUSTOM & DETAIL LENGKAP A4)
 # ==========================================
 def draw_cover_background(canvas_obj, doc_obj):
     canvas_obj.saveState()
-    # Memasang gambar latar geometris hijau di sisi kiri secara penuh pada ukuran A4 Portrait
     if os.path.exists("cover_bg.png"):
         canvas_obj.drawImage("cover_bg.png", 0, 0, width=595.27, height=841.89, preserveAspectRatio=False, mask='auto')
     canvas_obj.restoreState()
 
-# ==========================================
-# 2. IMPLEMENTASI PADA GENERATOR PDF
-# ==========================================
-# (Letakkan bagian ini di dalam fungsi generate_detailed_report sebelum PageBreak cover)
+def draw_footer_landscape(canvas, doc):
+    canvas.saveState()
+    canvas.setStrokeColor(colors.HexColor('#3A0C08'))
+    canvas.setLineWidth(1)
+    canvas.line(36, 45, landscape(A4)[0] - 36, 45) 
+    canvas.setFont('Helvetica-Bold', 9)
+    canvas.drawCentredString(landscape(A4)[0]/2.0, 30, "Kantor Konsultan Aktuaria Setya Gunawan (KKA Setya Gunawan)")
+    canvas.setFont('Helvetica', 8)
+    canvas.drawCentredString(landscape(A4)[0]/2.0, 20, "Izin Badan Usaha No. 4.21.0007 | Keputusan Kemenkeu RI No. 590/KM.1/2021 | STTD-OJK: STTD-039/NB.122/STTD-KA/2021 | AKKAI: AKKAI-21043")
+    canvas.restoreState()
 
-    # Mengatur gaya huruf agar presisi dengan gambar referensi Anda
+def generate_detailed_report(results_dict, salary_inc, ret_age, val_years, company_name, report_no, report_date):
+    pdf_buffer = io.BytesIO()
+    
+    class MixedPageDocTemplate(SimpleDocTemplate):
+        def handle_pageBegin(self):
+            if self.page > 1:
+                self.pagesize = landscape(A4)
+            super().handle_pageBegin()
+
+    doc_mixed = MixedPageDocTemplate(
+        pdf_buffer, 
+        pagesize=A4, 
+        rightMargin=54, 
+        leftMargin=54, 
+        topMargin=54, 
+        bottomMargin=54
+    )
+    
+    elements = []
+    styles = getSampleStyleSheet()
+    
     cover_title_style = ParagraphStyle('CoverMainTitle', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=17, textColor=colors.HexColor('#E67E22'), alignment=2, spaceAfter=6, leading=21)
     cover_sub_style = ParagraphStyle('CoverSubTitle', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=13.5, textColor=colors.HexColor('#E67E22'), alignment=2, spaceAfter=22, leading=17)
     cover_desc_style = ParagraphStyle('CoverDesc', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=11, textColor=colors.HexColor('#E67E22'), alignment=2, spaceAfter=4, leading=15)
     cover_date_style = ParagraphStyle('CoverDate', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=9.5, textColor=colors.HexColor('#E67E22'), alignment=2, spaceAfter=65, leading=14)
     cover_address_style = ParagraphStyle('CoverAddressRight', parent=styles['Normal'], fontName='Helvetica', fontSize=8.5, textColor=colors.HexColor('#2980B9'), alignment=2, leading=13.5)
+    
+    h_style = ParagraphStyle('SecH', parent=styles['Heading2'], fontSize=11, textColor=colors.HexColor('#C2382D'), spaceBefore=12, spaceAfter=6)
+    body_style = ParagraphStyle('BodyCustom', parent=styles['Normal'], fontSize=9, textColor=colors.HexColor('#222222'), spaceBefore=4, spaceAfter=8, leading=13)
 
-    # Menampilkan Logo di Kanan Atas
+    formatted_date = report_date.strftime('%d %B %Y') if hasattr(report_date, 'strftime') else str(report_date)
+
+    # 1. HALAMAN SAMPUL (COVER) A4 PORTRAIT
     if os.path.exists("logo.png"):
         logo = Image("logo.png", width=1.6*inch, height=1.3*inch)
         logo.hAlign = 'RIGHT'
@@ -509,23 +530,18 @@ def draw_cover_background(canvas_obj, doc_obj):
     else:
         elements.append(Spacer(1, 45))
 
-    # Teks Dinamis (Otomatis mengikuti input aplikasi)
     elements.append(Paragraph("FINAL ACTUARIAL REPORT", cover_title_style))
     elements.append(Paragraph(f"PT {company_name.upper()}", cover_sub_style))
-    
-    elements.append(Spacer(1, 115)) # Mengatur jarak vertikal agar pas di tengah
+    elements.append(Spacer(1, 115))
     
     elements.append(Paragraph("EMPLOYEE BENEFITS LIABILITIES", cover_desc_style))
     elements.append(Paragraph(f"NO. {report_no}", cover_desc_style))
     elements.append(Spacer(1, 12))
     
-    # Periode Tanggal Valuasi Otomatis Mengikuti Tahun Terpilih
     val_yr_str = str(val_years[0]) if val_years else '2022'
     elements.append(Paragraph(f"PERIOD DECEMBER, 31ST {val_yr_str}", cover_date_style))
-    
     elements.append(Spacer(1, 15))
     
-    # Blok Alamat KKA Setya Gunawan di Kanan Bawah
     address_block = (
         "<b>KKA SETYA GUNAWAN</b><br/>"
         "<i>Cilandak 88 Condominium Unit D-1</i><br/>"
@@ -537,6 +553,7 @@ def draw_cover_background(canvas_obj, doc_obj):
     )
     elements.append(Paragraph(address_block, cover_address_style))
     elements.append(PageBreak())
+
     # 2. BAB PENGANTAR
     elements.append(Paragraph("<b>1. PENDAHULUAN / INTRODUCTION</b>", h_style))
     elements.append(Paragraph(f"Laporan aktuaria ini disajikan untuk memenuhi permintaan <b>PT {company_name.upper()}</b> guna mengetahui Kewajiban dan Beban atas Imbalan Kerja Karyawan berdasarkan Undang-Undang Ketenagakerjaan (UU Cipta Kerja No. 11 Tahun 2020) dan PSAK 219.", body_style))
@@ -624,96 +641,13 @@ def draw_cover_background(canvas_obj, doc_obj):
     elements.append(Paragraph("<b>5. PENUTUP / CLOSING</b>", h_style))
     elements.append(Paragraph(f"Demikian laporan aktuaria ini disusun secara independen oleh KKA Setya Gunawan untuk dipergunakan sebagaimana mestinya oleh manajemen <b>PT {company_name.upper()}</b> dan pihak Auditor independen.", body_style))
     elements.append(Spacer(1, 20))
-    elements.append(Paragraph(f"Jakarta, {formatted_date}<br/><b>KANTOR KONSULTAN AKTUARIA SETYA GUNAWAN</b><br/><br/><br/><br/><b>Tim Aktuaris Publik</b>", ParagraphStyle('SignBlock', parent=styles['Normal'], fontSize=9, alignment=2)))
+    elements.append(Paragraph(f"Jakarta, {formatted_date}<br/><b>KANTOR KONSULTAN AKTUARIA SETYA GUNAWAN</b><br/><br/><br/><br/><b>Setya Gunawan, FSAI</b>", ParagraphStyle('SignBlock', parent=styles['Normal'], fontSize=9, alignment=2)))
         
-    # 3. Build dokumen menggunakan doc_mixed
     doc_mixed.build(
         elements, 
         onFirstPage=draw_cover_background, 
         onLaterPages=draw_footer_landscape
     )
-    pdf_buffer.seek(0)
-    return pdf_buffer
-
-    # 3. RINGKASAN HASIL & TABEL BAKU KKA
-    for yr in sorted(val_years, reverse=True):
-        df_yr = results_dict[yr]
-        if df_yr.empty: continue
-            
-        tot_salary = df_yr['Gross Salary'].sum()
-        tot_pvfb = df_yr['PVFB'].sum()
-        tot_pbo = df_yr['PBO'].sum()
-        tot_csc = df_yr['CSC'].sum()
-        num_emp = len(df_yr)
-
-        elements.append(Paragraph(f"<b>4. RINGKASAN HASIL VALUASI (PER 31 DESEMBER {yr})</b>", h_style))
-        t1_data = [
-            ["URAIAN (EXPLANATION)", f"Per 31 Des {yr} (Pasca Kerja)", f"Per 31 Des {yr} (Jangka Panjang Lainnya)"],
-            ["1. Jumlah Karyawan (Number of Employees)", str(num_emp), "0"],
-            ["2. Total Penghasilan Sebulan (Total Salary)", f"Rp {fmt_num(tot_salary)}", "Rp 0"],
-            ["3. Rata-rata Usia (Average Age)", f"{df_yr['Age Valuation'].mean():.2f}", "0.00"],
-            ["4. Rata-rata Masa Kerja Lalu (Past Service)", f"{df_yr['Past Service'].mean():.2f} tahun", "0.00 tahun"],
-            ["5. Tingkat Diskonto Akhir (Discount Rate)", f"{df_yr['Applied_Discount'].mean()*100:.2f}%", f"{df_yr['Applied_Discount'].mean()*100:.2f}%"],
-            ["6. Tingkat Kenaikan Gaji (Salary Increment)", f"{salary_inc*100:.2f}%", f"{salary_inc*100:.2f}%"],
-            ["7. Biaya Jasa Kini (Current Service Cost)", f"Rp {fmt_num(tot_csc)}", "Rp 0"],
-            ["8. Nilai Kini Kewajiban / PVDBO (Obligation)", f"Rp {fmt_num(tot_pbo)}", "Rp 0"]
-        ]
-        t1 = Table(t1_data, colWidths=[280, 220, 220])
-        t1.setStyle(TableStyle([
-            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#3A0C08')),
-            ('TEXTCOLOR', (0,0), (-1,0), colors.white),
-            ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0,0), (-1,-1), 7.5),
-            ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#D3C1BE')),
-            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-            ('ALIGN', (1,1), (-1,-1), 'RIGHT'),
-        ]))
-        elements.append(t1)
-        elements.append(Spacer(1, 15))
-
-        # 4. LAMPIRAN DETAIL KARYAWAN OTOMATIS
-        elements.append(Paragraph(f"<b>LAMPIRAN — Detail Perhitungan Individu Karyawan (Tahun {yr})</b>", h_style))
-        table_data = [["No", "NIK & Nama Karyawan", "Tgl Lahir", "Tgl Masuk", "Gaji Kotor (Rp)", "NRA", "Umur", "Masa Kerja", "Faktor UU", "Diskonto", "PVFB (Rp)", "PBO (Rp)", "CSC (Rp)"]]
-        
-        for i, row in df_yr.iterrows():
-            dob_str = row['Tanggal Lahir'].strftime('%d-%m-%Y') if pd.notnull(row['Tanggal Lahir']) else "-"
-            table_data.append([
-                str(i + 1), f"{row['NIK']}\n{row['Name']}"[:22], dob_str, "01-01-2023",
-                fmt_num(row['Gross Salary']), f"{ret_age}.00", f"{row['Age Valuation']:.2f}", f"{row['Past Service']:.2f}",
-                "23.75", f"{row['Applied_Discount']*100:.2f}%", fmt_num(row['PVFB']), fmt_num(row['PBO']), fmt_num(row['CSC'])
-            ])
-            
-        table_data.append([
-            "", "TOTAL KESELURUHAN", "", "", fmt_num(tot_salary), "", "", "", "", "", 
-            fmt_num(tot_pvfb), fmt_num(tot_pbo), fmt_num(tot_csc)
-        ])
-        
-        col_widths = [22, 110, 52, 52, 68, 30, 32, 38, 55, 42, 68, 68, 63]
-        t_detail = Table(table_data, colWidths=col_widths, repeatRows=1)
-        t_detail.setStyle(TableStyle([
-            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#3A0C08')),
-            ('TEXTCOLOR', (0,0), (-1,0), colors.white),
-            ('ALIGN', (0,0), (-1,0), 'CENTER'),
-            ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0,0), (-1,-1), 6.5),
-            ('BOTTOMPADDING', (0,0), (-1,0), 5),
-            ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#D3C1BE')),
-            ('ALIGN', (4,1), (-1,-1), 'RIGHT'),
-            ('ALIGN', (1,1), (3,-1), 'LEFT'),
-            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-            ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#EADCDA')),
-            ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold')
-        ]))
-        elements.append(t_detail)
-        elements.append(PageBreak())
-
-    # 5. BAB PENUTUP OTOMATIS
-    elements.append(Paragraph("<b>5. PENUTUP / CLOSING</b>", h_style))
-    elements.append(Paragraph(f"Demikian laporan aktuaria ini disusun secara independen oleh KKA Setya Gunawan untuk dipergunakan sebagaimana mestinya oleh manajemen <b>PT {company_name.upper()}</b> dan pihak Auditor independen.", body_style))
-    elements.append(Spacer(1, 20))
-    elements.append(Paragraph(f"Jakarta, {formatted_date}<br/><b>KANTOR KONSULTAN AKTUARIA SETYA GUNAWAN</b><br/><br/><br/><br/><b>Setya Gunawan, FSAI</b>", ParagraphStyle('SignBlock', parent=styles['Normal'], fontSize=9, alignment=2)))
-        
-    doc.build(elements, onFirstPage=draw_footer_landscape, onLaterPages=draw_footer_landscape)
     pdf_buffer.seek(0)
     return pdf_buffer
 
@@ -1083,16 +1017,29 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria":
                     results_dict[yr] = pd.DataFrame(hasil_valuasi)
                     dplk_dict[yr] = total_dplk_yr
 
+                # Simpan ke session_state agar aman dari NameError saat download/render ulang
                 st.session_state.results_dict = results_dict
                 st.session_state.dplk_dict = dplk_dict
                 st.session_state.paid_dict = benefit_paid_dict
                 st.session_state.active_years = active_years
+                st.session_state.asumsi_gaji = asumsi_gaji
+                st.session_state.usia_pensiun = usia_pensiun
+                st.session_state.input_perusahaan = input_perusahaan
+                st.session_state.nomor_laporan = nomor_laporan
+                st.session_state.tanggal_laporan = tanggal_laporan
                 st.session_state.calculated_results = True
                 st.success("Valuasi Aktuaria Selesai! Rincian tingkat individu kini siap ditinjau.")
 
         if st.session_state.get("calculated_results"):
             res_dict = st.session_state.results_dict
             act_yrs = st.session_state.active_years
+            
+            # Ambil parameter dari session_state agar konsisten
+            cur_salary_inc = st.session_state.get("asumsi_gaji", asumsi_gaji)
+            cur_ret_age = st.session_state.get("usia_pensiun", usia_pensiun)
+            cur_company = st.session_state.get("input_perusahaan", input_perusahaan)
+            cur_no_rep = st.session_state.get("nomor_laporan", nomor_laporan)
+            cur_date_rep = st.session_state.get("tanggal_laporan", tanggal_laporan)
 
             st.markdown("---")
             st.subheader("👥 Rincian Perhitungan Tingkat Individu per Karyawan")
@@ -1122,14 +1069,19 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria":
             st.markdown("---")
             st.subheader("📥 Unduh Kertas Kerja & Laporan Resmi KKA Setya Gunawan")
             pdf_file = generate_detailed_report(
-                res_dict, asumsi_gaji, usia_pensiun,
-                act_yrs, input_perusahaan, nomor_laporan, tanggal_laporan
+                results_dict=res_dict, 
+                salary_inc=cur_salary_inc, 
+                ret_age=cur_ret_age, 
+                val_years=act_yrs, 
+                company_name=cur_company, 
+                report_no=cur_no_rep, 
+                report_date=cur_date_rep
             )
 
             st.download_button(
                 label="📥 Download Laporan Aktuaria PSAK 219 (PDF Landscape)",
                 data=pdf_file,
-                file_name=f"LAPORAN_AKTUARIA_PSAK219_{input_perusahaan.replace(' ', '_')}.pdf",
+                file_name=f"LAPORAN_AKTUARIA_PSAK219_{cur_company.replace(' ', '_')}.pdf",
                 mime="application/pdf",
                 type="primary"
             )
