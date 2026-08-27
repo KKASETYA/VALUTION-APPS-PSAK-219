@@ -224,11 +224,21 @@ header[data-testid="stHeader"] { background: transparent; }
 </style>
 """, unsafe_allow_html=True)
 
+# Inisialisasi Session State Global agar data aman
 if 'payment_verified' not in st.session_state:
     st.session_state.payment_verified = False
 
 if 'admin_logged_in' not in st.session_state:
     st.session_state.admin_logged_in = False
+
+if 'results_dict' not in st.session_state:
+    st.session_state.results_dict = {}
+
+if 'active_years' not in st.session_state:
+    st.session_state.active_years = []
+
+if 'calculated_results' not in st.session_state:
+    st.session_state.calculated_results = False
 
 # ==========================================
 # 1. DATABASE KURVA YIELD PHEI MULTI-TAHUN (2022 - 2025)
@@ -358,7 +368,7 @@ def parse_excel_dataset(file_or_buffer, sheet_name=0):
     return pd.DataFrame(clean_data), total_benefit_paid
 
 # ==========================================
-# 4. ENGINE AKTUARIA (PUC DENGAN IFRIC AD & FAKTOR )
+# 4. ENGINE AKTUARIA (PUC DENGAN IFRIC AD)
 # ==========================================
 class PSAK219Engine:
     def __init__(self, valuation_year, salary_increase, retirement_age, resign_rate=0.0):
@@ -473,7 +483,7 @@ class PSAK219Engine:
         }
 
 # ==========================================
-# 5. GENERATOR PDF LAPORAN KKA SETYA GUNAWAN (FORMAT COVER KUSTOM & DETAIL LENGKAP A4)
+# 5. GENERATOR PDF LAPORAN KKA SETYA GUNAWAN
 # ==========================================
 def draw_cover_background(canvas_obj, doc_obj):
     canvas_obj.saveState()
@@ -524,7 +534,6 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_years, compa
 
     formatted_date = report_date.strftime('%d %B %Y') if hasattr(report_date, 'strftime') else str(report_date)
 
-    # 1. HALAMAN SAMPUL (COVER) A4 PORTRAIT
     if os.path.exists("logo.png"):
         logo = Image("logo.png", width=1.6*inch, height=1.3*inch)
         logo.hAlign = 'RIGHT'
@@ -557,7 +566,6 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_years, compa
     elements.append(Paragraph(address_block, cover_address_style))
     elements.append(PageBreak())
 
-    # 2. BAB PENGANTAR
     elements.append(Paragraph("<b>1. PENDAHULUAN / INTRODUCTION</b>", h_style))
     elements.append(Paragraph(f"Laporan aktuaria ini disajikan untuk memenuhi permintaan <b>PT {company_name.upper()}</b> guna mengetahui Kewajiban dan Beban atas Imbalan Kerja Karyawan berdasarkan Undang-Undang Ketenagakerjaan (UU Cipta Kerja No. 11 Tahun 2020) dan PSAK 219.", body_style))
     
@@ -568,7 +576,6 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_years, compa
     elements.append(Paragraph(f"Metode valuasi menggunakan <b>Projected Unit Credit (PUC)</b> dengan asumsi tingkat kenaikan gaji {salary_inc*100:.2f}% p.a., Usia Pensiun Normal {ret_age} tahun, serta tingkat diskonto berbasis kurva PHEI.", body_style))
     elements.append(PageBreak())
 
-    # 3. RINGKASAN HASIL & LAMPIRAN DETAIL KARYAWAN LENGKAP PER TAHUN
     for yr in sorted(val_years, reverse=True):
         df_yr = results_dict[yr]
         if df_yr.empty: continue
@@ -604,7 +611,6 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_years, compa
         elements.append(t1)
         elements.append(Spacer(1, 15))
 
-        # --- LAMPIRAN DETAIL KARYAWAN ---
         elements.append(Paragraph(f"<b>LAMPIRAN — Detail Perhitungan Individu Karyawan (Tahun {yr})</b>", h_style))
         table_data = [["No", "NIK & Nama Karyawan", "Tgl Lahir", "Tgl Masuk", "Gaji Kotor (Rp)", "NRA", "Umur", "Masa Kerja", "Faktor UU", "Diskonto", "PVFB (Rp)", "PBO (Rp)", "CSC (Rp)"]]
         
@@ -640,7 +646,6 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_years, compa
         elements.append(t_detail)
         elements.append(PageBreak())
 
-    # 4. BAB PENUTUP
     elements.append(Paragraph("<b>5. PENUTUP / CLOSING</b>", h_style))
     elements.append(Paragraph(f"Demikian laporan aktuaria ini disusun secara independen oleh KKA Setya Gunawan untuk dipergunakan sebagaimana mestinya oleh manajemen <b>PT {company_name.upper()}</b> dan pihak Auditor independen.", body_style))
     elements.append(Spacer(1, 20))
@@ -675,10 +680,6 @@ def load_logo_base64():
     return None
 
 LOGO_B64 = load_logo_base64()
-LOGO_CHIP_HTML = (
-    f'<div style="background:#ffffff;display:inline-block;padding:8px 16px;border-radius:16px;margin-bottom:16px;box-shadow:0 6px 16px rgba(0,0,0,0.18);">'
-    f'<img src="data:image/png;base64,{LOGO_B64}" style="height:44px;display:block;"/></div>'
-) if LOGO_B64 else ""
 
 # ==========================================
 # 7. NAVIGASI HORIZONTAL NAVBAR ATAS (DENGAN URL PARAMETER ADMIN RAHASIA)
@@ -697,7 +698,6 @@ is_url_admin = query_params.get("role") == "admin"
 nav_options = ["Beranda", "Tentang Kami", "Layanan Kami", "Kalkulator Valuasi Aktuaria", "Kontak Kami"]
 nav_icons = ["house", "building", "briefcase", "calculator", "envelope"]
 
-# Jika diakses lewat tautan rahasia admin, tambahkan menu Admin secara eksklusif
 if is_url_admin:
     nav_options.append("🔐 Admin Dashboard")
     nav_icons.append("shield-lock")
@@ -751,7 +751,6 @@ if menu == "🏠 Beranda" or menu == "Beranda":
         st.markdown("📐 **PSAK 219 & IFRIC AD** | 📈 **PHEI Yield Matching** | 📄 **Kertas Kerja Audit Ready** | 🗂️ **Integrasi API & Otomasi**")
 
     st.markdown("---")
-
     c1, c2 = st.columns([1, 1])
     with c1:
         if st.button("Hitung Imbalan Kerja PSAK 219", use_container_width=True):
@@ -759,41 +758,6 @@ if menu == "🏠 Beranda" or menu == "Beranda":
     with c2:
         if st.button("💼 Lihat Layanan Kami", use_container_width=True):
             go_to("Layanan Kami")
-
-    st.markdown("<hr class='divider-soft'/>", unsafe_allow_html=True)
-
-    s1, s2, s3, s4 = st.columns(4)
-    with s1:
-        st.metric(label="Sesuai PSAK 219 & IFRIC AD", value="100%")
-    with s2:
-        st.metric(label="Tenor Kurva PHEI (Tahun)", value="30")
-    with s3:
-        st.metric(label="Tampil Per Karyawan", value="Detail")
-    with s4:
-        st.metric(label="Estimasi & Laporan", value="24 Jam")
-
-    st.markdown("<hr class='divider-soft'/>", unsafe_allow_html=True)
-    st.subheader("Layanan Utama KKA Setya Gunawan")
-    st.caption("Layanan Valuasi Aktuaria berstandar.")
-
-    fc1, fc2 = st.columns([1.4, 1])
-    with fc1:
-        with st.container(border=True):
-            st.subheader("🧮 Valuasi Aktuaria Imbalan Kerja (PSAK 219)")
-            st.write(
-                "Perhitungan kewajiban imbalan pascakerja menggunakan metode *Projected Unit Credit* "
-                "dan penerapan interpretasi **IFRIC AD (Capping 24 Tahun Masa Kerja)**. "
-                "Sistem mengintegrasikan asumsi demografi TMI IV, tingkat diskonto PHEI, serta analisis sensitivitas mendalam."
-            )
-            if st.button("🚀 Buka Kalkulator Valuasi Aktuaria", key="cta_flagship"):
-                go_to("Kalkulator Valuasi Aktuaria")
-    with fc2:
-        with st.container(border=True):
-            st.markdown("<b>Keunggulan Sistem KKA Setya Gunawan:</b>", unsafe_allow_html=True)
-            st.write("📈 Pencocokan kurva yield PHEI otomatis")
-            st.write("⚖️ Atribusi IFRIC AD / ISAK 35 (Capping)")
-            st.write("👥 **Tabel rincian tingkat individu langsung di web**")
-            st.write("📄 Ekspor Laporan PDF sesuai dengan standar penyajian laporan KKA")
 
 # ==========================================
 # 9. HALAMAN: TENTANG KAMI
@@ -804,34 +768,6 @@ elif menu == "🏢 Tentang Kami" or menu == "Tentang Kami":
         st.title(f"{COMPANY_LEGAL_NAME}")
         st.write("Kantor konsultan aktuaria independen yang terdaftar resmi dan berizin untuk memberikan layanan aktuaria, konsultasi imbalan kerja, dan audit support bagi perusahaan di Indonesia.")
 
-    st.markdown("---")
-
-    c1, c2 = st.columns(2)
-    with c1:
-        with st.container(border=True):
-            st.subheader("🎯 Visi KKA Setya Gunawan")
-            st.write("Menjadi kantor konsultan aktuaria terdepan yang andal, profesional, dan tepercaya dalam mendukung pengelolaan liabilitas imbalan kerja korporasi di Indonesia.")
-    with c2:
-        with st.container(border=True):
-            st.subheader("🚀 Misi KKA Setya Gunawan")
-            st.write("Menghadirkan layanan aktuaria berbasis teknologi tinggi, transparan, serta selaras dengan standar akuntansi keuangan PSAK 219, IFRS, dan regulasi ketenagakerjaan nasional.")
-
-    st.markdown("---")
-    st.subheader("Legalitas & Perizinan Resmi")
-    l1, l2, l3 = st.columns(3)
-    with l1:
-        with st.container(border=True):
-            st.markdown("📜 **Izin Badan Usaha**")
-            st.write(f"{COMPANY_LICENSE}\n\n({COMPANY_MENKEU})")
-    with l2:
-        with st.container(border=True):
-            st.markdown("🏛️ **Terdaftar di OJK**")
-            st.write(COMPANY_OJK)
-    with l3:
-        with st.container(border=True):
-            st.markdown("🪪 **Keanggotaan AKKAI**")
-            st.write(f"Nomor: {COMPANY_AKKAI}")
-
 # ==========================================
 # 10. HALAMAN: LAYANAN KAMI
 # ==========================================
@@ -841,12 +777,6 @@ elif menu == "💼 Layanan Kami" or menu == "Layanan Kami":
         st.title("Layanan Konsultasi & Valuasi Aktuaria")
         st.write("Mendampingi perusahaan menyusun laporan aktuaria imbalan pascakerja, analisis sensitivitas, hingga tata kelola program dana pensiun (DPLK / DPPK).")
 
-    with st.container(border=True):
-        st.subheader("⭐ Kalkulator & Valuasi Aktuaria PSAK 219 Terintegrasi")
-        st.write("Sistem valuasi otomatis berbasis web untuk menghitung PVDBO, CSC, Biaya Bunga, OCI, serta analisis jatuh tempo (Maturity Analysis) dan uji sensitivitas secara presisi.")
-        if st.button("🚀 Gunakan Kalkulator Sekarang", key="cta_service_page"):
-            go_to("Kalkulator Valuasi Aktuaria")
-
 # ==========================================
 # 11. HALAMAN: KONTAK KAMI
 # ==========================================
@@ -855,28 +785,6 @@ elif menu == "📞 Kontak Kami" or menu == "Kontak Kami":
         st.success("HUBUNGI KAMI")
         st.title("Konsultasikan Kebutuhan Aktuaria Anda")
         st.write("Tim aktuaris publik dan profesional KKA Setya Gunawan siap melayani kebutuhan korporasi Anda.")
-
-    c1, c2 = st.columns([1, 1.1])
-    with c1:
-        with st.container(border=True):
-            st.subheader("📍 Alamat Kantor Utama")
-            st.write(COMPANY_ADDRESS)
-            st.markdown("📱 **Telepon / WhatsApp**")
-            st.write(COMPANY_PHONE)
-            st.markdown("✉️ **Email Resmi**")
-            st.write(COMPANY_EMAIL)
-            st.markdown("🏛️ **Legalitas & Akreditasi**")
-            st.write(f"{COMPANY_LICENSE}\n{COMPANY_OJK}\nAKKAI: {COMPANY_AKKAI}")
-    with c2:
-        st.subheader("Kirim Pesan Konsultasi")
-        with st.form("contact_form"):
-            st.text_input("Nama Lengkap")
-            st.text_input("Nama Perusahaan")
-            st.text_input("Email Korporat")
-            st.text_area("Pesan / Kebutuhan Valuasi", height=120)
-            submitted = st.form_submit_button("Kirim Pesan")
-            if submitted:
-                st.success("Terima kasih! Pesan Anda telah diterima oleh tim KKA Setya Gunawan.")
 
 # ==========================================
 # 12. HALAMAN: ADMIN DASHBOARD (EKSKLUSIF)
@@ -892,7 +800,7 @@ elif menu == "🔐 Admin Dashboard":
             admin_pass_input = st.text_input("Password", type="password")
             login_btn = st.form_submit_button("Masuk Dashboard")
             if login_btn:
-                if admin_pass_input == "aktuaris2026": # Sandi Admin Anda
+                if admin_pass_input == "aktuaris2026":
                     st.session_state.admin_logged_in = True
                     st.success("Login berhasil!")
                     st.rerun()
@@ -907,7 +815,7 @@ elif menu == "🔐 Admin Dashboard":
         st.markdown("---")
         st.subheader("📊 Monitoring Data & Hasil Valuasi Klien")
 
-        if "results_dict" in st.session_state and st.session_state.results_dict:
+        if st.session_state.get("calculated_results") and st.session_state.results_dict:
             res_dict = st.session_state.results_dict
             act_yrs = st.session_state.active_years
             client_name = st.session_state.get("input_perusahaan", "Perusahaan Klien")
@@ -919,7 +827,6 @@ elif menu == "🔐 Admin Dashboard":
                 df_client = res_dict[yr]
                 st.dataframe(df_client, use_container_width=True)
 
-                # Fitur Data Pulling (Download Data Klien dalam format CSV / Excel)
                 csv_bytes = df_client.to_csv(index=False).encode('utf-8')
                 st.download_button(
                     label=f"📥 Tarik Data Klien (Tahun {yr}) - CSV",
@@ -929,7 +836,7 @@ elif menu == "🔐 Admin Dashboard":
                     key=f"pull_csv_{yr}"
                 )
         else:
-            st.warning("Belum ada data kalkulasi atau unggahan dari klien yang tersimpan di memori sesi sistem saat ini.")
+            st.warning("⚠️ Belum ada data kalkulasi atau unggahan dari klien yang tersimpan. Pastikan Anda telah menjalankan kalkulasi di menu **Kalkulator Valuasi Aktuaria** pada sesi ini.")
 
 # ==========================================
 # 13. HALAMAN: KALKULATOR VALUASI AKTUARIA
@@ -940,9 +847,8 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
         st.title("📄 Generator Laporan Aktuaria PSAK 219 (IFRIC AD)")
         st.write("Menampilkan rincian kalkulasi per karyawan di web, dilengkapi kurva yield PHEI & kertas kerja siap audit.")
 
-    # Sistem Pembayaran / Paywall QRIS KKA Setya Gunawan
     if not st.session_state.payment_verified:
-        st.warning("🔒 **Akses Terkunci:** Silakan lakukan verifikasi pembayaran administrasi layanan valuasi aktuaria KKA Setya Gunawan.")
+        st.warning("🔒 **Akses Terkunci:** Silakan lakukan verifikasi pembayaran administrasi layanan valuasi aktuaria.")
         with st.container(border=True):
             st.subheader("Biaya Akses Valuasi Korporat")
             st.markdown("## Rp 5.000.000,-")
@@ -959,7 +865,6 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
     else:
         st.success("🎉 Pembayaran Terverifikasi! Sistem Kalkulator PSAK 219 & Kertas Kerja Individu Aktif.")
 
-        # Pengaturan Laporan dipindah ke bagian utama halaman karena sidebar tidak dipakai
         with st.expander("⚙️ Pengaturan Laporan & Asumsi Aktuaria (Klik untuk Mengatur)", expanded=True):
             col_set1, col_set2 = st.columns(2)
             with col_set1:
@@ -970,7 +875,6 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
                 asumsi_gaji = st.number_input("Kenaikan Gaji Tahunan (%)", value=8.0, step=0.1) / 100
                 usia_pensiun = st.number_input("Usia Pensiun Normal", value=55, step=1)
                 asumsi_resign = st.number_input("Tingkat Pengunduran Diri / Resign (%)", value=2.0, step=0.1) / 100
-            st.info("💡 **Standar Aktuaris KKA Setya Gunawan:** Suku bunga diskonto ditentukan otomatis lewat *yield curve matching* PHEI sesuai sisa masa kerja individual.")
 
         metode_input = st.radio(
             "Pilih Metode Masukan Data Karyawan:",
@@ -996,7 +900,6 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
                 except Exception as e:
                     st.error(f"Gagal membaca file: {e}")
         else:
-            st.info("Masukkan data karyawan langsung per tahun menggunakan tabel interaktif di bawah (Rentang 2021 - 2026).")
             selected_years = st.multiselect(
                 "Pilih Tahun Valuasi yang Ingin Dibuat",
                 [2021, 2022, 2023, 2024, 2025, 2026],
@@ -1078,7 +981,7 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
                     results_dict[yr] = pd.DataFrame(hasil_valuasi)
                     dplk_dict[yr] = total_dplk_yr
 
-                # Simpan ke session_state agar aman dari NameError & bisa ditarik oleh Admin
+                # Simpan permanen ke session_state global
                 st.session_state.results_dict = results_dict
                 st.session_state.dplk_dict = dplk_dict
                 st.session_state.paid_dict = benefit_paid_dict
@@ -1089,7 +992,7 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
                 st.session_state.nomor_laporan = nomor_laporan
                 st.session_state.tanggal_laporan = tanggal_laporan
                 st.session_state.calculated_results = True
-                st.success("Valuasi Aktuaria Selesai! Rincian tingkat individu kini siap ditinjau.")
+                st.success("Valuasi Aktuaria Selesai! Data kini tersimpan dan dapat ditarik melalui Admin Dashboard.")
 
         if st.session_state.get("calculated_results"):
             res_dict = st.session_state.results_dict
@@ -1103,14 +1006,11 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
 
             st.markdown("---")
             st.subheader("👥 Rincian Perhitungan Tingkat Individu per Karyawan")
-            st.write("Berikut adalah rincian kalkulasi aktuaria per orang sesuai format kertas kerja KKA Setya Gunawan:")
 
             for yr in sorted(act_yrs, reverse=True):
                 st.markdown(f"#### 📅 Data Valuasi Tahun {yr}")
                 df_y = res_dict[yr]
-                if df_y.empty:
-                    st.info(f"Tidak ada data untuk tahun {yr}.")
-                    continue
+                if df_y.empty: continue
 
                 df_display = df_y.copy()
                 df_display['Tanggal Lahir'] = pd.to_datetime(df_display['Tanggal Lahir']).dt.strftime('%d-%m-%Y')
