@@ -7,8 +7,6 @@ import os
 import re
 import base64
 import time
-import sqlite3
-import uuid
 
 from reportlab.lib.pagesizes import letter, A4, landscape
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, Image
@@ -18,7 +16,7 @@ from reportlab.lib.units import inch
 from streamlit_option_menu import option_menu
 
 # ==========================================
-# KONFIGURASI HALAMAN & IDENTITAS KKA
+# KONFIGURASI HALAMAN & IDENTITAS KKA Setya Gunawan
 # ==========================================
 st.set_page_config(
     page_title="KKA Setya Gunawan | Kantor Konsultan Aktuaria",
@@ -28,36 +26,7 @@ st.set_page_config(
 )
 
 # ==========================================
-# INISIALISASI DATABASE SQLITE (MULTI-TENANT BACKEND)
-# ==========================================
-def init_db():
-    conn = sqlite3.connect("kka_actuarial.db", check_same_thread=False)
-    cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS raw_files (
-            company_name TEXT PRIMARY KEY,
-            filename TEXT,
-            file_bytes BLOB,
-            timestamp TEXT
-        )
-    ''')
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS calculation_results (
-            company_name TEXT,
-            valuation_year INTEGER,
-            result_csv TEXT,
-            parameters TEXT,
-            timestamp TEXT,
-            PRIMARY KEY (company_name, valuation_year)
-        )
-    ''')
-    conn.commit()
-    conn.close()
-
-init_db()
-
-# ==========================================
-# CUSTOM CSS & TEMA KORPORAT KKA SETYA GUNAWAN
+# CUSTOM CSS & TEMA KORPORAT KKA Setya Gunawan
 # ==========================================
 st.markdown("""
 <style>
@@ -113,14 +82,21 @@ header[data-testid="stHeader"] { background: transparent; }
 </style>
 """, unsafe_allow_html=True)
 
-# Inisialisasi Session State Global
-if 'payment_verified' not in st.session_state: st.session_state.payment_verified = False
-if 'admin_logged_in' not in st.session_state: st.session_state.admin_logged_in = False
-if 'client_session_id' not in st.session_state: st.session_state.client_session_id = str(uuid.uuid4())[:8]
+# Inisialisasi Session State Global agar data aman
+if 'payment_verified' not in st.session_state:
+    st.session_state.payment_verified = False
 
-if 'results_dict' not in st.session_state: st.session_state.results_dict = {}
-if 'active_years' not in st.session_state: st.session_state.active_years = []
-if 'calculated_results' not in st.session_state: st.session_state.calculated_results = False
+if 'admin_logged_in' not in st.session_state:
+    st.session_state.admin_logged_in = False
+
+if 'results_dict' not in st.session_state:
+    st.session_state.results_dict = {}
+
+if 'active_years' not in st.session_state:
+    st.session_state.active_years = []
+
+if 'calculated_results' not in st.session_state:
+    st.session_state.calculated_results = False
 
 # ==========================================
 # 1. DATABASE KURVA YIELD PHEI MULTI-TAHUN (2022 - 2025)
@@ -162,14 +138,19 @@ def get_phei_discount_rate(duration, valuation_year):
     
     curve = MULTI_YEAR_PHEI_CURVE[valuation_year]
     dur_int = int(round(duration))
-    if dur_int in curve: return curve[dur_int]
-    elif dur_int < 1: return curve[0.1]
-    elif dur_int > 30: return curve[30]
+    if dur_int in curve:
+        return curve[dur_int]
+    elif dur_int < 1:
+        return curve[0.1]
+    elif dur_int > 30:
+        return curve[30]
     else:
         lower_tenor = max([t for t in curve.keys() if t <= duration])
         upper_tenor = min([t for t in curve.keys() if t >= duration])
-        if lower_tenor == upper_tenor: return curve[lower_tenor]
-        r_low, r_high = curve[lower_tenor], curve[upper_tenor]
+        if lower_tenor == upper_tenor:
+            return curve[lower_tenor]
+        r_low = curve[lower_tenor]
+        r_high = curve[upper_tenor]
         return r_low + (r_high - r_low) * (duration - lower_tenor) / (upper_tenor - lower_tenor)
 
 # ==========================================
@@ -177,11 +158,14 @@ def get_phei_discount_rate(duration, valuation_year):
 # ==========================================
 def fmt_num(num, decimals=0):
     if pd.isna(num) or num == "" or num == 0: return "-"
-    if decimals == 0: return f"{num:,.0f}".replace(",", ".")
-    else: return f"{num:,.{decimals}f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    if decimals == 0:
+        return f"{num:,.0f}".replace(",", ".")
+    else:
+        formatted = f"{num:,.{decimals}f}"
+        return formatted.replace(",", "X").replace(".", ",").replace("X", ".")
 
 # ==========================================
-# 3. PARSER EXCEL PRESISI
+# 3. PARSER EXCEL PRESISI (DENGAN SAFE FLOAT)
 # ==========================================
 def parse_excel_dataset(file_or_buffer, sheet_name=0):
     df = pd.read_excel(file_or_buffer, sheet_name=sheet_name, header=None)
@@ -196,11 +180,14 @@ def parse_excel_dataset(file_or_buffer, sheet_name=0):
 
     def safe_float(val, default=0.0):
         try:
-            if pd.isna(val): return default
+            if pd.isna(val):
+                return default
             cleaned = re.sub(r'[^0-9.\-]', '', str(val))
-            if cleaned == '' or cleaned == '-': return default
+            if cleaned == '' or cleaned == '-':
+                return default
             return float(cleaned)
-        except: return default
+        except:
+            return default
 
     for idx in range(data_start_idx, len(df)):
         row = df.iloc[idx]
@@ -211,6 +198,7 @@ def parse_excel_dataset(file_or_buffer, sheet_name=0):
         
         salary = safe_float(row.iloc[5] if len(row) > 5 else 0.0, 0.0)
         dplk = safe_float(row.iloc[6] if len(row) > 6 else 0.0, 0.0)
+
         pension_mult = safe_float(row.iloc[12] if len(row) > 12 else 1.75, 1.75)
         disability_mult = safe_float(row.iloc[13] if len(row) > 13 else 2.0, 2.0)
         death_mult = safe_float(row.iloc[14] if len(row) > 14 else 2.0, 2.0)
@@ -220,15 +208,20 @@ def parse_excel_dataset(file_or_buffer, sheet_name=0):
             clean_data.append({
                 'NIK': str(nik).strip() if not pd.isna(nik) else '',
                 'Nama': str(nama).strip() if not pd.isna(nama) else '',
-                'Tanggal Lahir': dob, 'Tgl. Mulai Bekerja': doe,
-                'Total Upah Bulanan (Gross)': salary, 'Saldo DPLK': dplk,
-                'Pension_Mult': pension_mult, 'Disability_Mult': disability_mult,
-                'Death_Mult': death_mult, 'Resign_Mult': resign_mult
+                'Tanggal Lahir': dob,
+                'Tgl. Mulai Bekerja': doe,
+                'Total Upah Bulanan (Gross)': salary,
+                'Saldo DPLK': dplk,
+                'Pension_Mult': pension_mult,
+                'Disability_Mult': disability_mult,
+                'Death_Mult': death_mult,
+                'Resign_Mult': resign_mult
             })
 
         if len(row) > 11:
             val_paid = safe_float(row.iloc[11], 0.0)
-            if val_paid > 0: total_benefit_paid += val_paid
+            if val_paid > 0:
+                total_benefit_paid += val_paid
 
     return pd.DataFrame(clean_data), total_benefit_paid
 
@@ -279,11 +272,14 @@ class PSAK219Engine:
         total_service = past_service + years_to_retire
         weighted_time_pv = 0
         
+        # --- ATRIBUSI IFRIC AD (CAPPING 24 TAHUN) ---
         unattributed_years = max(0, total_service - 24)
         past_service_ret = max(0, past_service - unattributed_years)
         total_service_ret = min(total_service, 24)
 
-        pvfb_death = pvfb_disability = pvfb_resign = 0
+        pvfb_death = 0
+        pvfb_disability = 0
+        pvfb_resign = 0
         p_survival = 1.0
 
         for t in range(int(years_to_retire)):
@@ -298,10 +294,20 @@ class PSAK219Engine:
             b_resign = salary_t * (r_mult * upmk_t) if service_t >= 3 else 0
             
             v = 1 / ((1 + discount_rate) ** (t + 1))
-            pvfb_death += b_death * p_survival * q_m * v
-            pvfb_disability += b_disab * p_survival * q_d * v
-            pvfb_resign += b_resign * p_survival * q_w * v
-            weighted_time_pv += (t + 1) * (b_death * p_survival * q_m * v + b_disab * p_survival * q_d * v + b_resign * p_survival * q_w * v)
+
+            cf_death = b_death * p_survival * q_m
+            cf_disab = b_disab * p_survival * q_d
+            cf_resign = b_resign * p_survival * q_w
+
+            pv_death = cf_death * v
+            pv_disab = cf_disab * v
+            pv_resign = cf_resign * v
+            
+            pvfb_death += pv_death
+            pvfb_disability += pv_disab
+            pvfb_resign += pv_resign
+            
+            weighted_time_pv += (t + 1) * (pv_death + pv_disab + pv_resign)
             p_survival *= (1 - (q_m + q_d + q_w))
 
         salary_ret = current_salary * ((1 + self.salary_inc) ** years_to_retire)
@@ -321,15 +327,20 @@ class PSAK219Engine:
 
         pbo = pbo_death_dis_res + pbo_ret
         csc = csc_death_dis_res + csc_ret
+        
         duration = (weighted_time_pv / total_pvfb) if total_pvfb > 0 else years_to_retire / 2.0
         
         return {
-            'PBO': pbo, 'CSC': csc, 'Duration': duration, 
-            'PVFB': total_pvfb, 'Applied_Discount': discount_rate, 'Future_Service': years_to_retire
+            'PBO': pbo, 
+            'CSC': csc, 
+            'Duration': duration, 
+            'PVFB': total_pvfb, 
+            'Applied_Discount': discount_rate,
+            'Future_Service': years_to_retire
         }
 
 # ==========================================
-# 5. GENERATOR PDF LAPORAN
+# 5. GENERATOR PDF LAPORAN KKA SETYA GUNAWAN
 # ==========================================
 def draw_cover_background(canvas_obj, doc_obj):
     canvas_obj.saveState()
@@ -353,10 +364,19 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_years, compa
     
     class MixedPageDocTemplate(SimpleDocTemplate):
         def handle_pageBegin(self):
-            if self.page > 1: self.pagesize = landscape(A4)
+            if self.page > 1:
+                self.pagesize = landscape(A4)
             super().handle_pageBegin()
 
-    doc_mixed = MixedPageDocTemplate(pdf_buffer, pagesize=A4, rightMargin=54, leftMargin=54, topMargin=54, bottomMargin=54)
+    doc_mixed = MixedPageDocTemplate(
+        pdf_buffer, 
+        pagesize=A4, 
+        rightMargin=54, 
+        leftMargin=54, 
+        topMargin=54, 
+        bottomMargin=54
+    )
+    
     elements = []
     styles = getSampleStyleSheet()
     
@@ -488,12 +508,16 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_years, compa
     elements.append(Spacer(1, 20))
     elements.append(Paragraph(f"Jakarta, {formatted_date}<br/><b>KANTOR KONSULTAN AKTUARIA SETYA GUNAWAN</b><br/><br/><br/><br/><b>Setya Gunawan, FSAI</b>", ParagraphStyle('SignBlock', parent=styles['Normal'], fontSize=9, alignment=2)))
         
-    doc_mixed.build(elements, onFirstPage=draw_cover_background, onLaterPages=draw_footer_landscape)
+    doc_mixed.build(
+        elements, 
+        onFirstPage=draw_cover_background, 
+        onLaterPages=draw_footer_landscape
+    )
     pdf_buffer.seek(0)
     return pdf_buffer
 
 # ==========================================
-# 6. KONSTANTA KORPORAT KKA SETYA GUNAWAN
+# 6. KONSTANTA KORPORAT KKA Setya Gunawan
 # ==========================================
 COMPANY_LEGAL_NAME = "Kantor Konsultan Aktuaria Setya Gunawan"
 COMPANY_LICENSE = "Izin Badan Usaha Kemenkeu RI No. 4.21.0007"
@@ -508,7 +532,8 @@ LOGO_PATH = "logo.png"
 
 def load_logo_base64():
     if os.path.exists(LOGO_PATH):
-        with open(LOGO_PATH, "rb") as f: return base64.b64encode(f.read()).decode()
+        with open(LOGO_PATH, "rb") as f:
+            return base64.b64encode(f.read()).decode()
     return None
 
 LOGO_B64 = load_logo_base64()
@@ -516,9 +541,12 @@ LOGO_B64 = load_logo_base64()
 # ==========================================
 # 7. NAVIGASI HORIZONTAL NAVBAR ATAS
 # ==========================================
-if "menu" not in st.session_state: st.session_state["menu"] = "Beranda"
+if "menu" not in st.session_state:
+    st.session_state["menu"] = "Beranda"
 
-def go_to(page_name): st.session_state["menu"] = page_name; st.rerun()
+def go_to(page_name):
+    st.session_state["menu"] = page_name
+    st.rerun()
 
 query_params = st.query_params
 is_url_admin = query_params.get("role") == "admin"
@@ -540,13 +568,23 @@ with st.container():
         """, unsafe_allow_html=True)
 
     selected_nav = option_menu(
-        menu_title=None, options=nav_options, icons=nav_icons, menu_icon="cast",
+        menu_title=None,
+        options=nav_options,
+        icons=nav_icons,
+        menu_icon="cast",
         default_index=nav_options.index(st.session_state["menu"]) if st.session_state["menu"] in nav_options else 0,
         orientation="horizontal",
         styles={
             "container": {"padding": "0!important", "background-color": "#FAF1F0", "border-radius": "10px", "margin-bottom": "25px"},
             "icon": {"color": "#C2382D", "font-size": "13px"}, 
-            "nav-link": {"font-size": "13.5px", "text-align": "center", "margin": "0px 4px", "font-family": "Inter, sans-serif", "font-weight": "600", "color": "#3A0C08"},
+            "nav-link": {
+                "font-size": "13.5px",
+                "text-align": "center",
+                "margin": "0px 4px",
+                "font-family": "Inter, sans-serif",
+                "font-weight": "600",
+                "color": "#3A0C08",
+            },
             "nav-link-selected": {"background-color": "#3A0C08", "color": "white !important"},
         }
     )
@@ -566,14 +604,16 @@ if menu == "🏠 Beranda" or menu == "Beranda":
             "konsultasi program pensiun, dan pelaporan keuangan sesuai standar **PSAK 219 & IFRIC AD** — "
             "didukung pencocokan kurva yield PHEI zero-coupon resmi per tahun valuasi."
         )
-        st.markdown("📐 **PSAK 219 & IFRIC AD** | 📈 **PHEI Yield Matching** | 📄 **Kertas Kerja Audit Ready** | 🗂️ **Multi-Tenant DB**")
+        st.markdown("📐 **PSAK 219 & IFRIC AD** | 📈 **PHEI Yield Matching** | 📄 **Kertas Kerja Audit Ready** | 🗂️ **Integrasi API & Otomasi**")
 
     st.markdown("---")
     c1, c2 = st.columns([1, 1])
     with c1:
-        if st.button("Hitung Imbalan Kerja PSAK 219", use_container_width=True): go_to("Kalkulator Valuasi Aktuaria")
+        if st.button("Hitung Imbalan Kerja PSAK 219", use_container_width=True):
+            go_to("Kalkulator Valuasi Aktuaria")
     with c2:
-        if st.button("💼 Lihat Layanan Kami", use_container_width=True): go_to("Layanan Kami")
+        if st.button("💼 Lihat Layanan Kami", use_container_width=True):
+            go_to("Layanan Kami")
 
 # ==========================================
 # 9. HALAMAN: TENTANG KAMI
@@ -600,15 +640,15 @@ elif menu == "📞 Kontak Kami" or menu == "Kontak Kami":
     with st.container():
         st.success("HUBUNGI KAMI")
         st.title("Konsultasikan Kebutuhan Aktuaria Anda")
-        st.write(f"Email: {COMPANY_EMAIL} | Telepon: {COMPANY_PHONE}<br/>Alamat: {COMPANY_ADDRESS}", unsafe_allow_html=True)
+        st.write("Tim aktuaris publik dan profesional KKA Setya Gunawan siap melayani kebutuhan korporasi Anda.")
 
 # ==========================================
-# 12. HALAMAN: ADMIN DASHBOARD (MULTI-TENANT DB)
+# 12. HALAMAN: ADMIN DASHBOARD (EKSKLUSIF)
 # ==========================================
 elif menu == "🔐 Admin Dashboard":
     st.success("PANEL KONTROL INTERNAL KKA SETYA GUNAWAN")
-    st.title("🔐 Admin Dashboard & Database Center")
-    st.write("Pusat kendali arsip seluruh perusahaan klien yang tersimpan permanen di database server.")
+    st.title("🔐 Admin Dashboard & Data Pulling Center")
+    st.write("Area kontrol terbatas untuk memantau data mentah yang diunggah klien dan hasil kalkulasi aktuaria.")
 
     if not st.session_state.admin_logged_in:
         with st.form("admin_login_form"):
@@ -629,59 +669,46 @@ elif menu == "🔐 Admin Dashboard":
             st.rerun()
 
         st.markdown("---")
-        st.subheader("📊 Monitoring Data Mentah & Hasil Valuasi Seluruh Perusahaan Klien")
+        st.subheader("📊 Monitoring Data Mentah & Hasil Valuasi Klien")
 
-        conn = sqlite3.connect("kka_actuarial.db", check_same_thread=False)
-        df_companies = pd.read_sql("SELECT DISTINCT company_name FROM raw_files UNION SELECT DISTINCT company_name FROM calculation_results", conn)
-        
-        if not df_companies.empty:
-            company_list = df_companies['company_name'].tolist()
-            selected_comp = st.selectbox("Pilih Perusahaan Klien untuk Dilihat:", company_list)
+        client_name = st.session_state.get("input_perusahaan", "Perusahaan Klien")
 
-            if selected_comp:
-                st.markdown(f"### 🏢 Data Klien: **{selected_comp}**")
-                
-                # 1. Unduh File Excel Mentah Asli dari Database
-                cursor = conn.cursor()
-                cursor.execute("SELECT filename, file_bytes, timestamp FROM raw_files WHERE company_name = ?", (selected_comp,))
-                raw_row = cursor.fetchone()
-                if raw_row:
-                    fname, fbytes, ftime = raw_row
-                    st.markdown(f"**📁 File Excel Mentah Asli (Diunggah pada: {ftime})**")
-                    st.info(f"Nama File: `{fname}`")
-                    
-                    st.download_button(
-                        label=f"📥 Download File Excel Mentah Asli (.xlsx)",
-                        data=fbytes, file_name=fname,
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                        key=f"dl_raw_{selected_comp}"
-                    )
-                    st.markdown("---")
+        # Tombol Download File Excel Mentah Asli Klien
+        if "raw_uploaded_file_bytes" in st.session_state:
+            st.markdown(f"**📁 File Excel Mentah Asli yang Diunggah Klien**")
+            st.info(f"Nama File: `{st.session_state.get('raw_uploaded_filename', 'data_klien.xlsx')}`")
+            
+            st.download_button(
+                label="📥 Download File Excel Mentah Asli (.xlsx)",
+                data=st.session_state.raw_uploaded_file_bytes,
+                file_name=st.session_state.get('raw_uploaded_filename', f"Raw_Excel_{client_name.replace(' ', '_')}.xlsx"),
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                key="download_raw_excel_button"
+            )
+            st.markdown("---")
 
-                # 2. Hasil Kalkulasi Aktuaria dari Database
-                df_calcs = pd.read_sql("SELECT valuation_year, result_csv, timestamp FROM calculation_results WHERE company_name = ?", conn, params=(selected_comp,))
-                if not df_calcs.empty:
-                    for _, c_row in df_calcs.iterrows():
-                        yr = c_row['valuation_year']
-                        csv_data = c_row['result_csv']
-                        st.markdown(f"**📈 Hasil Perhitungan Aktuaria (Output) Tahun {yr} (Dihitung: {c_row['timestamp']})**")
-                        
-                        df_res_view = pd.read_csv(io.StringIO(csv_data))
-                        st.dataframe(df_res_view, use_container_width=True)
-                        
-                        st.download_button(
-                            label=f"📥 Tarik Hasil PERHITUNGAN Aktuaria ({selected_comp} - {yr}) - CSV",
-                            data=csv_data.encode('utf-8'),
-                            file_name=f"Hasil_Aktuaria_{selected_comp.replace(' ', '_')}_{yr}.csv",
-                            mime="text/csv",
-                            key=f"dl_res_{selected_comp}_{yr}"
-                        )
-                        st.markdown("═══════════════════════════════════════════════════════════")
-                else:
-                    st.info("Perusahaan ini belum menjalankan kalkulasi aktuaria di sistem.")
+        if st.session_state.get("calculated_results") and st.session_state.results_dict:
+            res_dict = st.session_state.results_dict
+            act_yrs = st.session_state.active_years
+
+            st.info(f"Klien Aktif Terakhir: **{client_name}**")
+
+            for yr in sorted(act_yrs, reverse=True):
+                st.markdown(f"### 📅 Hasil Perhitungan Aktuaria (Output) Tahun {yr}")
+                df_client = res_dict[yr]
+                st.dataframe(df_client, use_container_width=True)
+
+                csv_res = df_client.to_csv(index=False).encode('utf-8')
+                st.download_button(
+                    label=f"📥 Tarik Hasil PERHITUNGAN Aktuaria ({yr}) - CSV",
+                    data=csv_res,
+                    file_name=f"Hasil_Aktuaria_{client_name.replace(' ', '_')}_{yr}.csv",
+                    mime="text/csv",
+                    key=f"pull_res_csv_{yr}"
+                )
+                st.markdown("═══════════════════════════════════════════════════════════")
         else:
-            st.warning("⚠️ Belum ada data perusahaan yang tersimpan di database server.")
-        conn.close()
+            st.warning("⚠️ Belum ada data kalkulasi atau unggahan dari klien yang tersimpan. Pastikan Anda telah menjalankan kalkulasi di menu **Kalkulator Valuasi Aktuaria** pada sesi ini.")
 
 # ==========================================
 # 13. HALAMAN: KALKULATOR VALUASI AKTUARIA
@@ -733,15 +760,9 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
             uploaded_file = st.file_uploader("Unggah File Excel Multi-Tahun Anda (.xlsx / .xls)", type=["xlsx", "xls"])
             if uploaded_file is not None:
                 try:
-                    # Simpan file mentah ke database SQLite secara permanen per perusahaan
-                    conn = sqlite3.connect("kka_actuarial.db", check_same_thread=False)
-                    cursor = conn.cursor()
-                    cursor.execute('''
-                        INSERT OR REPLACE INTO raw_files (company_name, filename, file_bytes, timestamp)
-                        VALUES (?, ?, ?, ?)
-                    ''', (input_perusahaan, uploaded_file.name, uploaded_file.getvalue(), datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
-                    conn.commit()
-                    conn.close()
+                    # Simpan file Excel mentah asli secara utuh ke session state agar Admin bisa download persis aslinya
+                    st.session_state.raw_uploaded_file_bytes = uploaded_file.getvalue()
+                    st.session_state.raw_uploaded_filename = uploaded_file.name
 
                     xl_file = pd.ExcelFile(uploaded_file)
                     for sh in xl_file.sheet_names:
@@ -751,7 +772,7 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
                             df_emp, total_paid = parse_excel_dataset(uploaded_file, sheet_name=sh)
                             datasets_to_process[yr] = df_emp
                             benefit_paid_dict[yr] = total_paid
-                    st.success(f"Berhasil membaca sheet Excel untuk **{input_perusahaan}** (Tahun: {list(datasets_to_process.keys())})")
+                    st.success(f"Berhasil membaca sheet Excel untuk tahun: {list(datasets_to_process.keys())}")
                 except Exception as e:
                     st.error(f"Gagal membaca file: {e}")
         else:
@@ -791,13 +812,10 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
 
         st.markdown("---")
         if st.button("Jalankan Valuasi Otomatis (PSAK 219 & IFRIC AD) 🚀") and datasets_to_process:
-            with st.spinner("Menghitung perincian aktuaria per karyawan dengan metode PUC & IFRIC AD, serta menyimpannya ke database..."):
+            with st.spinner("Menghitung perincian aktuaria per karyawan dengan metode PUC dan IFRIC AD..."):
                 results_dict = {}
                 dplk_dict = {}
                 active_years = sorted(list(datasets_to_process.keys()))
-                
-                conn = sqlite3.connect("kka_actuarial.db", check_same_thread=False)
-                cursor = conn.cursor()
 
                 for yr in active_years:
                     val_date_dt = datetime.datetime(yr, 12, 31)
@@ -836,24 +854,10 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
                             "Gross Salary": gross_salary, **kalkulasi
                         })
 
-                    df_res_yr = pd.DataFrame(hasil_valuasi)
-                    results_dict[yr] = df_res_yr
+                    results_dict[yr] = pd.DataFrame(hasil_valuasi)
                     dplk_dict[yr] = total_dplk_yr
 
-                    # Simpan hasil kalkulasi ke Database SQLite secara permanen
-                    cursor.execute('''
-                        INSERT OR REPLACE INTO calculation_results (company_name, valuation_year, result_csv, parameters, timestamp)
-                        VALUES (?, ?, ?, ?, ?)
-                    ''', (
-                        input_perusahaan, yr, df_res_yr.to_csv(index=False),
-                        f"SalaryInc:{asumsi_gaji},RetAge:{usia_pensiun},Resign:{asumsi_resign}",
-                        datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    ))
-
-                conn.commit()
-                conn.close()
-
-                # Simpan ke session_state global
+                # Simpan permanen ke session_state global
                 st.session_state.results_dict = results_dict
                 st.session_state.dplk_dict = dplk_dict
                 st.session_state.paid_dict = benefit_paid_dict
@@ -864,7 +868,7 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
                 st.session_state.nomor_laporan = nomor_laporan
                 st.session_state.tanggal_laporan = tanggal_laporan
                 st.session_state.calculated_results = True
-                st.success(f"Valuasi Aktuaria untuk **{input_perusahaan}** Selesai! Data kalkulasi tersimpan aman di Database Server.")
+                st.success("Valuasi Aktuaria Selesai! Data dan file Excel asli kini tersimpan di Admin Dashboard.")
 
         if st.session_state.get("calculated_results"):
             res_dict = st.session_state.results_dict
