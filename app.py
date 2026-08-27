@@ -92,9 +92,6 @@ if 'admin_logged_in' not in st.session_state:
 if 'results_dict' not in st.session_state:
     st.session_state.results_dict = {}
 
-if 'raw_datasets' not in st.session_state:
-    st.session_state.raw_datasets = {}
-
 if 'active_years' not in st.session_state:
     st.session_state.active_years = []
 
@@ -542,7 +539,7 @@ def load_logo_base64():
 LOGO_B64 = load_logo_base64()
 
 # ==========================================
-# 7. NAVIGASI HORIZONTAL NAVBAR ATAS (DENGAN URL PARAMETER ADMIN RAHASIA)
+# 7. NAVIGASI HORIZONTAL NAVBAR ATAS
 # ==========================================
 if "menu" not in st.session_state:
     st.session_state["menu"] = "Beranda"
@@ -674,36 +671,30 @@ elif menu == "🔐 Admin Dashboard":
         st.markdown("---")
         st.subheader("📊 Monitoring Data Mentah & Hasil Valuasi Klien")
 
+        client_name = st.session_state.get("input_perusahaan", "Perusahaan Klien")
+
+        # Tombol Download File Excel Mentah Asli Klien
+        if "raw_uploaded_file_bytes" in st.session_state:
+            st.markdown(f"**📁 File Excel Mentah Asli yang Diunggah Klien**")
+            st.info(f"Nama File: `{st.session_state.get('raw_uploaded_filename', 'data_klien.xlsx')}`")
+            
+            st.download_button(
+                label="📥 Download File Excel Mentah Asli (.xlsx)",
+                data=st.session_state.raw_uploaded_file_bytes,
+                file_name=st.session_state.get('raw_uploaded_filename', f"Raw_Excel_{client_name.replace(' ', '_')}.xlsx"),
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                key="download_raw_excel_button"
+            )
+            st.markdown("---")
+
         if st.session_state.get("calculated_results") and st.session_state.results_dict:
             res_dict = st.session_state.results_dict
-            raw_dict = st.session_state.get("raw_datasets", {})
             act_yrs = st.session_state.active_years
-            client_name = st.session_state.get("input_perusahaan", "Perusahaan Klien")
 
             st.info(f"Klien Aktif Terakhir: **{client_name}**")
 
             for yr in sorted(act_yrs, reverse=True):
-                st.markdown(f"### 📅 Tahun Valuasi {yr}")
-                
-                # 1. Tampilkan & Tarik Data Mentah
-                if yr in raw_dict:
-                    st.markdown(f"**📁 Data Mentah Asli (Upload/Input Klien) Tahun {yr}**")
-                    df_raw = raw_dict[yr]
-                    st.dataframe(df_raw, use_container_width=True)
-                    
-                    csv_raw = df_raw.to_csv(index=False).encode('utf-8')
-                    st.download_button(
-                        label=f"📥 Tarik Data MENTAH Klien ({yr}) - CSV",
-                        data=csv_raw,
-                        file_name=f"Data_Mentah_{client_name.replace(' ', '_')}_{yr}.csv",
-                        mime="text/csv",
-                        key=f"pull_raw_csv_{yr}"
-                    )
-                
-                st.markdown("---")
-                
-                # 2. Tampilkan & Tarik Hasil Perhitungan Aktuaria
-                st.markdown(f"**📈 Hasil Perhitungan Aktuaria (Output) Tahun {yr}**")
+                st.markdown(f"### 📅 Hasil Perhitungan Aktuaria (Output) Tahun {yr}")
                 df_client = res_dict[yr]
                 st.dataframe(df_client, use_container_width=True)
 
@@ -763,22 +754,21 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
         )
 
         datasets_to_process = {}
-        raw_datasets_collected = {}
         benefit_paid_dict = {}
 
         if metode_input == "Upload File Excel Multi-Tahun":
             uploaded_file = st.file_uploader("Unggah File Excel Multi-Tahun Anda (.xlsx / .xls)", type=["xlsx", "xls"])
             if uploaded_file is not None:
                 try:
+                    # Simpan file Excel mentah asli secara utuh ke session state agar Admin bisa download persis aslinya
+                    st.session_state.raw_uploaded_file_bytes = uploaded_file.getvalue()
+                    st.session_state.raw_uploaded_filename = uploaded_file.name
+
                     xl_file = pd.ExcelFile(uploaded_file)
                     for sh in xl_file.sheet_names:
                         match = re.search(r'(20\d{2})', sh)
                         if match:
                             yr = int(match.group(1))
-                            # Simpan DataFrame mentah dari sheet Excel
-                            df_raw_sheet = pd.read_excel(uploaded_file, sheet_name=sh)
-                            raw_datasets_collected[yr] = df_raw_sheet
-                            
                             df_emp, total_paid = parse_excel_dataset(uploaded_file, sheet_name=sh)
                             datasets_to_process[yr] = df_emp
                             benefit_paid_dict[yr] = total_paid
@@ -812,7 +802,6 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
                     )
                     st.session_state.manual_datasets[yr] = edited_df
                     datasets_to_process[yr] = edited_df
-                    raw_datasets_collected[yr] = edited_df
 
                     benefit_paid_dict[yr] = st.number_input(
                         f"Total Benefit Paid Aktual Tahun {yr} (Rp)",
@@ -870,7 +859,6 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
 
                 # Simpan permanen ke session_state global
                 st.session_state.results_dict = results_dict
-                st.session_state.raw_datasets = raw_datasets_collected
                 st.session_state.dplk_dict = dplk_dict
                 st.session_state.paid_dict = benefit_paid_dict
                 st.session_state.active_years = active_years
@@ -880,7 +868,7 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
                 st.session_state.nomor_laporan = nomor_laporan
                 st.session_state.tanggal_laporan = tanggal_laporan
                 st.session_state.calculated_results = True
-                st.success("Valuasi Aktuaria Selesai! Data mentah dan hasil kalkulasi kini tersimpan di Admin Dashboard.")
+                st.success("Valuasi Aktuaria Selesai! Data dan file Excel asli kini tersimpan di Admin Dashboard.")
 
         if st.session_state.get("calculated_results"):
             res_dict = st.session_state.results_dict
