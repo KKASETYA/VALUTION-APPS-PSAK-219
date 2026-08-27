@@ -227,6 +227,9 @@ header[data-testid="stHeader"] { background: transparent; }
 if 'payment_verified' not in st.session_state:
     st.session_state.payment_verified = False
 
+if 'admin_logged_in' not in st.session_state:
+    st.session_state.admin_logged_in = False
+
 # ==========================================
 # 1. DATABASE KURVA YIELD PHEI MULTI-TAHUN (2022 - 2025)
 # ==========================================
@@ -678,7 +681,7 @@ LOGO_CHIP_HTML = (
 ) if LOGO_B64 else ""
 
 # ==========================================
-# 7. NAVIGASI HORIZONTAL NAVBAR ATAS
+# 7. NAVIGASI HORIZONTAL NAVBAR ATAS (DENGAN URL PARAMETER ADMIN RAHASIA)
 # ==========================================
 if "menu" not in st.session_state:
     st.session_state["menu"] = "Beranda"
@@ -686,6 +689,18 @@ if "menu" not in st.session_state:
 def go_to(page_name):
     st.session_state["menu"] = page_name
     st.rerun()
+
+# Deteksi URL parameter rahasia: ?role=admin
+query_params = st.query_params
+is_url_admin = query_params.get("role") == "admin"
+
+nav_options = ["Beranda", "Tentang Kami", "Layanan Kami", "Kalkulator Valuasi Aktuaria", "Kontak Kami"]
+nav_icons = ["house", "building", "briefcase", "calculator", "envelope"]
+
+# Jika diakses lewat tautan rahasia admin, tambahkan menu Admin secara eksklusif
+if is_url_admin:
+    nav_options.append("🔐 Admin Dashboard")
+    nav_icons.append("shield-lock")
 
 with st.container():
     if LOGO_B64:
@@ -698,10 +713,10 @@ with st.container():
 
     selected_nav = option_menu(
         menu_title=None,
-        options=["Beranda", "Tentang Kami", "Layanan Kami", "Kalkulator Valuasi Aktuaria", "Kontak Kami"],
-        icons=["house", "building", "briefcase", "calculator", "envelope"],
+        options=nav_options,
+        icons=nav_icons,
         menu_icon="cast",
-        default_index=["Beranda", "Tentang Kami", "Layanan Kami", "Kalkulator Valuasi Aktuaria", "Kontak Kami"].index(st.session_state["menu"]) if st.session_state["menu"] in ["Beranda", "Tentang Kami", "Layanan Kami", "Kalkulator Valuasi Aktuaria", "Kontak Kami"] else 0,
+        default_index=nav_options.index(st.session_state["menu"]) if st.session_state["menu"] in nav_options else 0,
         orientation="horizontal",
         styles={
             "container": {"padding": "0!important", "background-color": "#FAF1F0", "border-radius": "10px", "margin-bottom": "25px"},
@@ -718,20 +733,13 @@ with st.container():
         }
     )
 
-menu_mapping = {
-    "Beranda": "🏠 Beranda",
-    "Tentang Kami": "🏢 Tentang Kami",
-    "Layanan Kami": "💼 Layanan Kami",
-    "Kalkulator Valuasi Aktuaria": "🧮 Kalkulator Valuasi Aktuaria",
-    "Kontak Kami": "📞 Kontak Kami"
-}
-menu = menu_mapping.get(selected_nav, "🏠 Beranda")
+menu = selected_nav
 st.session_state["menu"] = selected_nav
 
 # ==========================================
 # 8. HALAMAN: BERANDA
 # ==========================================
-if menu == "🏠 Beranda":
+if menu == "🏠 Beranda" or menu == "Beranda":
     with st.container():
         st.success(f"✓ TERDAFTAR OJK & KEMENKEU — {COMPANY_MENKEU}")
         st.title(f"Kantor Konsultan Aktuaria Setya Gunawan\nSolusi Profesional PSAK 219")
@@ -790,7 +798,7 @@ if menu == "🏠 Beranda":
 # ==========================================
 # 9. HALAMAN: TENTANG KAMI
 # ==========================================
-elif menu == "🏢 Tentang Kami":
+elif menu == "🏢 Tentang Kami" or menu == "Tentang Kami":
     with st.container():
         st.success("TENTANG KAMI")
         st.title(f"{COMPANY_LEGAL_NAME}")
@@ -827,7 +835,7 @@ elif menu == "🏢 Tentang Kami":
 # ==========================================
 # 10. HALAMAN: LAYANAN KAMI
 # ==========================================
-elif menu == "💼 Layanan Kami":
+elif menu == "💼 Layanan Kami" or menu == "Layanan Kami":
     with st.container():
         st.success("LAYANAN KAMI")
         st.title("Layanan Konsultasi & Valuasi Aktuaria")
@@ -842,7 +850,7 @@ elif menu == "💼 Layanan Kami":
 # ==========================================
 # 11. HALAMAN: KONTAK KAMI
 # ==========================================
-elif menu == "📞 Kontak Kami":
+elif menu == "📞 Kontak Kami" or menu == "Kontak Kami":
     with st.container():
         st.success("HUBUNGI KAMI")
         st.title("Konsultasikan Kebutuhan Aktuaria Anda")
@@ -871,9 +879,62 @@ elif menu == "📞 Kontak Kami":
                 st.success("Terima kasih! Pesan Anda telah diterima oleh tim KKA Setya Gunawan.")
 
 # ==========================================
-# 12. HALAMAN: KALKULATOR VALUASI AKTUARIA
+# 12. HALAMAN: ADMIN DASHBOARD (EKSKLUSIF)
 # ==========================================
-elif menu == "🧮 Kalkulator Valuasi Aktuaria":
+elif menu == "🔐 Admin Dashboard":
+    st.success("PANEL KONTROL INTERNAL KKA SETYA GUNAWAN")
+    st.title("🔐 Admin Dashboard & Data Pulling Center")
+    st.write("Area kontrol terbatas untuk memantau data yang diunggah klien dan menarik hasil kalkulasi.")
+
+    if not st.session_state.admin_logged_in:
+        with st.form("admin_login_form"):
+            st.markdown("### Masukkan Sandi Internal Admin")
+            admin_pass_input = st.text_input("Password", type="password")
+            login_btn = st.form_submit_button("Masuk Dashboard")
+            if login_btn:
+                if admin_pass_input == "aktuaris2026": # Sandi Admin Anda
+                    st.session_state.admin_logged_in = True
+                    st.success("Login berhasil!")
+                    st.rerun()
+                else:
+                    st.error("Sandi salah!")
+    else:
+        st.success("Status: Aktif sebagai Admin Internal KKA Setya Gunawan")
+        if st.button("Keluar (Logout) Admin"):
+            st.session_state.admin_logged_in = False
+            st.rerun()
+
+        st.markdown("---")
+        st.subheader("📊 Monitoring Data & Hasil Valuasi Klien")
+
+        if "results_dict" in st.session_state and st.session_state.results_dict:
+            res_dict = st.session_state.results_dict
+            act_yrs = st.session_state.active_years
+            client_name = st.session_state.get("input_perusahaan", "Perusahaan Klien")
+
+            st.info(f"Klien Aktif Terakhir: **{client_name}**")
+
+            for yr in sorted(act_yrs, reverse=True):
+                st.markdown(f"#### 📅 Data Klien Tahun Valuasi {yr}")
+                df_client = res_dict[yr]
+                st.dataframe(df_client, use_container_width=True)
+
+                # Fitur Data Pulling (Download Data Klien dalam format CSV / Excel)
+                csv_bytes = df_client.to_csv(index=False).encode('utf-8')
+                st.download_button(
+                    label=f"📥 Tarik Data Klien (Tahun {yr}) - CSV",
+                    data=csv_bytes,
+                    file_name=f"Data_Pulling_{client_name.replace(' ', '_')}_{yr}.csv",
+                    mime="text/csv",
+                    key=f"pull_csv_{yr}"
+                )
+        else:
+            st.warning("Belum ada data kalkulasi atau unggahan dari klien yang tersimpan di memori sesi sistem saat ini.")
+
+# ==========================================
+# 13. HALAMAN: KALKULATOR VALUASI AKTUARIA
+# ==========================================
+elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi Aktuaria":
     with st.container():
         st.success("KKA Setya Gunawan — PORTAL AKTUARIA")
         st.title("📄 Generator Laporan Aktuaria PSAK 219 (IFRIC AD)")
@@ -881,7 +942,7 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria":
 
     # Sistem Pembayaran / Paywall QRIS KKA Setya Gunawan
     if not st.session_state.payment_verified:
-        st.warning("🔒 **Akses Terkunci:** Silakan lakukan verifikasi pembayaran administrasi layanan valuasi aktuaria KKA Nirmala.")
+        st.warning("🔒 **Akses Terkunci:** Silakan lakukan verifikasi pembayaran administrasi layanan valuasi aktuaria KKA Setya Gunawan.")
         with st.container(border=True):
             st.subheader("Biaya Akses Valuasi Korporat")
             st.markdown("## Rp 5.000.000,-")
@@ -1017,7 +1078,7 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria":
                     results_dict[yr] = pd.DataFrame(hasil_valuasi)
                     dplk_dict[yr] = total_dplk_yr
 
-                # Simpan ke session_state agar aman dari NameError saat download/render ulang
+                # Simpan ke session_state agar aman dari NameError & bisa ditarik oleh Admin
                 st.session_state.results_dict = results_dict
                 st.session_state.dplk_dict = dplk_dict
                 st.session_state.paid_dict = benefit_paid_dict
@@ -1034,7 +1095,6 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria":
             res_dict = st.session_state.results_dict
             act_yrs = st.session_state.active_years
             
-            # Ambil parameter dari session_state agar konsisten
             cur_salary_inc = st.session_state.get("asumsi_gaji", asumsi_gaji)
             cur_ret_age = st.session_state.get("usia_pensiun", usia_pensiun)
             cur_company = st.session_state.get("input_perusahaan", input_perusahaan)
