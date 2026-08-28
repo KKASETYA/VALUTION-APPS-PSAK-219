@@ -866,7 +866,6 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
                     results_dict[yr] = df_res_yr
                     dplk_dict[yr] = total_dplk_yr
 
-                    # Simpan hasil kalkulasi ke Database SQLite secara permanen
                     cursor.execute('''
                         INSERT OR REPLACE INTO calculation_results (company_name, valuation_year, result_csv, parameters, timestamp)
                         VALUES (?, ?, ?, ?, ?)
@@ -876,7 +875,6 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
                         datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     ))
 
-                # Generate juga file PDF secara otomatis agar tersimpan ke database report_pdfs untuk diakses Admin
                 temp_pdf_buffer = generate_detailed_report(
                     results_dict=results_dict, 
                     salary_inc=asumsi_gaji, 
@@ -896,21 +894,20 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
                     datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 ))
 
-              conn.commit()
-              conn.close()
+                conn.commit()
+                conn.close()
 
-              # Simpan ke session_state global
-              st.session_state.results_dict = results_dict
-              st.session_state.dplk_dict = dplk_dict
-              st.session_state.paid_dict = benefit_paid_dict
-              st.session_state.active_years = active_years
-              st.session_state.asumsi_gaji = asumsi_gaji
-              st.session_state.usia_pensiun = usia_pensiun
-              st.session_state.input_perusahaan = input_perusahaan
-              st.session_state.nomor_laporan = nomor_laporan
-              st.session_state.tanggal_laporan = tanggal_laporan
-              st.session_state.calculated_results = True
-              st.success(f"Valuasi Aktuaria untuk **{input_perusahaan}** Selesai! Data kalkulasi dan laporan PDF tersimpan aman di Database Server.")
+                st.session_state.results_dict = results_dict
+                st.session_state.dplk_dict = dplk_dict
+                st.session_state.paid_dict = benefit_paid_dict
+                st.session_state.active_years = active_years
+                st.session_state.asumsi_gaji = asumsi_gaji
+                st.session_state.usia_pensiun = usia_pensiun
+                st.session_state.input_perusahaan = input_perusahaan
+                st.session_state.nomor_laporan = nomor_laporan
+                st.session_state.tanggal_laporan = tanggal_laporan
+                st.session_state.calculated_results = True
+                st.success(f"Valuasi Aktuaria untuk **{input_perusahaan}** Selesai! Data kalkulasi dan laporan PDF tersimpan aman di Database Server.")
 
         if st.session_state.get("calculated_results"):
             res_dict = st.session_state.results_dict
@@ -965,4 +962,4 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
                 file_name=f"LAPORAN_AKTUARIA_PSAK219_{cur_company.replace(' ', '_')}.pdf",
                 mime="application/pdf",
                 type="primary"
-          )
+            )
