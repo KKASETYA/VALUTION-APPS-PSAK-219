@@ -279,8 +279,7 @@ class PSAK219Engine:
         q_resign = self.resign_rate 
         return q_mortality, q_disability, q_resign
 
-    def calculate_puc(self, current_age, past_service, current_salary, p_mult=1.75, d_mult=2.0, death_mult=2.0, r_mult=1.0):
-        years_to_retire = self.ret_age - current_age
+    def calculate_puc(self, current_age, past_service, current_salary, p_mult=1.75, d_mult=2.0, death_mult=2.0, r_mult=1.0, years_to_retire=0.0):
         if pd.isna(current_age) or pd.isna(past_service) or pd.isna(current_salary) or years_to_retire <= 0:
             return {'PBO': 0, 'CSC': 0, 'Duration': 0, 'PVFB': 0, 'Applied_Discount': 0, 'Future_Service': 0}
 
@@ -458,29 +457,30 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_years, compa
         elements.append(Spacer(1, 15))
 
         elements.append(Paragraph(f"<b>LAMPIRAN — Detail Perhitungan Individu Karyawan (Tahun {yr})</b>", h_style))
-        table_data = [["No", "NIK & Nama Karyawan", "Tgl Lahir", "Tgl Masuk", "Gaji Kotor (Rp)", "NRA", "Umur", "Masa Kerja", "Faktor UU", "Diskonto", "PVFB (Rp)", "PBO (Rp)", "CSC (Rp)"]]
+        table_data = [["No", "NIK & Nama Karyawan", "Tgl Lahir", "Tgl Masuk", "Gaji Kotor (Rp)", "NRA", "Umur", "Age Entry", "Masa Kerja", "Faktor UU", "Diskonto", "PVFB (Rp)", "PBO (Rp)", "CSC (Rp)"]]
         
         for i, row in df_yr.iterrows():
             dob_str = row['Tanggal Lahir'].strftime('%d-%m-%Y') if pd.notnull(row['Tanggal Lahir']) else "-"
+            doe_str = row['Tgl. Mulai Bekerja'].strftime('%d-%m-%Y') if pd.notnull(row['Tgl. Mulai Bekerja']) else "-"
             table_data.append([
-                str(i + 1), f"{row['NIK']}\n{row['Name']}"[:22], dob_str, "01-01-2023",
-                fmt_num(row['Gross Salary']), f"{ret_age}.00", f"{row['Age Valuation']:.2f}", f"{row['Past Service']:.2f}",
+                str(i + 1), f"{row['NIK']}\n{row['Name']}"[:22], dob_str, doe_str,
+                fmt_num(row['Gross Salary']), f"{row['NRA']:.2f}", f"{row['Age Valuation']:.2f}", f"{row['Age Entry']:.2f}", f"{row['Past Service']:.2f}",
                 "23.75", f"{row['Applied_Discount']*100:.2f}%", fmt_num(row['PVFB']), fmt_num(row['PBO']), fmt_num(row['CSC'])
             ])
             
         table_data.append([
-            "", "TOTAL KESELURUHAN", "", "", fmt_num(tot_salary), "", "", "", "", "", 
+            "", "TOTAL KESELURUHAN", "", "", fmt_num(tot_salary), "", "", "", "", "", "", 
             fmt_num(tot_pvfb), fmt_num(tot_pbo), fmt_num(tot_csc)
         ])
         
-        col_widths = [24, 115, 55, 55, 75, 32, 35, 42, 60, 45, 75, 75, 70]
+        col_widths = [24, 115, 55, 55, 75, 30, 32, 35, 38, 50, 42, 65, 65, 60]
         t_detail = Table(table_data, colWidths=col_widths, repeatRows=1)
         t_detail.setStyle(TableStyle([
             ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#3A0C08')),
             ('TEXTCOLOR', (0,0), (-1,0), colors.white),
             ('ALIGN', (0,0), (-1,0), 'CENTER'),
             ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0,0), (-1,-1), 6.5),
+            ('FONTSIZE', (0,0), (-1,-1), 6),
             ('BOTTOMPADDING', (0,0), (-1,0), 5),
             ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#D3C1BE')),
             ('ALIGN', (4,1), (-1,-1), 'RIGHT'),
@@ -850,12 +850,15 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
                         total_dplk_yr += dplk_val
                         current_age = (val_date_dt - dob).days / 365.25
                         past_service = (val_date_dt - doe).days / 365.25
+                        age_entry = (doe - dob).days / 365.25
+                        nra = float(row.get("NRA", usia_pensiun))
+                        future_service = 0.0 if current_age >= nra else (nra - current_age)
 
-                        kalkulasi = final_engine.calculate_puc(current_age, past_service, gross_salary, p_mult, d_mult, death_mult, r_mult)
+                        kalkulasi = final_engine.calculate_puc(current_age, past_service, gross_salary, p_mult, d_mult, death_mult, r_mult, years_to_retire=future_service)
                         hasil_valuasi.append({
                             "NIK": row.get("NIK", "N/A"), "Name": row.get("Nama", "Unknown"),
-                            "Tanggal Lahir": dob,
-                            "Age Valuation": current_age, "Past Service": past_service,
+                            "Tanggal Lahir": dob, "Tgl. Mulai Bekerja": doe,
+                            "Age Valuation": current_age, "Age Entry": age_entry, "Past Service": past_service, "NRA": nra,
                             "Gross Salary": gross_salary, **kalkulasi
                         })
 
@@ -893,21 +896,21 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
                     datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 ))
 
-                conn.commit()
-                conn.close()
+              conn.commit()
+              conn.close()
 
-                # Simpan ke session_state global
-                st.session_state.results_dict = results_dict
-                st.session_state.dplk_dict = dplk_dict
-                st.session_state.paid_dict = benefit_paid_dict
-                st.session_state.active_years = active_years
-                st.session_state.asumsi_gaji = asumsi_gaji
-                st.session_state.usia_pensiun = usia_pensiun
-                st.session_state.input_perusahaan = input_perusahaan
-                st.session_state.nomor_laporan = nomor_laporan
-                st.session_state.tanggal_laporan = tanggal_laporan
-                st.session_state.calculated_results = True
-                st.success(f"Valuasi Aktuaria untuk **{input_perusahaan}** Selesai! Data kalkulasi dan laporan PDF tersimpan aman di Database Server.")
+              # Simpan ke session_state global
+              st.session_state.results_dict = results_dict
+              st.session_state.dplk_dict = dplk_dict
+              st.session_state.paid_dict = benefit_paid_dict
+              st.session_state.active_years = active_years
+              st.session_state.asumsi_gaji = asumsi_gaji
+              st.session_state.usia_pensiun = usia_pensiun
+              st.session_state.input_perusahaan = input_perusahaan
+              st.session_state.nomor_laporan = nomor_laporan
+              st.session_state.tanggal_laporan = tanggal_laporan
+              st.session_state.calculated_results = True
+              st.success(f"Valuasi Aktuaria untuk **{input_perusahaan}** Selesai! Data kalkulasi dan laporan PDF tersimpan aman di Database Server.")
 
         if st.session_state.get("calculated_results"):
             res_dict = st.session_state.results_dict
@@ -929,8 +932,11 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
 
                 df_display = df_y.copy()
                 df_display['Tanggal Lahir'] = pd.to_datetime(df_display['Tanggal Lahir']).dt.strftime('%d-%m-%Y')
+                df_display['Tgl. Mulai Bekerja'] = pd.to_datetime(df_display['Tgl. Mulai Bekerja']).dt.strftime('%d-%m-%Y')
                 df_display['Gross Salary'] = df_display['Gross Salary'].apply(lambda x: f"Rp {x:,.0f}".replace(",", "."))
+                df_display['NRA'] = df_display['NRA'].apply(lambda x: f"{x:.2f}")
                 df_display['Age Valuation'] = df_display['Age Valuation'].apply(lambda x: f"{x:.2f}")
+                df_display['Age Entry'] = df_display['Age Entry'].apply(lambda x: f"{x:.2f}")
                 df_display['Past Service'] = df_display['Past Service'].apply(lambda x: f"{x:.2f}")
                 df_display['Future_Service'] = df_display['Future_Service'].apply(lambda x: f"{x:.2f}")
                 df_display['Discount Rate'] = df_display['Applied_Discount'].apply(lambda x: f"{x*100:.2f}%")
@@ -938,7 +944,7 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
                 df_display['PBO'] = df_display['PBO'].apply(lambda x: f"Rp {x:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
                 df_display['CSC'] = df_display['CSC'].apply(lambda x: f"Rp {x:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
 
-                cols_to_show = ['NIK', 'Name', 'Tanggal Lahir', 'Gross Salary', 'Age Valuation', 'Past Service', 'Future_Service', 'Discount Rate', 'PVFB', 'PBO', 'CSC']
+                cols_to_show = ['NIK', 'Name', 'Tanggal Lahir', 'Tgl. Mulai Bekerja', 'Gross Salary', 'NRA', 'Age Valuation', 'Age Entry', 'Past Service', 'Future_Service', 'Discount Rate', 'PVFB', 'PBO', 'CSC']
                 st.dataframe(df_display[cols_to_show], use_container_width=True)
 
             st.markdown("---")
@@ -959,4 +965,4 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
                 file_name=f"LAPORAN_AKTUARIA_PSAK219_{cur_company.replace(' ', '_')}.pdf",
                 mime="application/pdf",
                 type="primary"
-            )
+          )
