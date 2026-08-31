@@ -360,11 +360,12 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
     
     class MixedPageDocTemplate(SimpleDocTemplate):
         def handle_pageBegin(self):
-            # Cover (page 1), Info Umum (page 2), Daftar Isi (page 3), dan Pendahuluan/Manfaat Karyawan (page 4) potret (A4), selebihnya landscape
-            if self.page > 4: self.pagesize = landscape(A4)
+            # Cover (page 1), Info Umum (page 2), Daftar Isi (page 3), Pendahuluan & Manfaat (page 4), serta halaman lanjutan Pendahuluan & Manfaat (page 5) potret (A4), selebihnya landscape
+            if self.page > 5: self.pagesize = landscape(A4)
             super().handle_pageBegin()
 
-    doc_mixed = MixedPageDocTemplate(pdf_buffer, pagesize=A4, rightMargin=54, leftMargin=54, topMargin=54, bottomMargin=54)
+    # Mengatur margin portait A4 ke 36 agar rata tengah secara ideal
+    doc_mixed = MixedPageDocTemplate(pdf_buffer, pagesize=A4, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36)
     elements = []
     styles = getSampleStyleSheet()
     
@@ -439,7 +440,8 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
         Paragraph("• <b>Public Actuary:</b><br/>Act-1.17.00026", info_text_style)
     ]
 
-    info_table = Table([[info_col_left, info_col_right]], colWidths=[240, 240])
+    # Lebar total untuk A4 portrait dengan margin 36 adalah 595.27 - 72 = 523.27 pt (dibagi dua sama rata ~261 pt)
+    info_table = Table([[info_col_left, info_col_right]], colWidths=[261, 261])
     info_table.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
         ('LEFTPADDING', (0,0), (-1,-1), 0),
@@ -518,14 +520,14 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
         Paragraph("• &nbsp; Sensitivity Analysis", toc_subitem_style),
         Paragraph("• &nbsp; Distribution Table", toc_subitem_style),
         Paragraph("• &nbsp; Table 1: Data, Assumptions and Actuarial Valuation Results", toc_subitem_style),
-        Paragraph("• &nbsp; Tabel 2: Re-measurement Calculations", toc_subitem_style),
+        Paragraph("• &nbsp; Table 2: Re-measurement Calculations", toc_subitem_style),
         Paragraph("• &nbsp; Table 3: Other Comprehensive Income", toc_subitem_style),
         Paragraph("• &nbsp; Table 4: Funding Position and Recognition of (Liability)/Asset in Balance Sheet", toc_subitem_style),
         Paragraph("• &nbsp; Table 5: Expenses/(Revenues) in Income Statement", toc_subitem_style),
         Paragraph("• &nbsp; Calculation of Curtailment Effects", toc_subitem_style),
     ]
 
-    toc_table = Table([[toc_left_content, toc_right_content]], colWidths=[240, 240])
+    toc_table = Table([[toc_left_content, toc_right_content]], colWidths=[261, 261])
     toc_table.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
         ('LEFTPADDING', (0,0), (-1,-1), 0),
@@ -537,63 +539,111 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
     elements.append(PageBreak())
 
     # ==========================================
-    # HALAMAN PENDAHULUAN & MANFAAT KARYAWAN (BILINGUAL PORTRAIT)
+    # HALAMAN PENDAHULUAN & MANFAAT KARYAWAN (BILINGUAL PORTRAIT - HALAMAN 1 DENGAN FONT SIZE 12)
     # ==========================================
-    intro_head_style = ParagraphStyle('IntroHead', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=10, textColor=colors.black, leading=13, spaceAfter=4)
-    intro_subhead_style = ParagraphStyle('IntroSubHead', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=8.5, textColor=colors.black, leading=11, spaceAfter=2)
-    intro_body_style = ParagraphStyle('IntroBody', parent=styles['Normal'], fontName='Helvetica', fontSize=8, textColor=colors.black, leading=11, spaceAfter=6)
+    intro_head_style_12 = ParagraphStyle('IntroHead12', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=12, textColor=colors.black, leading=15, spaceAfter=6)
+    intro_subhead_style_12 = ParagraphStyle('IntroSubHead12', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=12, textColor=colors.black, leading=15, spaceAfter=4)
+    intro_body_style_12 = ParagraphStyle('IntroBody12', parent=styles['Normal'], fontName='Helvetica', fontSize=12, textColor=colors.black, leading=16, spaceAfter=8)
 
-    intro_col_left = [
-        Paragraph("<b>1. PENDAHULUAN</b>", intro_head_style),
-        Paragraph("<b>1.1 Tujuan</b>", intro_subhead_style),
-        Paragraph(f"Laporan ini disajikan berdasarkan Lembar Persetujuan PT {company_name.upper()} untuk mengetahui Kewajiban dan Beban atas Imbalan Kerja Karyawan berdasarkan Undang-Undang Ketenagakerjaan (UU Cipta Kerja No. 11 Tahun 2020) dan Peraturan Perusahaan yang berlaku, sebagaimana tertuang dalam PSAK 219 tentang Imbalan Kerja.", intro_body_style),
-        Paragraph(f"Selain itu perhitungan ini dilakukan untuk tahun buku yang berakhir pada {first_key}.", intro_body_style),
-        Spacer(1, 4),
-        Paragraph("<b>1.2 Manfaat</b>", intro_subhead_style),
-        Paragraph("Manfaat Karyawan berdasarkan UU Cipta Kerja No. 11 Tahun 2020 mencakup Imbalan Kerja untuk Karyawan Tetap yang diberhentikan karena Pensiun, Meninggal Dunia, Sakit Berkepanjangan atau Mengundurkan Diri secara sukarela.", intro_body_style),
-        Spacer(1, 4),
-        Paragraph("<b>1.3 Tanggal Valuasi</b>", intro_subhead_style),
-        Paragraph(f"Tanggal Valuasi adalah {first_key}.", intro_body_style),
-        Spacer(1, 4),
-        Paragraph("<b>1.4 Data</b>", intro_subhead_style),
-        Paragraph("Valuasi menggunakan data yang telah kami terima dan telah dikonfirmasi oleh Entitas.", intro_body_style),
-        Spacer(1, 4),
-        Paragraph("<b>2. MANFAAT KARYAWAN</b>", intro_head_style),
-        Paragraph("Manfaat karyawan berdasarkan Cipta Kerja No. 11 Tahun 2020, terdiri dari:", intro_body_style),
-        Paragraph("<b>2.1 Manfaat Pensiun</b><br/>Manfaat yang dibayarkan kepada Karyawan yang berhenti bekerja karena mencapai usia pensiun normal. Besaran manfaat adalah sebesar 2,3P + 1,15PMK. (Pasal 56)", intro_body_style),
-        Paragraph("<b>2.2 Manfaat Meninggal Dunia</b><br/>Manfaat yang dibayarkan kepada ahli waris dari Karyawan yang Meninggal Dunia. Besaran manfaat adalah sebesar 2,3P + 1,15PMK. (Pasal 57)", intro_body_style)
+    intro_col_left_p1 = [
+        Paragraph("<b>1. PENDAHULUAN</b>", intro_head_style_12),
+        Paragraph("<b>1.1 Tujuan</b>", intro_subhead_style_12),
+        Paragraph(f"Laporan ini disajikan berdasarkan Lembar Persetujuan PT {company_name.upper()} untuk mengetahui Kewajiban dan Beban atas Imbalan Kerja Karyawan berdasarkan Undang-Undang Ketenagakerjaan (UU Cipta Kerja No. 11 Tahun 2020) dan Peraturan Perusahaan yang berlaku, sebagaimana tertuang dalam PSAK 219 tentang Imbalan Kerja.", intro_body_style_12),
+        Paragraph(f"Selain itu perhitungan ini dilakukan untuk tahun buku yang berakhir pada {first_key}.", intro_body_style_12),
+        Spacer(1, 6),
+        Paragraph("<b>1.2 Manfaat</b>", intro_subhead_style_12),
+        Paragraph("Manfaat Karyawan berdasarkan UU Cipta Kerja No. 11 Tahun 2020 mencakup Imbalan Kerja untuk Karyawan Tetap yang diberhentikan karena Pensiun, Meninggal Dunia, Sakit Berkepanjangan atau Mengundurkan Diri secara sukarela.", intro_body_style_12),
+        Spacer(1, 6),
+        Paragraph("<b>1.3 Tanggal Valuasi</b>", intro_subhead_style_12),
+        Paragraph(f"Tanggal Valuasi adalah {first_key}.", intro_body_style_12),
+        Spacer(1, 6),
+        Paragraph("<b>1.4 Data</b>", intro_subhead_style_12),
+        Paragraph("Valuasi menggunakan data yang telah kami terima dan telah dikonfirmasi oleh Entitas.", intro_body_style_12),
+        Spacer(1, 6),
+        Paragraph("<b>2. MANFAAT KARYAWAN</b>", intro_head_style_12),
+        Paragraph("Manfaat karyawan berdasarkan Cipta Kerja No. 11 Tahun 2020, terdiri dari:", intro_body_style_12),
+        Paragraph("<b>2.1 Manfaat Pensiun</b><br/>Manfaat yang dibayarkan kepada Karyawan yang berhenti bekerja karena mencapai usia pensiun normal. Besaran manfaat adalah sebesar 2,3P + 1,15PMK. (Pasal 56)", intro_body_style_12),
+        Paragraph("<b>2.2 Manfaat Meninggal Dunia</b><br/>Manfaat yang dibayarkan kepada ahli waris dari Karyawan yang Meninggal Dunia. Besaran manfaat adalah sebesar 2,3P + 1,15PMK. (Pasal 57)", intro_body_style_12)
     ]
 
-    intro_col_right = [
-        Paragraph("<b>1. INTRODUCTION</b>", intro_head_style),
-        Paragraph("<b>1.1 Purpose</b>", intro_subhead_style),
-        Paragraph(f"This report is presented by virtue of PT {company_name.upper()} to determine the Obligations and Expenses for Employee Benefits under Law about Manpower (UU Cipta Kerja No. 11 Tahun 2020) and applicable Company Regulations, as stated in PSAK 219 concerning Employee Benefits.", intro_body_style),
-        Paragraph(f"In addition, this calculation is for the financial year ending {first_key}.", intro_body_style),
-        Spacer(1, 4),
-        Paragraph("<b>1.2 Benefit</b>", intro_subhead_style),
-        Paragraph("Under Law Cipta Kerja No. 11 Years 2020 about Manpower, Employee Benefits in this valuation include benefits for Permanent Employees terminated due to retirement, death, prolonged illness or voluntary resignation.", intro_body_style),
-        Spacer(1, 4),
-        Paragraph("<b>1.3 Valuation Date</b>", intro_subhead_style),
-        Paragraph(f"The Valuation Date as per {first_key}.", intro_body_style),
-        Spacer(1, 4),
-        Paragraph("<b>1.4 Data</b>", intro_subhead_style),
-        Paragraph("Valuation uses the data we have received and confirmed by the Entity.", intro_body_style),
-        Spacer(1, 4),
-        Paragraph("<b>2. EMPLOYEE BENEFITS</b>", intro_head_style),
-        Paragraph("Under Law Cipta Kerja No. 11 years 2020 about Manpower, Employee Benefits consist of:", intro_body_style),
-        Paragraph("<b>2.1 Retirement Benefits</b><br/>Benefits paid to those employees terminated due to reaching the normal retirement age. The amount of benefit is 2,3P + 1,15PMK. (Article 56)", intro_body_style),
-        Paragraph("<b>2.2 Death Benefits</b><br/>Benefits paid to the heirs of Death Employees. The amount of benefit is 2,3P + 1,15PMK. (Article 57)", intro_body_style)
+    intro_col_right_p1 = [
+        Paragraph("<b>1. INTRODUCTION</b>", intro_head_style_12),
+        Paragraph("<b>1.1 Purpose</b>", intro_subhead_style_12),
+        Paragraph(f"This report is presented by virtue of PT {company_name.upper()} to determine the Obligations and Expenses for Employee Benefits under Law about Manpower (UU Cipta Kerja No. 11 Tahun 2020) and applicable Company Regulations, as stated in PSAK 219 concerning Employee Benefits.", intro_body_style_12),
+        Paragraph(f"In addition, this calculation is for the financial year ending {first_key}.", intro_body_style_12),
+        Spacer(1, 6),
+        Paragraph("<b>1.2 Benefit</b>", intro_subhead_style_12),
+        Paragraph("Under Law Cipta Kerja No. 11 Years 2020 about Manpower, Employee Benefits in this valuation include benefits for Permanent Employees terminated due to retirement, death, prolonged illness or voluntary resignation.", intro_body_style_12),
+        Spacer(1, 6),
+        Paragraph("<b>1.3 Valuation Date</b>", intro_subhead_style_12),
+        Paragraph(f"The Valuation Date as per {first_key}.", intro_body_style_12),
+        Spacer(1, 6),
+        Paragraph("<b>1.4 Data</b>", intro_subhead_style_12),
+        Paragraph("Valuation uses the data we have received and confirmed by the Entity.", intro_body_style_12),
+        Spacer(1, 6),
+        Paragraph("<b>2. EMPLOYEE BENEFITS</b>", intro_head_style_12),
+        Paragraph("Under Law Cipta Kerja No. 11 years 2020 about Manpower, Employee Benefits consist of:", intro_body_style_12),
+        Paragraph("<b>2.1 Retirement Benefits</b><br/>Benefits paid to those employees terminated due to reaching the normal retirement age. The amount of benefit is 2,3P + 1,15PMK. (Article 56)", intro_body_style_12),
+        Paragraph("<b>2.2 Death Benefits</b><br/>Benefits paid to the heirs of Death Employees. The amount of benefit is 2,3P + 1,15PMK. (Article 57)", intro_body_style_12)
     ]
 
-    intro_table = Table([[intro_col_left, intro_col_right]], colWidths=[240, 240])
-    intro_table.setStyle(TableStyle([
+    intro_table_p1 = Table([[intro_col_left_p1, intro_col_right_p1]], colWidths=[261, 261])
+    intro_table_p1.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
         ('LEFTPADDING', (0,0), (-1,-1), 0),
         ('RIGHTPADDING', (0,0), (-1,-1), 10),
         ('BOTTOMPADDING', (0,0), (-1,-1), 0),
         ('TOPPADDING', (0,0), (-1,-1), 0),
     ]))
-    elements.append(intro_table)
+    elements.append(intro_table_p1)
+    elements.append(PageBreak())
+
+    # ==========================================
+    # HALAMAN LANJUTAN PENDAHULUAN & MANFAAT (BILINGUAL PORTRAIT - HALAMAN 2 DENGAN FONT SIZE 12 SESUAI GAMBAR BARU)
+    # ==========================================
+    intro_col_left_p2 = [
+        Paragraph("<b>2.3 Manfaat Mengundurkan Diri</b><br/>Manfaat yang dibayarkan kepada Karyawan yang Mengundurkan Diri secara sukarela. Besaran manfaat adalah sebesar 0,3P + 0,15PMK. (Pasal 50)", intro_body_style_12),
+        Spacer(1, 6),
+        Paragraph("<b>2.4 Manfaat Sakit Berkepanjangan</b><br/>Manfaat yang dibayarkan kepada Karyawan yang diberhentikan karena Sakit berkepanjangan. Besaran manfaat adalah sebesar 2,3P + 2,3PMK. (Pasal 55)", intro_body_style_12),
+        Spacer(1, 6),
+        Paragraph("<b>2.5 Uang pisah</b><br/>Perusahaan diwajibkan untuk memberikan uang pisah kepada karyawan akibat Pemutusan Hubungan Kerja, dimana besaran nya diatur sesuai dengan Undang-undang", intro_body_style_12),
+        Spacer(1, 6),
+        Paragraph("<b>2.6 Karyawan PKWT (Kontrak)</b><br/>Pengusaha wajib memberikan uang kompensasi kepada Pekerja/Buruh yang hubungan kerjanya berdasarkan PKWT. Uang kompensasi diberikan kepada Pekerja/Buruh yang telah mempunyai masa kerja paling sedikit 1 (satu) bulan secara terus menerus. Uang Kompensasi yang dihitung secara aktuaria adalah Pekerja/Buruh yang telah mempunyai masa kerja lebih dari 1 (satu) tahun.", intro_body_style_12),
+        Spacer(1, 6),
+        Paragraph("<b>2.7 Pajak</b><br/>Pajak atas Manfaat Pensiun dibayar oleh Karyawan sesuai Pasal 21 Peraturan Pemerintah Republik Indonesia Nomor 68 Tahun 2009 tentang Tarif Pajak Penghasilan.", intro_body_style_12),
+        Spacer(1, 6),
+        Paragraph("<b>3. DATA PESERTA DAN KEUANGAN</b>", intro_head_style_12),
+        Paragraph("Peserta adalah Karyawan Tetap (PKWTT) & Kontrak (PKWT).", intro_body_style_12),
+        Spacer(1, 6),
+        Paragraph("<b>3.1 Data Karyawan Tetap (PKWTT) & Kontrak (PKWT)</b>", intro_subhead_style_12),
+    ]
+
+    intro_col_right_p2 = [
+        Paragraph("<b>2.3 Resignation Benefits</b><br/>Benefits paid to those voluntarily resigned Employees. The amount of benefit is equal to 0,3P + 0,15PMK. (Article 50)", intro_body_style_12),
+        Spacer(1, 6),
+        Paragraph("<b>2.4 Benefits of Prolonged Illness</b><br/>Benefits paid to those employees terminated due to prolonged illness. The amount of benefit is 2,3P + 2,3PMK. (Article 55)", intro_body_style_12),
+        Spacer(1, 6),
+        Paragraph("<b>2.5 Benefit Severance Payment</b><br/>Companies are required to provide severance pay to employees as a result of Termination of Employment, where the amount is regulated in accordance with the Law.", intro_body_style_12),
+        Spacer(1, 6),
+        Paragraph("<b>2.6 PKWT Employees (Contract)</b><br/>Employers are required to provide compensation money to Workers / Laborers whose working relationship is based on PKWT. Compensation money is given to Workers / Laborers who have worked at least 1 (one) month continuously. Compensation money that is calculated actuarially is Workers/Laborers who have worked for more than 1 (one) year.", intro_body_style_12),
+        Spacer(1, 6),
+        Paragraph("<b>2.7 Tax</b><br/>Taxes on Retirement Benefits are paid by the Employee in accordance with Article 21 of Government Regulation of the Republic of Indonesia Number 68 of 2009 concerning Income Tax Rates.", intro_body_style_12),
+        Spacer(1, 6),
+        Paragraph("<b>3. PARTICIPANT AND FINANCIAL DATA</b>", intro_head_style_12),
+        Paragraph("Participants are Permanent (PKWTT) & Contract (PKWT) Employees.", intro_body_style_12),
+        Spacer(1, 6),
+        Paragraph("<b>3.1 Permanent PKWTT & Contract PKWT Employees Data</b>", intro_subhead_style_12),
+    ]
+
+    intro_table_p2 = Table([[intro_col_left_p2, intro_col_right_p2]], colWidths=[261, 261])
+    intro_table_p2.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('LEFTPADDING', (0,0), (-1,-1), 0),
+        ('RIGHTPADDING', (0,0), (-1,-1), 10),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+        ('TOPPADDING', (0,0), (-1,-1), 0),
+    ]))
+    elements.append(intro_table_p2)
     elements.append(PageBreak())
 
     for vkey in sorted(val_keys, reverse=True):
@@ -1117,7 +1167,7 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
                 df_display = df_y.copy()
                 df_display['Tanggal Lahir'] = pd.to_datetime(df_display['Tanggal Lahir']).dt.strftime('%d-%m-%Y')
                 df_display['Tgl. Mulai Bekerja'] = pd.to_datetime(df_display['Tgl. Mulai Bekerja']).dt.strftime('%d-%m-%Y')
-                df_display['Gross Salary'] = df_display['Gross Salary'].apply(lambda x: f"Rp {x:,.0f}".replace(",", "."))
+                df_display['Gross Salary'] = df_display['GrossSalary'].apply(lambda x: f"Rp {x:,.0f}".replace(",", ".")) if 'GrossSalary' in df_display else df_display['Gross Salary'].apply(lambda x: f"Rp {x:,.0f}".replace(",", "."))
                 df_display['NRA'] = df_display['NRA'].apply(lambda x: f"{x:.2f}")
                 df_display['Age Valuation'] = df_display['Age Valuation'].apply(lambda x: f"{x:.2f}")
                 df_display['Age Entry'] = df_display['Age Entry'].apply(lambda x: f"{x:.2f}")
