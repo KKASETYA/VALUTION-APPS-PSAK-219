@@ -760,16 +760,16 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
         Spacer(1, 8),
         Paragraph("<b>KKA SETYA GUNAWAN</b>", ParagraphStyle('SignHeadLeft', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=10, alignment=0, keepWithNext=True)),
         Spacer(1, 2),
-        Paragraph("Aktuaris<br/>(Actuary)<br/>Lisensi Aktuaris Publik<br/>(Public Actuary Licence)<br/>Konsultan<br/>(Consultant Office)<br/>Alamat Kantor", ParagraphStyle('SignDescLeft', parent=styles['Normal'], fontName='Helvetica', fontSize=9, leading=12, alignment=0))
+        Paragraph("Aktuaris Publik<br/>(Public Actuary)<br/>Lisensi Aktuaris Publik<br/>(Public Actuary Licence)<br/>Konsultan<br/>(Consultant Office)<br/>Alamat Kantor", ParagraphStyle('SignDescLeft', parent=styles['Normal'], fontName='Helvetica', fontSize=9, leading=12, alignment=0))
     ]
 
     closing_col_right = [
         Paragraph("<b>7. CLOSING</b>", closing_head_10),
         Paragraph(f"We hope that the information we provide can be useful for the management of <b>PT {company_name.upper()}</b> and the Auditor to recognize the entity's liabilities and expenses in accordance with the provisions of PSAK 219 for the period of {first_key}.", closing_style_10),
         Spacer(1, 45), # Menyelaraskan posisi tanggal Jakarta dengan sisi kiri
-        Paragraph(f"<b>SETYA GUNAWAN, MM, FSAI</b>", ParagraphStyle('SignHeadRight', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=10, alignment=0, keepWithNext=True)),
+        Paragraph("<b>Setya Gunawan, S.E., AAAIJ, AIIS, FSAI</b>", ParagraphStyle('SignHeadRight', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=10, alignment=0, keepWithNext=True)),
         Spacer(1, 2),
-        Paragraph("<b>:</b> Act-1.17.00026<br/><b>:</b> KKA SETYA GUNAWAN<br/><b>:</b> Cilandak 88 Condominium Unit D-1<br/>Jl. Margasatwa Barat No.88<br/>Cilandak Timur<br/>Pasar Minggu<br/>Jakarta Selatan,<br/>12560", ParagraphStyle('SignDescRight', parent=styles['Normal'], fontName='Helvetica', fontSize=9, leading=12, alignment=0))
+        Paragraph("<b>:</b> Aktuaris Publik<br/><b>:</b> Act-1.17.00026<br/><b>:</b> KKA SETYA GUNAWAN<br/><b>:</b> Cilandak 88 Condominium Unit D-1<br/>Jl. Margasatwa Barat No.88<br/>Cilandak Timur<br/>Pasar Minggu<br/>Jakarta Selatan,<br/>12560", ParagraphStyle('SignDescRight', parent=styles['Normal'], fontName='Helvetica', fontSize=9, leading=12, alignment=0))
     ]
 
     closing_table = Table([[closing_col_left, closing_col_right]], colWidths=[200, 238.27])
@@ -875,7 +875,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
     elements.append(Paragraph("<b>9. PENUTUP / CLOSING</b>", h_style))
     elements.append(Paragraph(f"Demikian laporan aktuaria ini disusun secara independen oleh KKA Setya Gunawan untuk dipergunakan sebagaimana mestinya oleh manajemen <b>PT {company_name.upper()}</b> dan pihak Auditor independen.", body_style))
     elements.append(Spacer(1, 20))
-    elements.append(Paragraph(f"Jakarta, {formatted_date}<br/><b>KANTOR KONSULTAN AKTUARIA SETYA GUNAWAN</b><br/><br/><br/><br/><b>Setya Gunawan, FSAI</b>", ParagraphStyle('SignBlock', parent=styles['Normal'], fontSize=9, alignment=2)))
+    elements.append(Paragraph(f"Jakarta, {formatted_date}<br/><b>KANTOR KONSULTAN AKTUARIA SETYA GUNAWAN</b><br/><br/><br/><br/><b>Setya Gunawan, S.E., AAAIJ, AIIS, FSAI</b>", ParagraphStyle('SignBlock', parent=styles['Normal'], fontSize=9, alignment=2)))
         
     doc_mixed.build(elements, onFirstPage=draw_cover_background, onLaterPages=draw_footer_landscape)
     pdf_buffer.seek(0)
