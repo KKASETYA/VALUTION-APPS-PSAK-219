@@ -1331,7 +1331,7 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
                 df_display['Discount Rate'] = df_display['Applied_Discount'].apply(lambda x: f"{x*100:.2f}%")
                 df_display['PVFB'] = df_display['PVFB'].apply(lambda x: f"Rp {x:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
                 df_display['PBO'] = df_display['PBO'].apply(lambda x: f"Rp {x:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
-                df_display['CSC'] = df_display['CSC'].apply(lambda x: f"Rp {x:lbl:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")) if 'CSC' in df_display else "-"
+                df_display['CSC'] = df_display['CSC'].apply(lambda x: f"Rp {x:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")) if 'CSC' in df_display else "-"
 
                 cols_to_show = ['NIK', 'Name', 'Tanggal Lahir', 'Tgl. Mulai Bekerja', 'Gross Salary', 'NRA', 'Age Valuation', 'Age Entry', 'Past Service', 'Future_Service', 'Discount Rate', 'PVFB', 'PBO', 'CSC']
                 st.dataframe(df_display[cols_to_show], use_container_width=True)
