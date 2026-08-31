@@ -376,7 +376,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
     cover_address_style = ParagraphStyle('CoverAddressRight', parent=styles['Normal'], fontName='Helvetica', fontSize=8.5, textColor=colors.HexColor('#2980B9'), alignment=2, leading=13.5)
     
     h_style = ParagraphStyle('SecH', parent=styles['Heading2'], fontSize=11, textColor=colors.HexColor('#C2382D'), spaceBefore=12, spaceAfter=6)
-    body_style = ParagraphStyle('BodyCustom', parent=styles['Normal'], fontSize=11, textColor=colors.HexColor('#222222'), spaceBefore=4, spaceAfter=8, leading=15, alignment=4)
+    body_style = ParagraphStyle('BodyCustom', parent=styles['Normal'], fontSize=11, textColor=colors.HexColor('#222222'), spaceBefore=4, spaceAfter=8, leading=15, alignment=4, keepWithNext=False)
 
     formatted_date = report_date.strftime('%d %B %Y') if hasattr(report_date, 'strftime') else str(report_date)
 
@@ -415,7 +415,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
     # ==========================================
     # HALAMAN INFORMASI UMUM / GENERAL INFORMATION
     # ==========================================
-    info_text_style = ParagraphStyle('InfoText', parent=styles['Normal'], fontName='Helvetica', fontSize=11, textColor=colors.black, alignment=4, spaceAfter=6, leading=15)
+    info_text_style = ParagraphStyle('InfoText', parent=styles['Normal'], fontName='Helvetica', fontSize=10, textColor=colors.black, alignment=4, spaceAfter=4, leading=13)
     info_header_table_style = ParagraphStyle('InfoHeaderTable', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=11, textColor=colors.black, alignment=0, leading=14)
 
     content_width_portrait = 438.27
@@ -423,7 +423,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
 
     info_col_left = [
         Paragraph("<b>INFORMASI UMUM</b>", info_header_table_style),
-        Spacer(1, 8),
+        Spacer(1, 6),
         Paragraph("• <b>Entitas:</b><br/>PT " + company_name.upper(), info_text_style),
         Paragraph("• <b>Alamat:</b><br/>Cilandak 88 Condominium Unit D-1, Jl. Margasatwa Barat No. 88, Cilandak Timur, Pasar Minggu, Jakarta Selatan 12560", info_text_style),
         Paragraph(f"• <b>Tanggal Valuasi:</b><br/>{first_key}", info_text_style),
@@ -434,7 +434,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
 
     info_col_right = [
         Paragraph("<b>GENERAL INFORMATION</b>", info_header_table_style),
-        Spacer(1, 8),
+        Spacer(1, 6),
         Paragraph("• <b>Entity:</b><br/>PT " + company_name.upper(), info_text_style),
         Paragraph("• <b>Address:</b><br/>Cilandak 88 Condominium Unit D-1, Jl. Margasatwa Barat No. 88, Cilandak Timur, Pasar Minggu, Jakarta Selatan 12560", info_text_style),
         Paragraph(f"• <b>Valuation Date:</b><br/>{first_key}", info_text_style),
@@ -457,16 +457,16 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
     # ==========================================
     # HALAMAN DAFTAR ISI / TABLE OF CONTENTS
     # ==========================================
-    toc_head_style = ParagraphStyle('TOCHead', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=11, textColor=colors.black, leading=14)
-    toc_item_style = ParagraphStyle('TOCItem', parent=styles['Normal'], fontName='Helvetica', fontSize=11, textColor=colors.black, leading=14, alignment=4)
-    toc_subitem_style = ParagraphStyle('TOCSubItem', parent=styles['Normal'], fontName='Helvetica', fontSize=11, textColor=colors.black, leading=14, leftIndent=12, alignment=4)
+    toc_head_style = ParagraphStyle('TOCHead', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=10, textColor=colors.black, leading=13)
+    toc_item_style = ParagraphStyle('TOCItem', parent=styles['Normal'], fontName='Helvetica', fontSize=9, textColor=colors.black, leading=12, alignment=4)
+    toc_subitem_style = ParagraphStyle('TOCSubItem', parent=styles['Normal'], fontName='Helvetica', fontSize=8.5, textColor=colors.black, leading=11, leftIndent=12, alignment=4)
 
     toc_left_content = [
         Paragraph("<b>DAFTAR ISI &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; HAL &nbsp;&nbsp; PAGES</b>", toc_head_style),
-        Spacer(1, 4),
+        Spacer(1, 3),
         Paragraph("<b>Informasi Umum</b>", toc_item_style),
         Paragraph("<b>Daftar Isi</b>", toc_item_style),
-        Spacer(1, 4),
+        Spacer(1, 3),
         Paragraph("1 &nbsp;&nbsp;&nbsp;&nbsp; Pendahuluan", toc_item_style),
         Paragraph("2 &nbsp;&nbsp;&nbsp;&nbsp; Manfaat", toc_item_style),
         Paragraph("3 &nbsp;&nbsp;&nbsp;&nbsp; Data Karyawan dan Data Keuangan", toc_item_style),
@@ -474,7 +474,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
         Paragraph("5 &nbsp;&nbsp;&nbsp;&nbsp; Metode Valuasi dan Asumsi Aktuaria", toc_item_style),
         Paragraph("6 &nbsp;&nbsp;&nbsp;&nbsp; Ringkasan Hasil Valuasi", toc_item_style),
         Paragraph("7 &nbsp;&nbsp;&nbsp;&nbsp; Penutup", toc_item_style),
-        Spacer(1, 4),
+        Spacer(1, 3),
         Paragraph("<b>Lampiran</b>", toc_item_style),
         Paragraph("1 &nbsp;&nbsp;&nbsp;&nbsp; Ringkasan Manfaat Imbalan Kerja", toc_item_style),
         Paragraph("2 &nbsp;&nbsp;&nbsp;&nbsp; Pengertian Istilah Teknis", toc_item_style),
@@ -482,7 +482,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
         Paragraph("4 &nbsp;&nbsp;&nbsp;&nbsp; Tabel Tingkat Kematian, Pengunduran Diri dan Sakit Berkepanjangan", toc_item_style),
         Paragraph(f"5 &nbsp;&nbsp;&nbsp;&nbsp; Tabel PHEI Per {first_key}", toc_item_style),
         Paragraph("6 &nbsp;&nbsp;&nbsp;&nbsp; Detail Karyawan", toc_item_style),
-        Spacer(1, 4),
+        Spacer(1, 3),
         Paragraph("<b>TABEL</b>", toc_item_style),
         Paragraph("<b>Tabel Rekonsiliasi</b>", toc_item_style),
         Paragraph("• &nbsp; Analisis Sensitivitas", toc_subitem_style),
@@ -497,10 +497,10 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
 
     toc_right_content = [
         Paragraph("<b>GENERAL INFORMATION &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PAGES</b>", toc_head_style),
-        Spacer(1, 4),
+        Spacer(1, 3),
         Paragraph("<b>General Information</b>", toc_item_style),
         Paragraph("<b>Table of contents</b>", toc_item_style),
-        Spacer(1, 4),
+        Spacer(1, 3),
         Paragraph("1 &nbsp;&nbsp;&nbsp;&nbsp; Introduction", toc_item_style),
         Paragraph("2 &nbsp;&nbsp;&nbsp;&nbsp; Benefits Program", toc_item_style),
         Paragraph("3 &nbsp;&nbsp;&nbsp;&nbsp; Employee and Financial Data", toc_item_style),
@@ -508,7 +508,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
         Paragraph("5 &nbsp;&nbsp;&nbsp;&nbsp; Actuarial Valuation Methods and Assumptions", toc_item_style),
         Paragraph("6 &nbsp;&nbsp;&nbsp;&nbsp; Summary of Valuation Results", toc_item_style),
         Paragraph("7 &nbsp;&nbsp;&nbsp;&nbsp; Closing", toc_item_style),
-        Spacer(1, 4),
+        Spacer(1, 3),
         Paragraph("<b>Appendices</b>", toc_item_style),
         Paragraph("1 &nbsp;&nbsp;&nbsp;&nbsp; Summary of Employee Benefits", toc_item_style),
         Paragraph("2 &nbsp;&nbsp;&nbsp;&nbsp; Definition of Technical Terms", toc_item_style),
@@ -516,7 +516,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
         Paragraph("4 &nbsp;&nbsp;&nbsp;&nbsp; Table of Mortality, Resignation and Prolonged Illness Rates", toc_item_style),
         Paragraph(f"5 &nbsp;&nbsp;&nbsp;&nbsp; IBPA table as of {first_key}", toc_item_style),
         Paragraph("7 &nbsp;&nbsp;&nbsp;&nbsp; Detail Employee", toc_item_style),
-        Spacer(1, 4),
+        Spacer(1, 3),
         Paragraph("<b>TABLES</b>", toc_item_style),
         Paragraph("<b>Reconciliation Table</b>", toc_item_style),
         Paragraph("• &nbsp; Sensitivity Analysis", toc_subitem_style),
@@ -541,52 +541,52 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
     elements.append(PageBreak())
 
     # ==========================================
-    # HALAMAN PENDAHULUAN & MANFAAT KARYAWAN (FONT SIZE 11 & RATA KANAN-KIRI / JUSTIFIED)
+    # HALAMAN PENDAHULUAN & MANFAAT KARYAWAN (FONT SIZE 10.5 & RATA KANAN-KIRI / JUSTIFIED)
     # ==========================================
-    intro_head_style_11 = ParagraphStyle('IntroHead11', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=11, textColor=colors.black, leading=14, spaceAfter=5)
-    intro_subhead_style_11 = ParagraphStyle('IntroSubHead11', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=11, textColor=colors.black, leading=14, spaceAfter=3)
-    intro_body_style_11 = ParagraphStyle('IntroBody11', parent=styles['Normal'], fontName='Helvetica', fontSize=11, textColor=colors.black, leading=15, spaceAfter=4, alignment=4)
+    intro_head_style_10 = ParagraphStyle('IntroHead10', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=10.5, textColor=colors.black, leading=13, spaceAfter=4, keepWithNext=True)
+    intro_subhead_style_10 = ParagraphStyle('IntroSubHead10', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=10.5, textColor=colors.black, leading=13, spaceAfter=2, keepWithNext=True)
+    intro_body_style_10 = ParagraphStyle('IntroBody10', parent=styles['Normal'], fontName='Helvetica', fontSize=10, textColor=colors.black, leading=13.5, spaceAfter=3, alignment=4, keepWithNext=False)
 
     intro_col_left_p1 = [
-        Paragraph("<b>1. PENDAHULUAN</b>", intro_head_style_11),
-        Paragraph("<b>1.1 Tujuan</b>", intro_subhead_style_11),
-        Paragraph(f"Laporan ini disajikan berdasarkan Lembar Persetujuan PT {company_name.upper()} untuk mengetahui Kewajiban dan Beban atas Imbalan Kerja Karyawan berdasarkan Undang-Undang Ketenagakerjaan (UU Cipta Kerja No. 11 Tahun 2020) dan Peraturan Perusahaan yang berlaku, sebagaimana tertuang dalam PSAK 219 tentang Imbalan Kerja.", intro_body_style_11),
-        Paragraph(f"Selain itu perhitungan ini dilakukan untuk tahun buku yang berakhir pada {first_key}.", intro_body_style_11),
+        Paragraph("<b>1. PENDAHULUAN</b>", intro_head_style_10),
+        Paragraph("<b>1.1 Tujuan</b>", intro_subhead_style_10),
+        Paragraph(f"Laporan ini disajikan berdasarkan Lembar Persetujuan PT {company_name.upper()} untuk mengetahui Kewajiban dan Beban atas Imbalan Kerja Karyawan berdasarkan Undang-Undang Ketenagakerjaan (UU Cipta Kerja No. 11 Tahun 2020) dan Peraturan Perusahaan yang berlaku, sebagaimana tertuang dalam PSAK 219 tentang Imbalan Kerja.", intro_body_style_10),
+        Paragraph(f"Selain itu perhitungan ini dilakukan untuk tahun buku yang berakhir pada {first_key}.", intro_body_style_10),
         Spacer(1, 2),
-        Paragraph("<b>1.2 Manfaat</b>", intro_subhead_style_11),
-        Paragraph("Manfaat Karyawan berdasarkan UU Cipta Kerja No. 11 Tahun 2020 mencakup Imbalan Kerja untuk Karyawan Tetap yang diberhentikan karena Pensiun, Meninggal Dunia, Sakit Berkepanjangan atau Mengundurkan Diri secara sukarela.", intro_body_style_11),
+        Paragraph("<b>1.2 Manfaat</b>", intro_subhead_style_10),
+        Paragraph("Manfaat Karyawan berdasarkan UU Cipta Kerja No. 11 Tahun 2020 mencakup Imbalan Kerja untuk Karyawan Tetap yang diberhentikan karena Pensiun, Meninggal Dunia, Sakit Berkepanjangan atau Mengundurkan Diri secara sukarela.", intro_body_style_10),
         Spacer(1, 2),
-        Paragraph("<b>1.3 Tanggal Valuasi</b>", intro_subhead_style_11),
-        Paragraph(f"Tanggal Valuasi adalah {first_key}.", intro_body_style_11),
+        Paragraph("<b>1.3 Tanggal Valuasi</b>", intro_subhead_style_10),
+        Paragraph(f"Tanggal Valuasi adalah {first_key}.", intro_body_style_10),
         Spacer(1, 2),
-        Paragraph("<b>1.4 Data</b>", intro_subhead_style_11),
-        Paragraph("Valuasi menggunakan data yang telah kami terima dan telah dikonfirmasi oleh Entitas.", intro_body_style_11),
+        Paragraph("<b>1.4 Data</b>", intro_subhead_style_10),
+        Paragraph("Valuasi menggunakan data yang telah kami terima dan telah dikonfirmasi oleh Entitas.", intro_body_style_10),
         Spacer(1, 2),
-        Paragraph("<b>2. MANFAAT KARYAWAN</b>", intro_head_style_11),
-        Paragraph("Manfaat karyawan berdasarkan Cipta Kerja No. 11 Tahun 2020, terdiri dari:", intro_body_style_11),
-        Paragraph("<b>2.1 Manfaat Pensiun</b><br/>Manfaat yang dibayarkan kepada Karyawan yang berhenti bekerja karena mencapai usia pensiun normal. Besaran manfaat adalah sebesar 2,3P + 1,15PMK. (Pasal 56)", intro_body_style_11),
-        Paragraph("<b>2.2 Manfaat Meninggal Dunia</b><br/>Manfaat yang dibayarkan kepada ahli waris dari Karyawan yang Meninggal Dunia. Besaran manfaat adalah sebesar 2,3P + 1,15PMK. (Pasal 57)", intro_body_style_11)
+        Paragraph("<b>2. MANFAAT KARYAWAN</b>", intro_head_style_10),
+        Paragraph("Manfaat karyawan berdasarkan Cipta Kerja No. 11 Tahun 2020, terdiri dari:", intro_body_style_10),
+        Paragraph("<b>2.1 Manfaat Pensiun</b><br/>Manfaat yang dibayarkan kepada Karyawan yang berhenti bekerja karena mencapai usia pensiun normal. Besaran manfaat adalah sebesar 2,3P + 1,15PMK. (Pasal 56)", intro_body_style_10),
+        Paragraph("<b>2.2 Manfaat Meninggal Dunia</b><br/>Manfaat yang dibayarkan kepada ahli waris dari Karyawan yang Meninggal Dunia. Besaran manfaat adalah sebesar 2,3P + 1,15PMK. (Pasal 57)", intro_body_style_10)
     ]
 
     intro_col_right_p1 = [
-        Paragraph("<b>1. INTRODUCTION</b>", intro_head_style_11),
-        Paragraph("<b>1.1 Purpose</b>", intro_subhead_style_11),
-        Paragraph(f"This report is presented by virtue of PT {company_name.upper()} to determine the Obligations and Expenses for Employee Benefits under Law about Manpower (UU Cipta Kerja No. 11 Tahun 2020) and applicable Company Regulations, as stated in PSAK 219 concerning Employee Benefits.", intro_body_style_11),
-        Paragraph(f"In addition, this calculation is for the financial year ending {first_key}.", intro_body_style_11),
+        Paragraph("<b>1. INTRODUCTION</b>", intro_head_style_10),
+        Paragraph("<b>1.1 Purpose</b>", intro_subhead_style_10),
+        Paragraph(f"This report is presented by virtue of PT {company_name.upper()} to determine the Obligations and Expenses for Employee Benefits under Law about Manpower (UU Cipta Kerja No. 11 Tahun 2020) and applicable Company Regulations, as stated in PSAK 219 concerning Employee Benefits.", intro_body_style_10),
+        Paragraph(f"In addition, this calculation is for the financial year ending {first_key}.", intro_body_style_10),
         Spacer(1, 2),
-        Paragraph("<b>1.2 Benefit</b>", intro_subhead_style_11),
-        Paragraph("Under Law Cipta Kerja No. 11 Years 2020 about Manpower, Employee Benefits in this valuation include benefits for Permanent Employees terminated due to retirement, death, prolonged illness or voluntary resignation.", intro_body_style_11),
+        Paragraph("<b>1.2 Benefit</b>", intro_subhead_style_10),
+        Paragraph("Under Law Cipta Kerja No. 11 Years 2020 about Manpower, Employee Benefits in this valuation include benefits for Permanent Employees terminated due to retirement, death, prolonged illness or voluntary resignation.", intro_body_style_10),
         Spacer(1, 2),
-        Paragraph("<b>1.3 Valuation Date</b>", intro_subhead_style_11),
-        Paragraph(f"The Valuation Date as per {first_key}.", intro_body_style_11),
+        Paragraph("<b>1.3 Valuation Date</b>", intro_subhead_style_10),
+        Paragraph(f"The Valuation Date as per {first_key}.", intro_body_style_10),
         Spacer(1, 2),
-        Paragraph("<b>1.4 Data</b>", intro_subhead_style_11),
-        Paragraph("Valuation uses the data we have received and confirmed by the Entity.", intro_body_style_11),
+        Paragraph("<b>1.4 Data</b>", intro_subhead_style_10),
+        Paragraph("Valuation uses the data we have received and confirmed by the Entity.", intro_body_style_10),
         Spacer(1, 2),
-        Paragraph("<b>2. EMPLOYEE BENEFITS</b>", intro_head_style_11),
-        Paragraph("Under Law Cipta Kerja No. 11 years 2020 about Manpower, Employee Benefits consist of:", intro_body_style_11),
-        Paragraph("<b>2.1 Retirement Benefits</b><br/>Benefits paid to those employees terminated due to reaching the normal retirement age. The amount of benefit is 2,3P + 1,15PMK. (Article 56)", intro_body_style_11),
-        Paragraph("<b>2.2 Death Benefits</b><br/>Benefits paid to the heirs of Death Employees. The amount of benefit is 2,3P + 1,15PMK. (Article 57)", intro_body_style_11)
+        Paragraph("<b>2. EMPLOYEE BENEFITS</b>", intro_head_style_10),
+        Paragraph("Under Law Cipta Kerja No. 11 years 2020 about Manpower, Employee Benefits consist of:", intro_body_style_10),
+        Paragraph("<b>2.1 Retirement Benefits</b><br/>Benefits paid to those employees terminated due to reaching the normal retirement age. The amount of benefit is 2,3P + 1,15PMK. (Article 56)", intro_body_style_10),
+        Paragraph("<b>2.2 Death Benefits</b><br/>Benefits paid to the heirs of Death Employees. The amount of benefit is 2,3P + 1,15PMK. (Article 57)", intro_body_style_10)
     ]
 
     intro_table_p1 = Table([[intro_col_left_p1, intro_col_right_p1]], colWidths=[col_w_half, col_w_half])
@@ -601,40 +601,40 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
     elements.append(PageBreak())
 
     # ==========================================
-    # HALAMAN LANJUTAN PENDAHULUAN & MANFAAT (FONT SIZE 11 & RATA KANAN-KIRI)
+    # HALAMAN LANJUTAN PENDAHULUAN & MANFAAT (FONT SIZE 10 & RATA KANAN-KIRI)
     # ==========================================
     intro_col_left_p2 = [
-        Paragraph("<b>2.3 Manfaat Mengundurkan Diri</b><br/>Manfaat yang dibayarkan kepada Karyawan yang Mengundurkan Diri secara sukarela. Besaran manfaat adalah sebesar 0,3P + 0,15PMK. (Pasal 50)", intro_body_style_11),
+        Paragraph("<b>2.3 Manfaat Mengundurkan Diri</b><br/>Manfaat yang dibayarkan kepada Karyawan yang Mengundurkan Diri secara sukarela. Besaran manfaat adalah sebesar 0,3P + 0,15PMK. (Pasal 50)", intro_body_style_10),
         Spacer(1, 2),
-        Paragraph("<b>2.4 Manfaat Sakit Berkepanjangan</b><br/>Manfaat yang dibayarkan kepada Karyawan yang diberhentikan karena Sakit berkepanjangan. Besaran manfaat adalah sebesar 2,3P + 2,3PMK. (Pasal 55)", intro_body_style_11),
+        Paragraph("<b>2.4 Manfaat Sakit Berkepanjangan</b><br/>Manfaat yang dibayarkan kepada Karyawan yang diberhentikan karena Sakit berkepanjangan. Besaran manfaat adalah sebesar 2,3P + 2,3PMK. (Pasal 55)", intro_body_style_10),
         Spacer(1, 2),
-        Paragraph("<b>2.5 Uang pisah</b><br/>Perusahaan diwajibkan untuk memberikan uang pisah kepada karyawan akibat Pemutusan Hubungan Kerja, dimana besaran nya diatur sesuai dengan Undang-undang", intro_body_style_11),
+        Paragraph("<b>2.5 Uang pisah</b><br/>Perusahaan diwajibkan untuk memberikan uang pisah kepada karyawan akibat Pemutusan Hubungan Kerja, dimana besaran nya diatur sesuai dengan Undang-undang", intro_body_style_10),
         Spacer(1, 2),
-        Paragraph("<b>2.6 Karyawan PKWT (Kontrak)</b><br/>Pengusaha wajib memberikan uang kompensasi kepada Pekerja/Buruh yang hubungan kerjanya berdasarkan PKWT. Uang kompensasi diberikan kepada Pekerja/Buruh yang telah mempunyai masa kerja paling sedikit 1 (satu) bulan secara terus menerus. Uang Kompensasi yang dihitung secara aktuaria adalah Pekerja/Buruh yang telah mempunyai masa kerja lebih dari 1 (satu) tahun.", intro_body_style_11),
+        Paragraph("<b>2.6 Karyawan PKWT (Kontrak)</b><br/>Pengusaha wajib memberikan uang kompensasi kepada Pekerja/Buruh yang hubungan kerjanya berdasarkan PKWT. Uang kompensasi diberikan kepada Pekerja/Buruh yang telah mempunyai masa kerja paling sedikit 1 (satu) bulan secara terus menerus. Uang Kompensasi yang dihitung secara aktuaria adalah Pekerja/Buruh yang telah mempunyai masa kerja lebih dari 1 (satu) tahun.", intro_body_style_10),
         Spacer(1, 2),
-        Paragraph("<b>2.7 Pajak</b><br/>Pajak atas Manfaat Pensiun dibayar oleh Karyawan sesuai Pasal 21 Peraturan Pemerintah Republik Indonesia Nomor 68 Tahun 2009 tentang Tarif Pajak Penghasilan.", intro_body_style_11),
+        Paragraph("<b>2.7 Pajak</b><br/>Pajak atas Manfaat Pensiun dibayar oleh Karyawan sesuai Pasal 21 Peraturan Pemerintah Republik Indonesia Nomor 68 Tahun 2009 tentang Tarif Pajak Penghasilan.", intro_body_style_10),
         Spacer(1, 2),
-        Paragraph("<b>3. DATA PESERTA DAN KEUANGAN</b>", intro_head_style_11),
-        Paragraph("Peserta adalah Karyawan Tetap (PKWTT) & Kontrak (PKWT).", intro_body_style_11),
+        Paragraph("<b>3. DATA PESERTA DAN KEUANGAN</b>", intro_head_style_10),
+        Paragraph("Peserta adalah Karyawan Tetap (PKWTT) & Kontrak (PKWT).", intro_body_style_10),
         Spacer(1, 2),
-        Paragraph("<b>3.1 Data Karyawan Tetap (PKWTT) & Kontrak (PKWT)</b>", intro_subhead_style_11),
+        Paragraph("<b>3.1 Data Karyawan Tetap (PKWTT) & Kontrak (PKWT)</b>", intro_subhead_style_10),
     ]
 
     intro_col_right_p2 = [
-        Paragraph("<b>2.3 Resignation Benefits</b><br/>Benefits paid to those voluntarily resigned Employees. The amount of benefit is equal to 0,3P + 0,15PMK. (Article 50)", intro_body_style_11),
+        Paragraph("<b>2.3 Resignation Benefits</b><br/>Benefits paid to those voluntarily resigned Employees. The amount of benefit is equal to 0,3P + 0,15PMK. (Article 50)", intro_body_style_10),
         Spacer(1, 2),
-        Paragraph("<b>2.4 Benefits of Prolonged Illness</b><br/>Benefits paid to those employees terminated due to prolonged illness. The amount of benefit is 2,3P + 2,3PMK. (Article 55)", intro_body_style_11),
+        Paragraph("<b>2.4 Benefits of Prolonged Illness</b><br/>Benefits paid to those employees terminated due to prolonged illness. The amount of benefit is 2,3P + 2,3PMK. (Article 55)", intro_body_style_10),
         Spacer(1, 2),
-        Paragraph("<b>2.5 Benefit Severance Payment</b><br/>Companies are required to provide severance pay to employees as a result of Termination of Employment, where the amount is regulated in accordance with the Law.", intro_body_style_11),
+        Paragraph("<b>2.5 Benefit Severance Payment</b><br/>Companies are required to provide severance pay to employees as a result of Termination of Employment, where the amount is regulated in accordance with the Law.", intro_body_style_10),
         Spacer(1, 2),
-        Paragraph("<b>2.6 PKWT Employees (Contract)</b><br/>Employers are required to provide compensation money to Workers / Laborers whose working relationship is based on PKWT. Compensation money is given to Workers / Laborers who have worked at least 1 (one) month continuously. Compensation money that is calculated actuarially is Workers/Laborers who have worked for more than 1 (one) year.", intro_body_style_11),
+        Paragraph("<b>2.6 PKWT Employees (Contract)</b><br/>Employers are required to provide compensation money to Workers / Laborers whose working relationship is based on PKWT. Compensation money is given to Workers / Laborers who have worked at least 1 (one) month continuously. Compensation money that is calculated actuarially is Workers/Laborers who have worked for more than 1 (one) year.", intro_body_style_10),
         Spacer(1, 2),
-        Paragraph("<b>2.7 Tax</b><br/>Taxes on Retirement Benefits are paid by the Employee in accordance with Article 21 of Government Regulation of the Republic of Indonesia Number 68 of 2009 concerning Income Tax Rates.", intro_body_style_11),
+        Paragraph("<b>2.7 Tax</b><br/>Taxes on Retirement Benefits are paid by the Employee in accordance with Article 21 of Government Regulation of the Republic of Indonesia Number 68 of 2009 concerning Income Tax Rates.", intro_body_style_10),
         Spacer(1, 2),
-        Paragraph("<b>3. PARTICIPANT AND FINANCIAL DATA</b>", intro_head_style_11),
-        Paragraph("Participants are Permanent (PKWTT) & Contract (PKWT) Employees.", intro_body_style_11),
+        Paragraph("<b>3. PARTICIPANT AND FINANCIAL DATA</b>", intro_head_style_10),
+        Paragraph("Participants are Permanent (PKWTT) & Contract (PKWT) Employees.", intro_body_style_10),
         Spacer(1, 2),
-        Paragraph("<b>3.1 Permanent PKWTT & Contract PKWT Employees Data</b>", intro_subhead_style_11),
+        Paragraph("<b>3.1 Permanent PKWTT & Contract PKWT Employees Data</b>", intro_subhead_style_10),
     ]
 
     intro_table_p2 = Table([[intro_col_left_p2, intro_col_right_p2]], colWidths=[col_w_half, col_w_half])
@@ -649,49 +649,49 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
     elements.append(PageBreak())
 
     # ==========================================
-    # HALAMAN DATA KEUANGAN & METODOLOGI (FONT SIZE 11 & RATA KANAN-KIRI)
+    # HALAMAN DATA KEUANGAN & METODOLOGI (FONT SIZE 10 & RATA KANAN-KIRI)
     # ==========================================
     fin_col_left = [
-        Paragraph("Berikut adalah ringkasan data yang kami terima dari Entitas terdapat pada tabel 1", intro_body_style_11),
+        Paragraph("Berikut adalah ringkasan data yang kami terima dari Entitas terdapat pada tabel 1", intro_body_style_10),
         Spacer(1, 2),
-        Paragraph("<b>3.2 Data Keuangan</b>", intro_subhead_style_11),
-        Paragraph("Realisasi Pembayaran Benefit / Manfaat serta iuran termasuk pajak oleh Perusahaan sebagai berikut :", intro_body_style_11),
-        Paragraph("• &nbsp; Realisasi pembayaran Manfaat Pensiun adalah sebesar <b>Rp. 0,-</b>", intro_body_style_11),
-        Paragraph("• &nbsp; Realisasi pembayaran Manfaat Mengundurkan diri adalah sebesar <b>Rp. 0,-</b>", intro_body_style_11),
-        Paragraph("• &nbsp; Realisasi pembayaran Manfaat Meninggal Dunia adalah sebesar <b>Rp. 0,-</b>", intro_body_style_11),
-        Paragraph("• &nbsp; Nilai Wajar Aset Program Dana Pensiun adalah sebesar <b>Rp. 0,-</b>", intro_body_style_11),
-        Paragraph("• &nbsp; Iuran Karyawan Dana Pensiun adalah sebesar <b>Rp. 0,-</b>", intro_body_style_11),
+        Paragraph("<b>3.2 Data Keuangan</b>", intro_subhead_style_10),
+        Paragraph("Realisasi Pembayaran Benefit / Manfaat serta iuran termasuk pajak oleh Perusahaan sebagai berikut :", intro_body_style_10),
+        Paragraph("• &nbsp; Realisasi pembayaran Manfaat Pensiun adalah sebesar <b>Rp. 0,-</b>", intro_body_style_10),
+        Paragraph("• &nbsp; Realisasi pembayaran Manfaat Mengundurkan diri adalah sebesar <b>Rp. 0,-</b>", intro_body_style_10),
+        Paragraph("• &nbsp; Realisasi pembayaran Manfaat Meninggal Dunia adalah sebesar <b>Rp. 0,-</b>", intro_body_style_10),
+        Paragraph("• &nbsp; Nilai Wajar Aset Program Dana Pensiun adalah sebesar <b>Rp. 0,-</b>", intro_body_style_10),
+        Paragraph("• &nbsp; Iuran Karyawan Dana Pensiun adalah sebesar <b>Rp. 0,-</b>", intro_body_style_10),
         Spacer(1, 2),
-        Paragraph("<b>4. METODOLOGI</b>", intro_head_style_11),
-        Paragraph("<b>4.1</b> Tujuan PSAK 219 adalah untuk mengatur Akuntansi dan pengungkapan imbalan kerja. Di dalam PSAK 219, entitas diwajibkan untuk mengakui <b>Liabilitas</b> ketika pekerja telah memberikan jasanya dan berhak memperoleh imbalan kerja yang akan dibayarkan dimasa yang akan datang, dan <b>Beban</b> ketika entitas menikmati manfaat ekonomis yang dihasilkan dari jasa yang diberikan oleh pekerja yang berhak memperoleh imbalan kerja.", intro_body_style_11),
+        Paragraph("<b>4. METODOLOGI</b>", intro_head_style_10),
+        Paragraph("<b>4.1</b> Tujuan PSAK 219 adalah untuk mengatur Akuntansi dan pengungkapan imbalan kerja. Di dalam PSAK 219, entitas diwajibkan untuk mengakui <b>Liabilitas</b> ketika pekerja telah memberikan jasanya dan berhak memperoleh imbalan kerja yang akan dibayarkan dimasa yang akan datang, dan <b>Beban</b> ketika entitas menikmati manfaat ekonomis yang dihasilkan dari jasa yang diberikan oleh pekerja yang berhak memperoleh imbalan kerja.", intro_body_style_10),
         Spacer(1, 2),
-        Paragraph("<b>4.2</b> Dalam PSAK 219, Komponen Beban terdiri dari:", intro_body_style_11),
-        Paragraph("a. &nbsp; Biaya Jasa Kini;<br/>b. &nbsp; Biaya Bunga Neto;<br/>c. &nbsp; Biaya Jasa Lalu, jika ada.", intro_body_style_11),
+        Paragraph("<b>4.2</b> Dalam PSAK 219, Komponen Beban terdiri dari:", intro_body_style_10),
+        Paragraph("a. &nbsp; Biaya Jasa Kini;<br/>b. &nbsp; Biaya Bunga Neto;<br/>c. &nbsp; Biaya Jasa Lalu, jika ada.", intro_body_style_10),
         Spacer(1, 2),
-        Paragraph("<b>4.3</b> Pada Neraca, jumlah (Kewajiban)/ Aset yang diakui adalah akumulasi dari (Beban)/Pendapatan ditambah Penghasilan Komprehensif Lain Pembayaran Manfaat Aktual, dan Kontribusi yang dibayarkan oleh Entitas.", intro_body_style_11),
+        Paragraph("<b>4.3</b> Pada Neraca, jumlah (Kewajiban)/ Aset yang diakui adalah akumulasi dari (Beban)/Pendapatan ditambah Penghasilan Komprehensif Lain Pembayaran Manfaat Aktual, dan Kontribusi yang dibayarkan oleh Entitas.", intro_body_style_10),
         Spacer(1, 2),
-        Paragraph("<b>4.4</b> Pengertian Istilah Teknis yang digunakan dalam laporan ini dijelaskan pada <b>Lampiran 2</b>.", intro_body_style_11)
+        Paragraph("<b>4.4</b> Pengertian Istilah Teknis yang digunakan dalam laporan ini dijelaskan pada <b>Lampiran 2</b>.", intro_body_style_10)
     ]
 
     fin_col_right = [
-        Paragraph("The following is a summary of data we received from the Entity is on Table 1", intro_body_style_11),
+        Paragraph("The following is a summary of data we received from the Entity is on Table 1", intro_body_style_10),
         Spacer(1, 2),
-        Paragraph("<b>3.2 Financial Data</b>", intro_subhead_style_11),
-        Paragraph("The Company's realized Benefit and Contributions Payments are as follows:", intro_body_style_11),
-        Paragraph("• &nbsp; Realized payments of Retirement Benefits shall be <b>Rp. 0,-</b>", intro_body_style_11),
-        Paragraph("• &nbsp; Realized payments of Withdrawal Benefits shall be <b>Rp. 0,-</b>", intro_body_style_11),
-        Paragraph("• &nbsp; Realized payments of Death Benefits shall be <b>Rp. 0,-</b>", intro_body_style_11),
-        Paragraph("• &nbsp; Fair Value of Pension Fund Assets shall be <b>Rp. 0,-</b>", intro_body_style_11),
-        Paragraph("• &nbsp; Employee contributions to Pension Fund shall be <b>Rp. 0,-</b>", intro_body_style_11),
+        Paragraph("<b>3.2 Financial Data</b>", intro_subhead_style_10),
+        Paragraph("The Company's realized Benefit and Contributions Payments are as follows:", intro_body_style_10),
+        Paragraph("• &nbsp; Realized payments of Retirement Benefits shall be <b>Rp. 0,-</b>", intro_body_style_10),
+        Paragraph("• &nbsp; Realized payments of Withdrawal Benefits shall be <b>Rp. 0,-</b>", intro_body_style_10),
+        Paragraph("• &nbsp; Realized payments of Death Benefits shall be <b>Rp. 0,-</b>", intro_body_style_10),
+        Paragraph("• &nbsp; Fair Value of Pension Fund Assets shall be <b>Rp. 0,-</b>", intro_body_style_10),
+        Paragraph("• &nbsp; Employee contributions to Pension Fund shall be <b>Rp. 0,-</b>", intro_body_style_10),
         Spacer(1, 2),
-        Paragraph("<b>4. METHODOLOGY</b>", intro_head_style_11),
-        Paragraph("<b>4.1</b> The purpose of PSAK 219 is to regulate and disclose employee benefits accounting treatment and disclosure. Under PSAK 219, an entity is required to recognize <b>Liabilities</b> when an employee has provided their services and is entitled to receive employee benefits to be paid in the future and <b>Expenses</b> when the entity gets economic benefits resulting from services provided by employees entitled to receive employee benefits.", intro_body_style_11),
+        Paragraph("<b>4. METHODOLOGY</b>", intro_head_style_10),
+        Paragraph("<b>4.1</b> The purpose of PSAK 219 is to regulate and disclose employee benefits accounting treatment and disclosure. Under PSAK 219, an entity is required to recognize <b>Liabilities</b> when an employee has provided their services and is entitled to receive employee benefits to be paid in the future and <b>Expenses</b> when the entity gets economic benefits resulting from services provided by employees entitled to receive employee benefits.", intro_body_style_10),
         Spacer(1, 2),
-        Paragraph("<b>4.2</b> Under PSAK 24, the Expense Component consists of:<br/>a. &nbsp; Current Service Cost;<br/>b. &nbsp; Net Interest Cost;<br/>c. &nbsp; Past Service Cost, if any.", intro_body_style_11),
+        Paragraph("<b>4.2</b> Under PSAK 24, the Expense Component consists of:<br/>a. &nbsp; Current Service Cost;<br/>b. &nbsp; Net Interest Cost;<br/>c. &nbsp; Past Service Cost, if any.", intro_body_style_10),
         Spacer(1, 2),
-        Paragraph("<b>4.3</b> On the Balance Sheet, the recognized amount (Liabilities) / Assets is the accumulated (Expenses)/Revenues plus Other Comprehensive Income, Actual Benefit Payment, and Contributions paid by the Entity.", intro_body_style_11),
+        Paragraph("<b>4.3</b> On the Balance Sheet, the recognized amount (Liabilities) / Assets is the accumulated (Expenses)/Revenues plus Other Comprehensive Income, Actual Benefit Payment, and Contributions paid by the Entity.", intro_body_style_10),
         Spacer(1, 2),
-        Paragraph("<b>4.4</b> The definitions of Technical Terms used in this report are described in <b>Appendix 2</b>.", intro_body_style_11)
+        Paragraph("<b>4.4</b> The definitions of Technical Terms used in this report are described in <b>Appendix 2</b>.", intro_body_style_10)
     ]
 
     fin_table = Table([[fin_col_left, fin_col_right]], colWidths=[col_w_half, col_w_half])
@@ -706,32 +706,32 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
     elements.append(PageBreak())
 
     # ==========================================
-    # HALAMAN: METODE DAN ASUMSI AKTUARIA (FONT SIZE 11 & RATA KANAN-KIRI)
+    # HALAMAN: METODE DAN ASUMSI AKTUARIA (FONT SIZE 10 & RATA KANAN-KIRI)
     # ==========================================
     meth_col_left = [
-        Paragraph("<b>5. METODE DAN ASUMSI AKTUARIA</b>", intro_head_style_11),
+        Paragraph("<b>5. METODE DAN ASUMSI AKTUARIA</b>", intro_head_style_10),
         Spacer(1, 2),
-        Paragraph("<b>5.1 Metode Valuasi Aktuaria</b>", intro_subhead_style_11),
-        Paragraph("Metode valuasi aktuaria yang dipergunakan adalah <b>“Projected Unit Credit”</b> berdasarkan metode ini, manfaat/imbalan diakru secara prorata sesuai jasa atau dengan kata lain manfaat/imbalan dibagi tahun jasa, mengganggap setiap periode jasa akan menghasilkan satu unit tambahan manfaat/imbalan dan mengukur setiap unit secara terpisah untuk menghasilkan kewajiban final.", intro_body_style_11),
+        Paragraph("<b>5.1 Metode Valuasi Aktuaria</b>", intro_subhead_style_10),
+        Paragraph("Metode valuasi aktuaria yang dipergunakan adalah <b>“Projected Unit Credit”</b> berdasarkan metode ini, manfaat/imbalan diakru secara prorata sesuai jasa atau dengan kata lain manfaat/imbalan dibagi tahun jasa, mengganggap setiap periode jasa akan menghasilkan satu unit tambahan manfaat/imbalan dan mengukur setiap unit secara terpisah untuk menghasilkan kewajiban final.", intro_body_style_10),
         Spacer(1, 2),
-        Paragraph("<b>5.2 Asumsi Aktuaria</b>", intro_subhead_style_11),
-        Paragraph("Berdasarkan PSAK 219, asumsi aktuaria tidak boleh bias dan harus cocok satu dengan yang lain. Asumsi aktuaria adalah estimasi terbaik entitas mengenai variabel yang akan menentukan hasil Valuasi.", intro_body_style_11),
+        Paragraph("<b>5.2 Asumsi Aktuaria</b>", intro_subhead_style_10),
+        Paragraph("Berdasarkan PSAK 219, asumsi aktuaria tidak boleh bias dan harus cocok satu dengan yang lain. Asumsi aktuaria adalah estimasi terbaik entitas mengenai variabel yang akan menentukan hasil Valuasi.", intro_body_style_10),
         Spacer(1, 2),
-        Paragraph("<b>6. RINGKASAN HASIL VALUASI</b>", intro_head_style_11),
-        Paragraph("Berdasarkan Data, Metode dan Asumsi yang digunakan, berikut ini ringkasan hasil valuasi.", intro_body_style_11)
+        Paragraph("<b>6. RINGKASAN HASIL VALUASI</b>", intro_head_style_10),
+        Paragraph("Berdasarkan Data, Metode dan Asumsi yang digunakan, berikut ini ringkasan hasil valuasi.", intro_body_style_10)
     ]
 
     meth_col_right = [
-        Paragraph("<b>5. ACTUARIAL METHODS AND ASSUMPTIONS</b>", intro_head_style_11),
+        Paragraph("<b>5. ACTUARIAL METHODS AND ASSUMPTIONS</b>", intro_head_style_10),
         Spacer(1, 2),
-        Paragraph("<b>5.1 Actuarial Valuation Method</b>", intro_subhead_style_11),
-        Paragraph("The actuarial valuation method used is <b>“Projected Unit Credit”</b>. Under this method, benefits/rewards are accrued pro rata according to services; or, in other words, benefits/rewards are divided by service years, assuming each service period would produce one additional unit of benefits/rewards and measuring each unit separately to produce final obligations.", intro_body_style_11),
+        Paragraph("<b>5.1 Actuarial Valuation Method</b>", intro_subhead_style_10),
+        Paragraph("The actuarial valuation method used is <b>“Projected Unit Credit”</b>. Under this method, benefits/rewards are accrued pro rata according to services; or, in other words, benefits/rewards are divided by service years, assuming each service period would produce one additional unit of benefits/rewards and measuring each unit separately to produce final obligations.", intro_body_style_10),
         Spacer(1, 2),
-        Paragraph("<b>5.2 Actuarial Assumptions</b>", intro_subhead_style_11),
-        Paragraph("Under PSAK 219, actuarial assumptions must be unbiased and mutually compatible. Actuarial assumptions are the entity's best estimates of the variables that would determine the valuation results.", intro_body_style_11),
+        Paragraph("<b>5.2 Actuarial Assumptions</b>", intro_subhead_style_10),
+        Paragraph("Under PSAK 219, actuarial assumptions must be unbiased and mutually compatible. Actuarial assumptions are the entity's best estimates of the variables that would determine the valuation results.", intro_body_style_10),
         Spacer(1, 2),
-        Paragraph("<b>6. SUMMARY OF VALUATION RESULTS</b>", intro_subhead_style_11),
-        Paragraph("Based on the Data, Methods and Assumptions used, here is the summary of valuation results.", intro_body_style_11)
+        Paragraph("<b>6. SUMMARY OF VALUATION RESULTS</b>", intro_head_style_10),
+        Paragraph("Based on the Data, Methods and Assumptions used, here is the summary of valuation results.", intro_body_style_10)
     ]
 
     meth_table = Table([[meth_col_left, meth_col_right]], colWidths=[col_w_half, col_w_half])
@@ -746,31 +746,30 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
     elements.append(PageBreak())
 
     # ==========================================
-    # HALAMAN BARU: PENUTUP / CLOSING (FONT SIZE 11 & RATA KANAN-KIRI)
+    # HALAMAN BARU: PENUTUP / CLOSING (FONT SIZE 10 & RATA KANAN-KIRI)
     # ==========================================
-    closing_style_11 = ParagraphStyle('ClosingStyle11', parent=styles['Normal'], fontName='Helvetica', fontSize=11, textColor=colors.black, leading=15, spaceAfter=8, alignment=4)
-    closing_head_11 = ParagraphStyle('ClosingHead11', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=11, textColor=colors.black, leading=14, spaceAfter=5)
-    closing_center_style = ParagraphStyle('ClosingCenter', parent=styles['Normal'], fontName='Helvetica', fontSize=11, textColor=colors.black, leading=15, alignment=1)
-    closing_right_style = ParagraphStyle('ClosingRight', parent=styles['Normal'], fontName='Helvetica', fontSize=11, textColor=colors.black, leading=15, alignment=2)
+    closing_style_10 = ParagraphStyle('ClosingStyle10', parent=styles['Normal'], fontName='Helvetica', fontSize=10, textColor=colors.black, leading=13.5, spaceAfter=4, alignment=4, keepWithNext=False)
+    closing_head_10 = ParagraphStyle('ClosingHead10', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=10.5, textColor=colors.black, leading=13, spaceAfter=4, keepWithNext=True)
+    closing_center_style = ParagraphStyle('ClosingCenter', parent=styles['Normal'], fontName='Helvetica', fontSize=10, textColor=colors.black, leading=13.5, alignment=1, keepWithNext=True)
 
     closing_col_left = [
-        Paragraph("<b>7. PENUTUP</b>", closing_head_11),
-        Paragraph(f"Semoga informasi yang kami berikan dapat berguna bagi manajemen <b>PT {company_name.upper()}</b> dan pihak <i>Auditor</i> dalam rangka mengakui kewajiban dan beban entitas sesuai dengan ketentuan PSAK 219 untuk periode {first_key}.", closing_style_11),
-        Spacer(1, 20),
+        Paragraph("<b>7. PENUTUP</b>", closing_head_10),
+        Paragraph(f"Semoga informasi yang kami berikan dapat berguna bagi manajemen <b>PT {company_name.upper()}</b> dan pihak <i>Auditor</i> dalam rangka mengakui kewajiban dan beban entitas sesuai dengan ketentuan PSAK 219 untuk periode {first_key}.", closing_style_10),
+        Spacer(1, 10),
         Paragraph(f"Jakarta, {formatted_date}", closing_center_style),
-        Spacer(1, 15),
-        Paragraph("<b>KKA SETYA GUNAWAN</b>", ParagraphStyle('SignHeadLeft', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=11, alignment=0)),
-        Spacer(1, 5),
-        Paragraph("Aktuaris<br/>(Actuary)<br/>Lisensi Aktuaris Publik<br/>(Public Actuary Licence)<br/>Konsultan<br/>(Consultant Office)<br/>Alamat Kantor", ParagraphStyle('SignDescLeft', parent=styles['Normal'], fontName='Helvetica', fontSize=10, leading=14, alignment=0))
+        Spacer(1, 8),
+        Paragraph("<b>KKA SETYA GUNAWAN</b>", ParagraphStyle('SignHeadLeft', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=10, alignment=0, keepWithNext=True)),
+        Spacer(1, 2),
+        Paragraph("Aktuaris<br/>(Actuary)<br/>Lisensi Aktuaris Publik<br/>(Public Actuary Licence)<br/>Konsultan<br/>(Consultant Office)<br/>Alamat Kantor", ParagraphStyle('SignDescLeft', parent=styles['Normal'], fontName='Helvetica', fontSize=9, leading=12, alignment=0))
     ]
 
     closing_col_right = [
-        Paragraph("<b>7. CLOSING</b>", closing_head_11),
-        Paragraph(f"We hope that the information we provide can be useful for the management of <b>PT {company_name.upper()}</b> and the Auditor to recognize the entity's liabilities and expenses in accordance with the provisions of PSAK 219 for the period of {first_key}.", closing_style_11),
-        Spacer(1, 75), # Menyelaraskan posisi tanggal Jakarta dengan sisi kiri
-        Paragraph(f"<b>SETYA GUNAWAN, MM, FSAI</b>", ParagraphStyle('SignHeadRight', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=11, alignment=0)),
-        Spacer(1, 5),
-        Paragraph("<b>:</b> Act-1.17.00026<br/><b>:</b> KKA SETYA GUNAWAN<br/><b>:</b> Cilandak 88 Condominium Unit D-1<br/>Jl. Margasatwa Barat No.88<br/>Cilandak Timur<br/>Pasar Minggu<br/>Jakarta Selatan,<br/>12560", ParagraphStyle('SignDescRight', parent=styles['Normal'], fontName='Helvetica', fontSize=10, leading=14, alignment=0))
+        Paragraph("<b>7. CLOSING</b>", closing_head_10),
+        Paragraph(f"We hope that the information we provide can be useful for the management of <b>PT {company_name.upper()}</b> and the Auditor to recognize the entity's liabilities and expenses in accordance with the provisions of PSAK 219 for the period of {first_key}.", closing_style_10),
+        Spacer(1, 45), # Menyelaraskan posisi tanggal Jakarta dengan sisi kiri
+        Paragraph(f"<b>SETYA GUNAWAN, MM, FSAI</b>", ParagraphStyle('SignHeadRight', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=10, alignment=0, keepWithNext=True)),
+        Spacer(1, 2),
+        Paragraph("<b>:</b> Act-1.17.00026<br/><b>:</b> KKA SETYA GUNAWAN<br/><b>:</b> Cilandak 88 Condominium Unit D-1<br/>Jl. Margasatwa Barat No.88<br/>Cilandak Timur<br/>Pasar Minggu<br/>Jakarta Selatan,<br/>12560", ParagraphStyle('SignDescRight', parent=styles['Normal'], fontName='Helvetica', fontSize=9, leading=12, alignment=0))
     ]
 
     closing_table = Table([[closing_col_left, closing_col_right]], colWidths=[200, 238.27])
@@ -782,14 +781,14 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
         ('TOPPADDING', (0,0), (-1,-1), 0),
     ]))
     elements.append(closing_table)
-    elements.append(Spacer(1, 10))
+    elements.append(Spacer(1, 5))
 
     # Blok kontak bawah halaman penutup
     contact_col_left = [
-        Paragraph("(Office Adress)<br/>Telepon<br/>(Phone)<br/>Surat Elektronik<br/>(Email)", ParagraphStyle('ContactDescLeft', parent=styles['Normal'], fontName='Helvetica', fontSize=10, leading=14, alignment=0))
+        Paragraph("(Office Adress)<br/>Telepon<br/>(Phone)<br/>Surat Elektronik<br/>(Email)", ParagraphStyle('ContactDescLeft', parent=styles['Normal'], fontName='Helvetica', fontSize=9, leading=12, alignment=0))
     ]
     contact_col_right = [
-        Paragraph("<b>:</b> +62 21 781 7718 / +62 812 9090 9019<br/><b>:</b> <a href='mailto:aktuaris@actuarial-kas.com'>aktuaris@actuarial-kas.com</a>; <a href='mailto:kka_setyagunawan@yahoo.com'>kka_setyagunawan@yahoo.com</a>", ParagraphStyle('ContactDescRight', parent=styles['Normal'], fontName='Helvetica', fontSize=10, leading=14, alignment=0))
+        Paragraph("<b>:</b> +62 21 781 7718 / +62 812 9090 9019<br/><b>:</b> <a href='mailto:aktuaris@actuarial-kas.com'>aktuaris@actuarial-kas.com</a>; <a href='mailto:kka_setyagunawan@yahoo.com'>kka_setyagunawan@yahoo.com</a>", ParagraphStyle('ContactDescRight', parent=styles['Normal'], fontName='Helvetica', fontSize=9, leading=12, alignment=0))
     ]
     contact_table = Table([[contact_col_left, contact_col_right]], colWidths=[200, 238.27])
     contact_table.setStyle(TableStyle([
@@ -1332,7 +1331,7 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
                 df_display['Discount Rate'] = df_display['Applied_Discount'].apply(lambda x: f"{x*100:.2f}%")
                 df_display['PVFB'] = df_display['PVFB'].apply(lambda x: f"Rp {x:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
                 df_display['PBO'] = df_display['PBO'].apply(lambda x: f"Rp {x:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
-                df_display['CSC'] = df_display['CSC'].apply(lambda x: f"Rp {x:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+                df_display['CSC'] = df_display['CSC'].apply(lambda x: f"Rp {x:lbl:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")) if 'CSC' in df_display else "-"
 
                 cols_to_show = ['NIK', 'Name', 'Tanggal Lahir', 'Tgl. Mulai Bekerja', 'Gross Salary', 'NRA', 'Age Valuation', 'Age Entry', 'Past Service', 'Future_Service', 'Discount Rate', 'PVFB', 'PBO', 'CSC']
                 st.dataframe(df_display[cols_to_show], use_container_width=True)
