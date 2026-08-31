@@ -360,7 +360,6 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
     
     class MixedPageDocTemplate(SimpleDocTemplate):
         def handle_pageBegin(self):
-            # Cover (page 1) dan Daftar Isi / General Info (page 2 & 3) potret (A4), selebihnya landscape
             if self.page > 3: self.pagesize = landscape(A4)
             super().handle_pageBegin()
 
@@ -476,7 +475,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
         Paragraph("2 &nbsp;&nbsp;&nbsp;&nbsp; Pengertian Istilah Teknis", toc_item_style),
         Paragraph("3 &nbsp;&nbsp;&nbsp;&nbsp; Justifikasi Asumsi Aktuaria", toc_item_style),
         Paragraph("4 &nbsp;&nbsp;&nbsp;&nbsp; Tabel Tingkat Kematian, Pengunduran Diri dan Sakit Berkepanjangan", toc_item_style),
-        Paragraph("5 &nbsp;&nbsp;&nbsp;&nbsp; Tabel PHEI Per 30 Desember 2024", toc_item_style),
+        Paragraph(f"5 &nbsp;&nbsp;&nbsp;&nbsp; Tabel PHEI Per {first_key}", toc_item_style),
         Paragraph("6 &nbsp;&nbsp;&nbsp;&nbsp; Detail Karyawan", toc_item_style),
         Spacer(1, 4),
         Paragraph("<b>TABEL</b>", toc_item_style),
@@ -510,7 +509,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
         Paragraph("2 &nbsp;&nbsp;&nbsp;&nbsp; Definition of Technical Terms", toc_item_style),
         Paragraph("3 &nbsp;&nbsp;&nbsp;&nbsp; Justification of Actuarial Assumptions", toc_item_style),
         Paragraph("4 &nbsp;&nbsp;&nbsp;&nbsp; Table of Mortality, Resignation and Prolonged Illness Rates", toc_item_style),
-        Paragraph("5 &nbsp;&nbsp;&nbsp;&nbsp; IBPA table as of December, 30th 2024", toc_item_style),
+        Paragraph(f"5 &nbsp;&nbsp;&nbsp;&nbsp; IBPA table as of {first_key}", toc_item_style),
         Paragraph("7 &nbsp;&nbsp;&nbsp;&nbsp; Detail Employee", toc_item_style),
         Spacer(1, 4),
         Paragraph("<b>TABLES</b>", toc_item_style),
