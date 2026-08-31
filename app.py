@@ -51,7 +51,6 @@ def init_db():
             PRIMARY KEY (company_name, valuation_year)
         )
     ''')
-    # Tabel tambahan untuk menyimpan PDF laporan per perusahaan agar admin bisa mendownloadnya
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS report_pdfs (
             company_name TEXT PRIMARY KEY,
@@ -356,12 +355,12 @@ def draw_footer_landscape(canvas, doc):
     canvas.drawCentredString(landscape(A4)[0]/2.0, 20, "Izin Badan Usaha No. 4.21.0007 | Keputusan Kemenkeu RI No. 590/KM.1/2021 | STTD-OJK: STTD-039/NB.122/STTD-KA/2021 | AKKAI: AKKAI-21043")
     canvas.restoreState()
 
-def generate_detailed_report(results_dict, salary_inc, ret_age, val_years, company_name, report_no, report_date):
+def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, company_name, report_no, report_date):
     pdf_buffer = io.BytesIO()
     
     class MixedPageDocTemplate(SimpleDocTemplate):
         def handle_pageBegin(self):
-            if self.page > 1: self.pagesize = landscape(A4)
+            if self.page > 2: self.pagesize = landscape(A4)
             super().handle_pageBegin()
 
     doc_mixed = MixedPageDocTemplate(pdf_buffer, pagesize=A4, rightMargin=54, leftMargin=54, topMargin=54, bottomMargin=54)
@@ -395,8 +394,8 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_years, compa
     elements.append(Paragraph(f"NO. {report_no}", cover_desc_style))
     elements.append(Spacer(1, 12))
     
-    val_yr_str = str(val_years[0]) if val_years else '2022'
-    elements.append(Paragraph(f"PERIOD DECEMBER, 31ST {val_yr_str}", cover_date_style))
+    first_key = val_keys[0] if val_keys else '31 Des 2022'
+    elements.append(Paragraph(f"PERIOD PER {first_key.upper()}", cover_date_style))
     elements.append(Spacer(1, 15))
     
     address_block = (
@@ -411,6 +410,46 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_years, compa
     elements.append(Paragraph(address_block, cover_address_style))
     elements.append(PageBreak())
 
+    # ==========================================
+    # HALAMAN INFORMASI UMUM / GENERAL INFORMATION
+    # ==========================================
+    info_title_style = ParagraphStyle('InfoTitle', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=14, textColor=colors.black, alignment=0, spaceAfter=12, leading=16)
+    info_text_style = ParagraphStyle('InfoText', parent=styles['Normal'], fontName='Helvetica', fontSize=9, textColor=colors.black, alignment=0, spaceAfter=8, leading=13)
+    info_header_table_style = ParagraphStyle('InfoHeaderTable', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=12, textColor=colors.black, alignment=0, leading=15)
+
+    info_col_left = [
+        Paragraph("<b>INFORMASI UMUM</b>", info_header_table_style),
+        Spacer(1, 10),
+        Paragraph("• <b>Entitas:</b><br/>PT " + company_name.upper(), info_text_style),
+        Paragraph("• <b>Alamat:</b><br/>Cilandak 88 Condominium Unit D-1, Jl. Margasatwa Barat No. 88, Cilandak Timur, Pasar Minggu, Jakarta Selatan 12560", info_text_style),
+        Paragraph(f"• <b>Tanggal Valuasi:</b><br/>{first_key}", info_text_style),
+        Paragraph("• <b>Konsultan Aktuaria:</b><br/><b>KKA SETYA GUNAWAN</b><br/>Cilandak 88 Condominium Unit D-1,<br/>Jl. Margasatwa Barat No. 88,<br/>Cilandak Timur,<br/>Pasar Minggu,<br/>Jakarta Selatan<br/>12560", info_text_style),
+        Paragraph("• <b>Izin Usaha:</b><br/>Kementrian Keuangan RI<br/>Badan Pengawas Pasar Modal & Lembaga Keuangan<br/>No.", info_text_style),
+        Paragraph("• <b>Aktuaris Public:</b><br/>Act-1.17.00026", info_text_style)
+    ]
+
+    info_col_right = [
+        Paragraph("<b>GENERAL INFORMATION</b>", info_header_table_style),
+        Spacer(1, 10),
+        Paragraph("• <b>Entity:</b><br/>PT " + company_name.upper(), info_text_style),
+        Paragraph("• <b>Address:</b><br/>Cilandak 88 Condominium Unit D-1, Jl. Margasatwa Barat No. 88, Cilandak Timur, Pasar Minggu, Jakarta Selatan 12560", info_text_style),
+        Paragraph(f"• <b>Valuation Date:</b><br/>{first_key}", info_text_style),
+        Paragraph("• <b>Actuarial Consultant:</b><br/><b>KKA SETYA GUNAWAN</b><br/>Cilandak 88 Condominium Unit D-1,<br/>Jl. Margasatwa Barat No. 88,<br/>Cilandak Timur,<br/>Pasar Minggu,<br/>Jakarta Selatan<br/>12560", info_text_style),
+        Paragraph("• <b>Business Licence:</b><br/>Ministry of Finance RI<br/>Badan Pengawas Pasar Modal & Lembaga Keuangan<br/>No.", info_text_style),
+        Paragraph("• <b>Public Actuary:</b><br/>Act-1.17.00026", info_text_style)
+    ]
+
+    info_table = Table([[info_col_left, info_col_right]], colWidths=[240, 240])
+    info_table.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('LEFTPADDING', (0,0), (-1,-1), 0),
+        ('RIGHTPADDING', (0,0), (-1,-1), 10),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+        ('TOPPADDING', (0,0), (-1,-1), 0),
+    ]))
+    elements.append(info_table)
+    elements.append(PageBreak())
+
     elements.append(Paragraph("<b>1. PENDAHULUAN / INTRODUCTION</b>", h_style))
     elements.append(Paragraph(f"Laporan aktuaria ini disajikan untuk memenuhi permintaan <b>PT {company_name.upper()}</b> guna mengetahui Kewajiban dan Beban atas Imbalan Kerja Karyawan berdasarkan Undang-Undang Ketenagakerjaan (UU Cipta Kerja No. 11 Tahun 2020) dan PSAK 219.", body_style))
     
@@ -421,8 +460,8 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_years, compa
     elements.append(Paragraph(f"Metode valuasi menggunakan <b>Projected Unit Credit (PUC)</b> dengan asumsi tingkat kenaikan gaji {salary_inc*100:.2f}% p.a., Usia Pensiun Normal {ret_age} tahun, serta tingkat diskonto berbasis kurva PHEI.", body_style))
     elements.append(PageBreak())
 
-    for yr in sorted(val_years, reverse=True):
-        df_yr = results_dict[yr]
+    for vkey in sorted(val_keys, reverse=True):
+        df_yr = results_dict[vkey]
         if df_yr.empty: continue
             
         tot_salary = df_yr['Gross Salary'].sum()
@@ -431,9 +470,9 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_years, compa
         tot_csc = df_yr['CSC'].sum()
         num_emp = len(df_yr)
 
-        elements.append(Paragraph(f"<b>4. RINGKASAN HASIL VALUASI (PER 31 DESEMBER {yr})</b>", h_style))
+        elements.append(Paragraph(f"<b>4. RINGKASAN HASIL VALUASI (PER {vkey.upper()})</b>", h_style))
         t1_data = [
-            ["URAIAN (EXPLANATION)", f"Per 31 Des {yr} (Pasca Kerja)", f"Per 31 Des {yr} (Jangka Panjang Lainnya)"],
+            ["URAIAN (EXPLANATION)", f"Per {vkey} (Pasca Kerja)", f"Per {vkey} (Jangka Panjang Lainnya)"],
             ["1. Jumlah Karyawan (Number of Employees)", str(num_emp), "0"],
             ["2. Total Penghasilan Sebulan (Total Salary)", f"Rp {fmt_num(tot_salary)}", "Rp 0"],
             ["3. Rata-rata Usia (Average Age)", f"{df_yr['Age Valuation'].mean():.2f}", "0.00"],
@@ -456,7 +495,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_years, compa
         elements.append(t1)
         elements.append(Spacer(1, 15))
 
-        elements.append(Paragraph(f"<b>LAMPIRAN — Detail Perhitungan Individu Karyawan (Tahun {yr})</b>", h_style))
+        elements.append(Paragraph(f"<b>LAMPIRAN — Detail Perhitungan Individu Karyawan (Periode {vkey})</b>", h_style))
         table_data = [["No", "NIK & Nama Karyawan", "Tgl Lahir", "Tgl Masuk", "Gaji Kotor (Rp)", "NRA", "Umur", "Age Entry", "Masa Kerja", "Faktor UU", "Diskonto", "PVFB (Rp)", "PBO (Rp)", "CSC (Rp)"]]
         
         for i, row in df_yr.iterrows():
@@ -642,7 +681,6 @@ elif menu == "🔐 Admin Dashboard":
 
         conn = sqlite3.connect("kka_actuarial.db", check_same_thread=False)
         
-        # Query gabungan mencakup raw_files, calculation_results, dan report_pdfs
         query = '''
             SELECT 
                 r.timestamp AS tanggal,
@@ -662,12 +700,6 @@ elif menu == "🔐 Admin Dashboard":
         if not df_admin_summary.empty:
             st.markdown("### Daftar Arsip Perusahaan Klien Aktif")
             
-            # Tampilkan dalam format tabel 5 kolom sesuai permintaan:
-            # Kolom 1: Tanggal/Waktu
-            # Kolom 2: Nama Perusahaan
-            # Kolom 3: Periode Perhitungan
-            # Kolom 4: Data Mentah Asli yang Diupload Klien
-            # Kolom 5: Laporan PDF Perusahaan Tersebut
             for index, row in df_admin_summary.iterrows():
                 with st.container(border=True):
                     col1, col2, col3, col4, col5 = st.columns([1.2, 1.8, 1.2, 1.9, 1.9])
@@ -756,7 +788,6 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
             uploaded_file = st.file_uploader("Unggah File Excel Multi-Tahun Anda (.xlsx / .xls)", type=["xlsx", "xls"])
             if uploaded_file is not None:
                 try:
-                    # Simpan file mentah ke database SQLite secara permanen per perusahaan
                     conn = sqlite3.connect("kka_actuarial.db", check_same_thread=False)
                     cursor = conn.cursor()
                     cursor.execute('''
@@ -772,44 +803,58 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
                         if match:
                             yr = int(match.group(1))
                             df_emp, total_paid = parse_excel_dataset(uploaded_file, sheet_name=sh)
-                            datasets_to_process[yr] = df_emp
-                            benefit_paid_dict[yr] = total_paid
-                    st.success(f"Berhasil membaca sheet Excel untuk **{input_perusahaan}** (Tahun: {list(datasets_to_process.keys())})")
+                            datasets_to_process[f"31 Des {yr}"] = df_emp
+                            benefit_paid_dict[f"31 Des {yr}"] = total_paid
+                    st.success(f"Berhasil membaca sheet Excel untuk **{input_perusahaan}**")
                 except Exception as e:
                     st.error(f"Gagal membaca file: {e}")
         else:
             selected_years = st.multiselect(
-                "Pilih Tahun Valuasi yang Ingin Dibuat",
+                "Pilih Tahun Valuasi",
                 [2021, 2022, 2023, 2024, 2025, 2026],
                 default=[2024, 2025]
             )
+            
+            selected_periods = st.multiselect(
+                "Pilih Periode Tanggal Valuasi (Per Tahun)",
+                ["30 Juni", "31 Desember"],
+                default=["31 Desember"]
+            )
 
-            if "manual_datasets" not in st.session_state:
-                st.session_state.manual_datasets = {}
+            valuation_keys = []
+            for yr in selected_years:
+                for p in selected_periods:
+                    if "Juni" in p or "Jun" in p:
+                        valuation_keys.append(f"30 Jun {yr}")
+                    else:
+                        valuation_keys.append(f"31 Des {yr}")
 
-            tab_years = st.tabs([str(yr) for yr in selected_years]) if selected_years else []
+            if "manual_datasets_v2" not in st.session_state:
+                st.session_state.manual_datasets_v2 = {}
 
-            for idx, yr in enumerate(selected_years):
-                with tab_years[idx]:
-                    if yr not in st.session_state.manual_datasets:
-                        st.session_state.manual_datasets[yr] = pd.DataFrame([
+            tab_periods = st.tabs(valuation_keys) if valuation_keys else []
+
+            for idx, vkey in enumerate(valuation_keys):
+                with tab_periods[idx]:
+                    if vkey not in st.session_state.manual_datasets_v2:
+                        st.session_state.manual_datasets_v2[vkey] = pd.DataFrame([
                             {"NIK": "001", "Nama": "Karyawan Contoh 1", "Tanggal Lahir": "1990-01-21", "Tgl. Mulai Bekerja": "2023-10-15", "Total Upah Bulanan (Gross)": 10000000.0, "Saldo DPLK": 0.0}
                         ])
 
                     edited_df = st.data_editor(
-                        st.session_state.manual_datasets[yr],
+                        st.session_state.manual_datasets_v2[vkey],
                         num_rows="dynamic",
-                        key=f"manual_editor_{yr}",
+                        key=f"manual_editor_{vkey}",
                         use_container_width=True
                     )
-                    st.session_state.manual_datasets[yr] = edited_df
-                    datasets_to_process[yr] = edited_df
+                    st.session_state.manual_datasets_v2[vkey] = edited_df
+                    datasets_to_process[vkey] = edited_df
 
-                    benefit_paid_dict[yr] = st.number_input(
-                        f"Total Benefit Paid Aktual Tahun {yr} (Rp)",
+                    benefit_paid_dict[vkey] = st.number_input(
+                        f"Total Benefit Paid Aktual Periode {vkey} (Rp)",
                         value=0.0,
                         step=1000000.0,
-                        key=f"manual_paid_{yr}"
+                        key=f"manual_paid_{vkey}"
                     )
 
         st.markdown("---")
@@ -817,14 +862,20 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
             with st.spinner("Menghitung perincian aktuaria per karyawan dengan metode PUC & IFRIC AD, serta menyimpannya ke database..."):
                 results_dict = {}
                 dplk_dict = {}
-                active_years = sorted(list(datasets_to_process.keys()))
+                active_keys = sorted(list(datasets_to_process.keys()))
                 
                 conn = sqlite3.connect("kka_actuarial.db", check_same_thread=False)
                 cursor = conn.cursor()
 
-                for yr in active_years:
-                    val_date_dt = datetime.datetime(yr, 12, 31)
-                    df_input = datasets_to_process[yr]
+                for vkey in active_keys:
+                    parts = vkey.split()
+                    day = int(parts[0])
+                    month_str = parts[1]
+                    yr = int(parts[2])
+                    
+                    month = 6 if "Jun" in month_str else 12
+                    val_date_dt = datetime.datetime(yr, month, day)
+                    df_input = datasets_to_process[vkey]
 
                     final_engine = PSAK219Engine(valuation_year=yr, salary_increase=asumsi_gaji, retirement_age=usia_pensiun, resign_rate=asumsi_resign)
                     hasil_valuasi = []
@@ -863,15 +914,15 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
                         })
 
                     df_res_yr = pd.DataFrame(hasil_valuasi)
-                    results_dict[yr] = df_res_yr
-                    dplk_dict[yr] = total_dplk_yr
+                    results_dict[vkey] = df_res_yr
+                    dplk_dict[vkey] = total_dplk_yr
 
                     cursor.execute('''
                         INSERT OR REPLACE INTO calculation_results (company_name, valuation_year, result_csv, parameters, timestamp)
                         VALUES (?, ?, ?, ?, ?)
                     ''', (
                         input_perusahaan, yr, df_res_yr.to_csv(index=False),
-                        f"SalaryInc:{asumsi_gaji},RetAge:{usia_pensiun},Resign:{asumsi_resign}",
+                        f"Period:{vkey},SalaryInc:{asumsi_gaji},RetAge:{usia_pensiun},Resign:{asumsi_resign}",
                         datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     ))
 
@@ -879,7 +930,7 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
                     results_dict=results_dict, 
                     salary_inc=asumsi_gaji, 
                     ret_age=usia_pensiun, 
-                    val_years=active_years, 
+                    val_keys=active_keys, 
                     company_name=input_perusahaan, 
                     report_no=nomor_laporan, 
                     report_date=tanggal_laporan
@@ -900,7 +951,7 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
                 st.session_state.results_dict = results_dict
                 st.session_state.dplk_dict = dplk_dict
                 st.session_state.paid_dict = benefit_paid_dict
-                st.session_state.active_years = active_years
+                st.session_state.active_years = active_keys
                 st.session_state.asumsi_gaji = asumsi_gaji
                 st.session_state.usia_pensiun = usia_pensiun
                 st.session_state.input_perusahaan = input_perusahaan
@@ -911,7 +962,7 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
 
         if st.session_state.get("calculated_results"):
             res_dict = st.session_state.results_dict
-            act_yrs = st.session_state.active_years
+            act_keys = st.session_state.active_years
             
             cur_salary_inc = st.session_state.get("asumsi_gaji", asumsi_gaji)
             cur_ret_age = st.session_state.get("usia_pensiun", usia_pensiun)
@@ -922,9 +973,9 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
             st.markdown("---")
             st.subheader("👥 Rincian Perhitungan Tingkat Individu per Karyawan")
 
-            for yr in sorted(act_yrs, reverse=True):
-                st.markdown(f"#### 📅 Data Valuasi Tahun {yr}")
-                df_y = res_dict[yr]
+            for vkey in sorted(act_keys, reverse=True):
+                st.markdown(f"#### 📅 Periode Valuasi: {vkey}")
+                df_y = res_dict[vkey]
                 if df_y.empty: continue
 
                 df_display = df_y.copy()
@@ -935,7 +986,7 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
                 df_display['Age Valuation'] = df_display['Age Valuation'].apply(lambda x: f"{x:.2f}")
                 df_display['Age Entry'] = df_display['Age Entry'].apply(lambda x: f"{x:.2f}")
                 df_display['Past Service'] = df_display['Past Service'].apply(lambda x: f"{x:.2f}")
-                df_display['Future_Service'] = df_display['Future_Service'].apply(lambda x: f"{x:.2f}")
+                df_display['Future_Service'] = df_display['Future_Service'].apply(lambda x: f"{x:,.2f}" if isinstance(x, (int, float)) else str(x))
                 df_display['Discount Rate'] = df_display['Applied_Discount'].apply(lambda x: f"{x*100:.2f}%")
                 df_display['PVFB'] = df_display['PVFB'].apply(lambda x: f"Rp {x:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
                 df_display['PBO'] = df_display['PBO'].apply(lambda x: f"Rp {x:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
@@ -950,7 +1001,7 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
                 results_dict=res_dict, 
                 salary_inc=cur_salary_inc, 
                 ret_age=cur_ret_age, 
-                val_years=act_yrs, 
+                val_keys=act_keys, 
                 company_name=cur_company, 
                 report_no=cur_no_rep, 
                 report_date=cur_date_rep
