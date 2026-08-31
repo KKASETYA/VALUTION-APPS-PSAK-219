@@ -360,7 +360,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
     
     class MixedPageDocTemplate(SimpleDocTemplate):
         def handle_pageBegin(self):
-            # Cover (page 1), Info Umum (page 2), Daftar Isi (page 3), Pendahuluan & Manfaat hal 1 (page 4), Pendahuluan & Manfaat hal 2 (page 5), serta halaman baru Data Keuangan & Metodologi (page 6) potret (A4), selebihnya landscape
+            # Cover (page 1), Info Umum (page 2), Daftar Isi (page 3), Pendahuluan & Manfaat hal 1 (page 4), Pendahuluan & Manfaat hal 2 (page 5), Data Keuangan & Metodologi hal 3 (page 6) potret (A4), selebihnya landscape
             if self.page > 6: self.pagesize = landscape(A4)
             super().handle_pageBegin()
 
@@ -397,10 +397,6 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
     elements.append(Spacer(1, 12))
     
     first_key = val_keys[0] if val_keys else '31 Des 2022'
-    # Ambil tahun valuasi dari first_key untuk rujukan IBPA/PHEI
-    match_yr = re.search(r'(20\d{2})', first_key)
-    val_year_str = match_yr.group(1) if match_yr else "2024"
-
     elements.append(Paragraph(f"PERIOD PER {first_key.upper()}", cover_date_style))
     elements.append(Spacer(1, 15))
     
@@ -546,7 +542,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
     # ==========================================
     intro_head_style_11 = ParagraphStyle('IntroHead11', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=11, textColor=colors.black, leading=14, spaceAfter=5)
     intro_subhead_style_11 = ParagraphStyle('IntroSubHead11', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=11, textColor=colors.black, leading=14, spaceAfter=3)
-    intro_body_style_11 = ParagraphStyle('IntroBody11', parent=styles['Normal'], fontName='Helvetica', fontSize=11, textColor=colors.black, leading=15, spaceAfter=6, alignment=4) # alignment 4 = justified (rata kanan-kiri)
+    intro_body_style_11 = ParagraphStyle('IntroBody11', parent=styles['Normal'], fontName='Helvetica', fontSize=11, textColor=colors.black, leading=15, spaceAfter=6, alignment=4) # alignment 4 = justified
 
     intro_col_left_p1 = [
         Paragraph("<b>1. PENDAHULUAN</b>", intro_head_style_11),
@@ -602,7 +598,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
     elements.append(PageBreak())
 
     # ==========================================
-    # HALAMAN LANJUTAN PENDAHULUAN & MANFAAT (BILINGRAIT PORTRAIT - HALAMAN 2 DENGAN FONT SIZE 11 & RATA KANAN/JUSTIFIED)
+    # HALAMAN LANJUTAN PENDAHULUAN & MANFAAT (BILINGUAL PORTRAIT - HALAMAN 2 DENGAN FONT SIZE 11 & RATA KANAN/JUSTIFIED)
     # ==========================================
     intro_col_left_p2 = [
         Paragraph("<b>2.3 Manfaat Mengundurkan Diri</b><br/>Manfaat yang dibayarkan kepada Karyawan yang Mengundurkan Diri secara sukarela. Besaran manfaat adalah sebesar 0,3P + 0,15PMK. (Pasal 50)", intro_body_style_11),
@@ -650,7 +646,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
     elements.append(PageBreak())
 
     # ==========================================
-    # HALAMAN BARU: DATA KEUANGAN & METODOLOGI (FONT SIZE 11, RATA KANAN/JUSTIFIED SESUAI PERMINTAAN GAMBAR BARU)
+    # HALAMAN BARU: DATA KEUANGAN & METODOLOGI (FONT SIZE 11, RATA KANAN/JUSTIFIED)
     # ==========================================
     fin_col_left = [
         Paragraph("Berikut adalah ringkasan data yang kami terima dari Entitas terdapat pada tabel 1", intro_body_style_11),
@@ -1230,7 +1226,7 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
                 df_display['Gross Salary'] = df_display['Gross Salary'].apply(lambda x: f"Rp {x:,.0f}".replace(",", "."))
                 df_display['NRA'] = df_display['NRA'].apply(lambda x: f"{x:.2f}")
                 df_display['Age Valuation'] = df_display['Age Valuation'].apply(lambda x: f"{x:.2f}")
-                df_display['Age Entry'] = df_display['Age Entry'].append if 'Age Entry' in df_display else df_display['Age Entry'].apply(lambda x: f"{x:.2f}")
+                df_display['Age Entry'] = df_display['Age Entry'].apply(lambda x: f"{x:.2f}")
                 df_display['Past Service'] = df_display['Past Service'].apply(lambda x: f"{x:.2f}")
                 df_display['Future_Service'] = df_display['Future_Service'].apply(lambda x: f"{x:,.2f}" if isinstance(x, (int, float)) else str(x))
                 df_display['Discount Rate'] = df_display['Applied_Discount'].apply(lambda x: f"{x*100:.2f}%")
@@ -1256,7 +1252,7 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
             st.download_button(
                 label="📥 Download Laporan Aktuaria PSAK 219 (PDF Landscape)",
                 data=pdf_file,
-                file_name=f"LAPORAN_AKTUARIA_PSAK219_{cur_company.format(' ', '_')}.pdf",
+                file_name=f"LAPORAN_AKTUARIA_PSAK219_{cur_company.replace(' ', '_')}.pdf",
                 mime="application/pdf",
                 type="primary"
             )
