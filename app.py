@@ -1248,7 +1248,7 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
 
                         kalkulasi = final_engine.calculate_puc(current_age, past_service, gross_salary, p_mult, d_mult, death_mult, r_mult, years_to_retire=future_service)
                         hasil_valuasi.append({
-                            "NIK": row.get("NIK", "N/A"), "Name": row.get("Nama", "Unknown"),
+                            "NIK": str(row.get("NIK", "N/A")), "Name": str(row.get("Nama", "Unknown")),
                             "Tanggal Lahir": dob, "Tgl. Mulai Bekerja": doe,
                             "Age Valuation": current_age, "Age Entry": age_entry, "Past Service": past_service, "NRA": nra,
                             "Gross Salary": gross_salary, **kalkulasi
@@ -1257,6 +1257,17 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
                     df_res_yr = pd.DataFrame(hasil_valuasi)
                     results_dict[vkey] = df_res_yr
                     dplk_dict[vkey] = total_dplk_yr
+
+                    cursor.execute('''
+                        CREATE TABLE IF NOT EXISTS calculation_results (
+                            company_name TEXT,
+                            valuation_year INTEGER,
+                            result_csv TEXT,
+                            parameters TEXT,
+                            timestamp TEXT,
+                            PRIMARY KEY (company_name, valuation_year)
+                        )
+                    ''')
 
                     cursor.execute('''
                         INSERT OR REPLACE INTO calculation_results (company_name, valuation_year, result_csv, parameters, timestamp)
@@ -1278,6 +1289,15 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
                 )
                 pdf_filename_str = f"LAPORAN_AKTUARIA_PSAK219_{input_perusahaan.replace(' ', '_')}.pdf"
                 
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS report_pdfs (
+                        company_name TEXT PRIMARY KEY,
+                        pdf_bytes BLOB,
+                        filename TEXT,
+                        timestamp TEXT
+                    )
+                ''')
+
                 cursor.execute('''
                     INSERT OR REPLACE INTO report_pdfs (company_name, pdf_bytes, filename, timestamp)
                     VALUES (?, ?, ?, ?)
