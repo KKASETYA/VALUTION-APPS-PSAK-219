@@ -360,7 +360,8 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
     
     class MixedPageDocTemplate(SimpleDocTemplate):
         def handle_pageBegin(self):
-            if self.page > 2: self.pagesize = landscape(A4)
+            # Cover (page 1) dan Daftar Isi / General Info (page 2 & 3) potret (A4), selebihnya landscape
+            if self.page > 3: self.pagesize = landscape(A4)
             super().handle_pageBegin()
 
     doc_mixed = MixedPageDocTemplate(pdf_buffer, pagesize=A4, rightMargin=54, leftMargin=54, topMargin=54, bottomMargin=54)
@@ -413,13 +414,12 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
     # ==========================================
     # HALAMAN INFORMASI UMUM / GENERAL INFORMATION
     # ==========================================
-    info_title_style = ParagraphStyle('InfoTitle', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=14, textColor=colors.black, alignment=0, spaceAfter=12, leading=16)
-    info_text_style = ParagraphStyle('InfoText', parent=styles['Normal'], fontName='Helvetica', fontSize=9, textColor=colors.black, alignment=0, spaceAfter=8, leading=13)
-    info_header_table_style = ParagraphStyle('InfoHeaderTable', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=12, textColor=colors.black, alignment=0, leading=15)
+    info_text_style = ParagraphStyle('InfoText', parent=styles['Normal'], fontName='Helvetica', fontSize=8.5, textColor=colors.black, alignment=0, spaceAfter=6, leading=12)
+    info_header_table_style = ParagraphStyle('InfoHeaderTable', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=11, textColor=colors.black, alignment=0, leading=14)
 
     info_col_left = [
         Paragraph("<b>INFORMASI UMUM</b>", info_header_table_style),
-        Spacer(1, 10),
+        Spacer(1, 8),
         Paragraph("• <b>Entitas:</b><br/>PT " + company_name.upper(), info_text_style),
         Paragraph("• <b>Alamat:</b><br/>Cilandak 88 Condominium Unit D-1, Jl. Margasatwa Barat No. 88, Cilandak Timur, Pasar Minggu, Jakarta Selatan 12560", info_text_style),
         Paragraph(f"• <b>Tanggal Valuasi:</b><br/>{first_key}", info_text_style),
@@ -430,7 +430,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
 
     info_col_right = [
         Paragraph("<b>GENERAL INFORMATION</b>", info_header_table_style),
-        Spacer(1, 10),
+        Spacer(1, 8),
         Paragraph("• <b>Entity:</b><br/>PT " + company_name.upper(), info_text_style),
         Paragraph("• <b>Address:</b><br/>Cilandak 88 Condominium Unit D-1, Jl. Margasatwa Barat No. 88, Cilandak Timur, Pasar Minggu, Jakarta Selatan 12560", info_text_style),
         Paragraph(f"• <b>Valuation Date:</b><br/>{first_key}", info_text_style),
@@ -448,6 +448,92 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
         ('TOPPADDING', (0,0), (-1,-1), 0),
     ]))
     elements.append(info_table)
+    elements.append(PageBreak())
+
+    # ==========================================
+    # HALAMAN DAFTAR ISI / TABLE OF CONTENTS
+    # ==========================================
+    toc_head_style = ParagraphStyle('TOCHead', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=10, textColor=colors.black, leading=13)
+    toc_item_style = ParagraphStyle('TOCItem', parent=styles['Normal'], fontName='Helvetica', fontSize=8, textColor=colors.black, leading=11)
+    toc_subitem_style = ParagraphStyle('TOCSubItem', parent=styles['Normal'], fontName='Helvetica', fontSize=7.5, textColor=colors.black, leading=10, leftIndent=12)
+
+    toc_left_content = [
+        Paragraph("<b>DAFTAR ISI &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; HAL &nbsp;&nbsp; PAGES</b>", toc_head_style),
+        Spacer(1, 4),
+        Paragraph("<b>Informasi Umum</b>", toc_item_style),
+        Paragraph("<b>Daftar Isi</b>", toc_item_style),
+        Spacer(1, 4),
+        Paragraph("1 &nbsp;&nbsp;&nbsp;&nbsp; Pendahuluan", toc_item_style),
+        Paragraph("2 &nbsp;&nbsp;&nbsp;&nbsp; Manfaat", toc_item_style),
+        Paragraph("3 &nbsp;&nbsp;&nbsp;&nbsp; Data Karyawan dan Data Keuangan", toc_item_style),
+        Paragraph("4 &nbsp;&nbsp;&nbsp;&nbsp; Metodologi", toc_item_style),
+        Paragraph("5 &nbsp;&nbsp;&nbsp;&nbsp; Metode Valuasi dan Asumsi Aktuaria", toc_item_style),
+        Paragraph("6 &nbsp;&nbsp;&nbsp;&nbsp; Ringkasan Hasil Valuasi", toc_item_style),
+        Paragraph("7 &nbsp;&nbsp;&nbsp;&nbsp; Penutup", toc_item_style),
+        Spacer(1, 4),
+        Paragraph("<b>Lampiran</b>", toc_item_style),
+        Paragraph("1 &nbsp;&nbsp;&nbsp;&nbsp; Ringkasan Manfaat Imbalan Kerja", toc_item_style),
+        Paragraph("2 &nbsp;&nbsp;&nbsp;&nbsp; Pengertian Istilah Teknis", toc_item_style),
+        Paragraph("3 &nbsp;&nbsp;&nbsp;&nbsp; Justifikasi Asumsi Aktuaria", toc_item_style),
+        Paragraph("4 &nbsp;&nbsp;&nbsp;&nbsp; Tabel Tingkat Kematian, Pengunduran Diri dan Sakit Berkepanjangan", toc_item_style),
+        Paragraph("5 &nbsp;&nbsp;&nbsp;&nbsp; Tabel PHEI Per 30 Desember 2024", toc_item_style),
+        Paragraph("6 &nbsp;&nbsp;&nbsp;&nbsp; Detail Karyawan", toc_item_style),
+        Spacer(1, 4),
+        Paragraph("<b>TABEL</b>", toc_item_style),
+        Paragraph("<b>Tabel Rekonsiliasi</b>", toc_item_style),
+        Paragraph("• &nbsp; Analisis Sensitivitas", toc_subitem_style),
+        Paragraph("• &nbsp; Tabel Distribusi", toc_subitem_style),
+        Paragraph("• &nbsp; Tabel 1: Data, Asumsi dan Hasil Valuasi Aktuaria", toc_subitem_style),
+        Paragraph("• &nbsp; Tabel 2: Perhitungan Pengukuran Kembali", toc_subitem_style),
+        Paragraph("• &nbsp; Tabel 3: Penghasilan Komprehensif Lain", toc_subitem_style),
+        Paragraph("• &nbsp; Tabel 4: Posisi Pendanaan dan Pengakuan (Kewajiban)/Aset dalam Neraca", toc_subitem_style),
+        Paragraph("• &nbsp; Tabel 5: Pengakuan Beban/(Pendapatan) dalam Laporan Laba Rugi", toc_subitem_style),
+        Paragraph("• &nbsp; Perhitungan Dampak Kurtailment", toc_subitem_style),
+    ]
+
+    toc_right_content = [
+        Paragraph("<b>GENERAL INFORMATION &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PAGES</b>", toc_head_style),
+        Spacer(1, 4),
+        Paragraph("<b>General Information</b>", toc_item_style),
+        Paragraph("<b>Table of contents</b>", toc_item_style),
+        Spacer(1, 4),
+        Paragraph("1 &nbsp;&nbsp;&nbsp;&nbsp; Introduction", toc_item_style),
+        Paragraph("2 &nbsp;&nbsp;&nbsp;&nbsp; Benefits Program", toc_item_style),
+        Paragraph("3 &nbsp;&nbsp;&nbsp;&nbsp; Employee and Financial Data", toc_item_style),
+        Paragraph("4 &nbsp;&nbsp;&nbsp;&nbsp; Methodology", toc_item_style),
+        Paragraph("5 &nbsp;&nbsp;&nbsp;&nbsp; Actuarial Valuation Methods and Assumptions", toc_item_style),
+        Paragraph("6 &nbsp;&nbsp;&nbsp;&nbsp; Summary of Valuation Results", toc_item_style),
+        Paragraph("7 &nbsp;&nbsp;&nbsp;&nbsp; Closing", toc_item_style),
+        Spacer(1, 4),
+        Paragraph("<b>Appendices</b>", toc_item_style),
+        Paragraph("1 &nbsp;&nbsp;&nbsp;&nbsp; Summary of Employee Benefits", toc_item_style),
+        Paragraph("2 &nbsp;&nbsp;&nbsp;&nbsp; Definition of Technical Terms", toc_item_style),
+        Paragraph("3 &nbsp;&nbsp;&nbsp;&nbsp; Justification of Actuarial Assumptions", toc_item_style),
+        Paragraph("4 &nbsp;&nbsp;&nbsp;&nbsp; Table of Mortality, Resignation and Prolonged Illness Rates", toc_item_style),
+        Paragraph("5 &nbsp;&nbsp;&nbsp;&nbsp; IBPA table as of December, 30th 2024", toc_item_style),
+        Paragraph("7 &nbsp;&nbsp;&nbsp;&nbsp; Detail Employee", toc_item_style),
+        Spacer(1, 4),
+        Paragraph("<b>TABLES</b>", toc_item_style),
+        Paragraph("<b>Reconciliation Table</b>", toc_item_style),
+        Paragraph("• &nbsp; Sensitivity Analysis", toc_subitem_style),
+        Paragraph("• &nbsp; Distribution Table", toc_subitem_style),
+        Paragraph("• &nbsp; Table 1: Data, Assumptions and Actuarial Valuation Results", toc_subitem_style),
+        Paragraph("• &nbsp; Table 2: Re-measurement Calculations", toc_subitem_style),
+        Paragraph("• &nbsp; Table 3: Other Comprehensive Income", toc_subitem_style),
+        Paragraph("• &nbsp; Table 4: Funding Position and Recognition of (Liability)/Asset in Balance Sheet", toc_subitem_style),
+        Paragraph("• &nbsp; Table 5: Expenses/(Revenues) in Income Statement", toc_subitem_style),
+        Paragraph("• &nbsp; Calculation of Curtailment Effects", toc_subitem_style),
+    ]
+
+    toc_table = Table([[toc_left_content, toc_right_content]], colWidths=[240, 240])
+    toc_table.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('LEFTPADDING', (0,0), (-1,-1), 0),
+        ('RIGHTPADDING', (0,0), (-1,-1), 10),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+        ('TOPPADDING', (0,0), (-1,-1), 0),
+    ]))
+    elements.append(toc_table)
     elements.append(PageBreak())
 
     elements.append(Paragraph("<b>1. PENDAHULUAN / INTRODUCTION</b>", h_style))
