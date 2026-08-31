@@ -365,7 +365,8 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
             if self.page > 8: self.pagesize = landscape(A4)
             super().handle_pageBegin()
 
-    doc_mixed = MixedPageDocTemplate(pdf_buffer, pagesize=A4, rightMargin=72, leftMargin=72, topMargin=72, bottomMargin=72)
+    # Margin disesuaikan (left/right = 36 pt / 0.5 inch) agar tabel dua kolom berdampingan tidak bertabrakan / berdempetan
+    doc_mixed = MixedPageDocTemplate(pdf_buffer, pagesize=A4, rightMargin=36, leftMargin=36, topMargin=54, bottomMargin=54)
     elements = []
     styles = getSampleStyleSheet()
     
@@ -418,7 +419,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
     info_text_style = ParagraphStyle('InfoText', parent=styles['Normal'], fontName='Helvetica', fontSize=11, textColor=colors.black, alignment=4, spaceAfter=4, leading=15)
     info_header_table_style = ParagraphStyle('InfoHeaderTable', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=11, textColor=colors.black, alignment=0, leading=15)
 
-    content_width_portrait = 451.27
+    content_width_portrait = 595.27 - 72  # 523.27 pt (lebar A4 dikurangi total margin kiri & kanan 36 pt x 2)
     col_w_half = content_width_portrait / 2.0
 
     info_col_left = [
@@ -447,7 +448,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
     info_table.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
         ('LEFTPADDING', (0,0), (-1,-1), 0),
-        ('RIGHTPADDING', (0,0), (-1,-1), 10),
+        ('RIGHTPADDING', (0,0), (-1,-1), 12),
         ('BOTTOMPADDING', (0,0), (-1,-1), 0),
         ('TOPPADDING', (0,0), (-1,-1), 0),
     ]))
@@ -533,7 +534,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
     toc_table.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
         ('LEFTPADDING', (0,0), (-1,-1), 0),
-        ('RIGHTPADDING', (0,0), (-1,-1), 10),
+        ('RIGHTPADDING', (0,0), (-1,-1), 12),
         ('BOTTOMPADDING', (0,0), (-1,-1), 0),
         ('TOPPADDING', (0,0), (-1,-1), 0),
     ]))
@@ -593,7 +594,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
     intro_table_p1.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
         ('LEFTPADDING', (0,0), (-1,-1), 0),
-        ('RIGHTPADDING', (0,0), (-1,-1), 10),
+        ('RIGHTPADDING', (0,0), (-1,-1), 12),
         ('BOTTOMPADDING', (0,0), (-1,-1), 0),
         ('TOPPADDING', (0,0), (-1,-1), 0),
     ]))
@@ -641,7 +642,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
     intro_table_p2.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
         ('LEFTPADDING', (0,0), (-1,-1), 0),
-        ('RIGHTPADDING', (0,0), (-1,-1), 10),
+        ('RIGHTPADDING', (0,0), (-1,-1), 12),
         ('BOTTOMPADDING', (0,0), (-1,-1), 0),
         ('TOPPADDING', (0,0), (-1,-1), 0),
     ]))
@@ -698,7 +699,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
     fin_table.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
         ('LEFTPADDING', (0,0), (-1,-1), 0),
-        ('RIGHTPADDING', (0,0), (-1,-1), 10),
+        ('RIGHTPADDING', (0,0), (-1,-1), 12),
         ('BOTTOMPADDING', (0,0), (-1,-1), 0),
         ('TOPPADDING', (0,0), (-1,-1), 0),
     ]))
@@ -738,7 +739,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
     meth_table.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
         ('LEFTPADDING', (0,0), (-1,-1), 0),
-        ('RIGHTPADDING', (0,0), (-1,-1), 10),
+        ('RIGHTPADDING', (0,0), (-1,-1), 12),
         ('BOTTOMPADDING', (0,0), (-1,-1), 0),
         ('TOPPADDING', (0,0), (-1,-1), 0),
     ]))
@@ -772,7 +773,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
         Paragraph("<b>:</b> Aktuaris Publik<br/><b>:</b> Act-1.17.00026<br/><b>:</b> KKA SETYA GUNAWAN<br/><b>:</b> Cilandak 88 Condominium Unit D-1<br/>Jl. Margasatwa Barat No.88<br/>Cilandak Timur<br/>Pasar Minggu<br/>Jakarta Selatan,<br/>12560", ParagraphStyle('SignDescRight', parent=styles['Normal'], fontName='Helvetica', fontSize=11, leading=15, alignment=0))
     ]
 
-    closing_table = Table([[closing_col_left, closing_col_right]], colWidths=[210, 241.27])
+    closing_table = Table([[closing_col_left, closing_col_right]], colWidths=[col_w_half, col_w_half])
     closing_table.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
         ('LEFTPADDING', (0,0), (-1,-1), 0),
@@ -789,7 +790,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
     contact_col_right = [
         Paragraph("<b>:</b> +62 21 781 7718 / +62 812 9090 9019<br/><b>:</b> <a href='mailto:aktuaris@actuarial-kas.com'>aktuaris@actuarial-kas.com</a>; <a href='mailto:kka_setyagunawan@yahoo.com'>kka_setyagunawan@yahoo.com</a>", ParagraphStyle('ContactDescRight', parent=styles['Normal'], fontName='Helvetica', fontSize=11, leading=15, alignment=0))
     ]
-    contact_table = Table([[contact_col_left, contact_col_right]], colWidths=[210, 241.27])
+    contact_table = Table([[contact_col_left, contact_col_right]], colWidths=[col_w_half, col_w_half])
     contact_table.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
         ('LEFTPADDING', (0,0), (-1,-1), 0),
@@ -1333,7 +1334,7 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
                 df_display['PBO'] = df_display['PBO'].apply(lambda x: f"Rp {x:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
                 df_display['CSC'] = df_display['CSC'].apply(lambda x: f"Rp {x:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")) if 'CSC' in df_display else "-"
 
-                cols_to_show = ['NIK', 'Name', 'Tanggal Lahir', 'Tgl. Mulai Bekerja', 'Gross Salary', 'NRA', 'Age Valuation', 'Age Entry', 'Past Service', 'Future_Service', 'Discount Rate', 'PVFB', 'PBO', 'CSC']
+                cols_to_show = ['NIK', 'Name', `Tanggal Lahir`, 'Tgl. Mulai Bekerja', 'Gross Salary', 'NRA', 'Age Valuation', 'Age Entry', 'Past Service', 'Future_Service', 'Discount Rate', 'PVFB', 'PBO', 'CSC']
                 st.dataframe(df_display[cols_to_show], use_container_width=True)
 
             st.markdown("---")
