@@ -348,7 +348,7 @@ def draw_footer_landscape(canvas, doc):
     canvas.saveState()
     canvas.setStrokeColor(colors.HexColor('#3A0C08'))
     canvas.setLineWidth(1)
-    canvas.line(36, 45, landscape(A4)[0] - 36, 45) 
+    canvas.line(56.7, 45, landscape(A4)[0] - 56.7, 45) 
     canvas.setFont('Helvetica-Bold', 9)
     canvas.drawCentredString(landscape(A4)[0]/2.0, 30, "Kantor Konsultan Aktuaria Setya Gunawan (KKA Setya Gunawan)")
     canvas.setFont('Helvetica', 8)
@@ -360,12 +360,12 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
     
     class MixedPageDocTemplate(SimpleDocTemplate):
         def handle_pageBegin(self):
-            # Cover (page 1), Info Umum (page 2), Daftar Isi (page 3), Pendahuluan & Manfaat hal 1 (page 4), Pendahuluan & Manfaat hal 2 (page 5), Data Keuangan & Metodologi hal 3 (page 6) potret (A4), selebihnya landscape
-            if self.page > 6: self.pagesize = landscape(A4)
+            # Cover (page 1), Info Umum (page 2), Daftar Isi (page 3), Pendahuluan & Manfaat hal 1 (page 4), Pendahuluan & Manfaat hal 2 (page 5), Data Keuangan & Metodologi hal 3 (page 6), Metode & Asumsi hal 4 (page 7) potret (A4), selebihnya landscape
+            if self.page > 7: self.pagesize = landscape(A4)
             super().handle_pageBegin()
 
-    # Margin 36 pt agar rata tengah secara ideal pada A4 portrait
-    doc_mixed = MixedPageDocTemplate(pdf_buffer, pagesize=A4, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36)
+    # Standard margin penulisan karya ilmiah untuk kertas A4 (Margin Atas 3 cm / ~85 pt, Bawah 2.5 cm / ~72 pt, Kiri 3 cm / ~85 pt, Kanan 2.5 cm / ~72 pt)
+    doc_mixed = MixedPageDocTemplate(pdf_buffer, pagesize=A4, rightMargin=72, leftMargin=85, topMargin=85, bottomMargin=72)
     elements = []
     styles = getSampleStyleSheet()
     
@@ -376,7 +376,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
     cover_address_style = ParagraphStyle('CoverAddressRight', parent=styles['Normal'], fontName='Helvetica', fontSize=8.5, textColor=colors.HexColor('#2980B9'), alignment=2, leading=13.5)
     
     h_style = ParagraphStyle('SecH', parent=styles['Heading2'], fontSize=11, textColor=colors.HexColor('#C2382D'), spaceBefore=12, spaceAfter=6)
-    body_style = ParagraphStyle('BodyCustom', parent=styles['Normal'], fontSize=9, textColor=colors.HexColor('#222222'), spaceBefore=4, spaceAfter=8, leading=13)
+    body_style = ParagraphStyle('BodyCustom', parent=styles['Normal'], fontSize=9, textColor=colors.HexColor('#222222'), spaceBefore=4, spaceAfter=8, leading=13, alignment=4)
 
     formatted_date = report_date.strftime('%d %B %Y') if hasattr(report_date, 'strftime') else str(report_date)
 
@@ -415,8 +415,12 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
     # ==========================================
     # HALAMAN INFORMASI UMUM / GENERAL INFORMATION
     # ==========================================
-    info_text_style = ParagraphStyle('InfoText', parent=styles['Normal'], fontName='Helvetica', fontSize=8.5, textColor=colors.black, alignment=0, spaceAfter=6, leading=12)
+    info_text_style = ParagraphStyle('InfoText', parent=styles['Normal'], fontName='Helvetica', fontSize=8.5, textColor=colors.black, alignment=4, spaceAfter=6, leading=12)
     info_header_table_style = ParagraphStyle('InfoHeaderTable', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=11, textColor=colors.black, alignment=0, leading=14)
+
+    # Lebar total cetak A4 portrait dengan margin kiri 85pt & kanan 72pt adalah 595.27 - (85+72) = 438.27 pt (dibagi dua sama rata ~219 pt)
+    content_width_portrait = 438.27
+    col_w_half = content_width_portrait / 2.0
 
     info_col_left = [
         Paragraph("<b>INFORMASI UMUM</b>", info_header_table_style),
@@ -440,7 +444,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
         Paragraph("• <b>Public Actuary:</b><br/>Act-1.17.00026", info_text_style)
     ]
 
-    info_table = Table([[info_col_left, info_col_right]], colWidths=[261, 261])
+    info_table = Table([[info_col_left, info_col_right]], colWidths=[col_w_half, col_w_half])
     info_table.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
         ('LEFTPADDING', (0,0), (-1,-1), 0),
@@ -452,7 +456,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
     elements.append(PageBreak())
 
     # ==========================================
-    # HALAMAN DAFTAR ISI / TABLE OF CONTENTS (DENGAN IBPA/PHEI SESUAI TAHUN VALUASI)
+    # HALAMAN DAFTAR ISI / TABLE OF CONTENTS
     # ==========================================
     toc_head_style = ParagraphStyle('TOCHead', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=10, textColor=colors.black, leading=13)
     toc_item_style = ParagraphStyle('TOCItem', parent=styles['Normal'], fontName='Helvetica', fontSize=8, textColor=colors.black, leading=11)
@@ -526,7 +530,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
         Paragraph("• &nbsp; Calculation of Curtailment Effects", toc_subitem_style),
     ]
 
-    toc_table = Table([[toc_left_content, toc_right_content]], colWidths=[261, 261])
+    toc_table = Table([[toc_left_content, toc_right_content]], colWidths=[col_w_half, col_w_half])
     toc_table.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
         ('LEFTPADDING', (0,0), (-1,-1), 0),
@@ -538,11 +542,11 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
     elements.append(PageBreak())
 
     # ==========================================
-    # HALAMAN PENDAHULUAN & MANFAAT KARYAWAN (BILINGUAL PORTRAIT - HALAMAN 1 DENGAN FONT SIZE 11 & RATA KANAN/JUSTIFIED)
+    # HALAMAN PENDAHULUAN & MANFAAT KARYAWAN (FONT SIZE 11 & RATA KANAN-KIRI / JUSTIFIED)
     # ==========================================
     intro_head_style_11 = ParagraphStyle('IntroHead11', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=11, textColor=colors.black, leading=14, spaceAfter=5)
     intro_subhead_style_11 = ParagraphStyle('IntroSubHead11', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=11, textColor=colors.black, leading=14, spaceAfter=3)
-    intro_body_style_11 = ParagraphStyle('IntroBody11', parent=styles['Normal'], fontName='Helvetica', fontSize=11, textColor=colors.black, leading=15, spaceAfter=6, alignment=4) # alignment 4 = justified
+    intro_body_style_11 = ParagraphStyle('IntroBody11', parent=styles['Normal'], fontName='Helvetica', fontSize=11, textColor=colors.black, leading=15, spaceAfter=6, alignment=4)
 
     intro_col_left_p1 = [
         Paragraph("<b>1. PENDAHULUAN</b>", intro_head_style_11),
@@ -586,7 +590,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
         Paragraph("<b>2.2 Death Benefits</b><br/>Benefits paid to the heirs of Death Employees. The amount of benefit is 2,3P + 1,15PMK. (Article 57)", intro_body_style_11)
     ]
 
-    intro_table_p1 = Table([[intro_col_left_p1, intro_col_right_p1]], colWidths=[261, 261])
+    intro_table_p1 = Table([[intro_col_left_p1, intro_col_right_p1]], colWidths=[col_w_half, col_w_half])
     intro_table_p1.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
         ('LEFTPADDING', (0,0), (-1,-1), 0),
@@ -598,7 +602,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
     elements.append(PageBreak())
 
     # ==========================================
-    # HALAMAN LANJUTAN PENDAHULUAN & MANFAAT (BILINGUAL PORTRAIT - HALAMAN 2 DENGAN FONT SIZE 11 & RATA KANAN/JUSTIFIED)
+    # HALAMAN LANJUTAN PENDAHULUAN & MANFAAT (FONT SIZE 11 & RATA KANAN-KIRI)
     # ==========================================
     intro_col_left_p2 = [
         Paragraph("<b>2.3 Manfaat Mengundurkan Diri</b><br/>Manfaat yang dibayarkan kepada Karyawan yang Mengundurkan Diri secara sukarela. Besaran manfaat adalah sebesar 0,3P + 0,15PMK. (Pasal 50)", intro_body_style_11),
@@ -634,7 +638,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
         Paragraph("<b>3.1 Permanent PKWTT & Contract PKWT Employees Data</b>", intro_subhead_style_11),
     ]
 
-    intro_table_p2 = Table([[intro_col_left_p2, intro_col_right_p2]], colWidths=[261, 261])
+    intro_table_p2 = Table([[intro_col_left_p2, intro_col_right_p2]], colWidths=[col_w_half, col_w_half])
     intro_table_p2.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
         ('LEFTPADDING', (0,0), (-1,-1), 0),
@@ -646,7 +650,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
     elements.append(PageBreak())
 
     # ==========================================
-    # HALAMAN BARU: DATA KEUANGAN & METODOLOGI (FONT SIZE 11, RATA KANAN/JUSTIFIED)
+    # HALAMAN DATA KEUANGAN & METODOLOGI (FONT SIZE 11 & RATA KANAN-KIRI)
     # ==========================================
     fin_col_left = [
         Paragraph("Berikut adalah ringkasan data yang kami terima dari Entitas terdapat pada tabel 1", intro_body_style_11),
@@ -691,7 +695,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
         Paragraph("<b>4.4</b> The definitions of Technical Terms used in this report are described in <b>Appendix 2</b>.", intro_body_style_11)
     ]
 
-    fin_table = Table([[fin_col_left, fin_col_right]], colWidths=[261, 261])
+    fin_table = Table([[fin_col_left, fin_col_right]], colWidths=[col_w_half, col_w_half])
     fin_table.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
         ('LEFTPADDING', (0,0), (-1,-1), 0),
@@ -700,6 +704,46 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
         ('TOPPADDING', (0,0), (-1,-1), 0),
     ]))
     elements.append(fin_table)
+    elements.append(PageBreak())
+
+    # ==========================================
+    # HALAMAN BARU: METODE DAN ASUMSI AKTUARIA (FONT SIZE 11 & RATA KANAN-KIRI)
+    # ==========================================
+    meth_col_left = [
+        Paragraph("<b>5. METODE DAN ASUMSI AKTUARIA</b>", intro_head_style_11),
+        Spacer(1, 4),
+        Paragraph("<b>5.1 Metode Valuasi Aktuaria</b>", intro_subhead_style_11),
+        Paragraph("Metode valuasi aktuaria yang dipergunakan adalah <b>“Projected Unit Credit”</b> berdasarkan metode ini, manfaat/imbalan diakru secara prorata sesuai jasa atau dengan kata lain manfaat/imbalan dibagi tahun jasa, mengganggap setiap periode jasa akan menghasilkan satu unit tambahan manfaat/imbalan dan mengukur setiap unit secara terpisah untuk menghasilkan kewajiban final.", intro_body_style_11),
+        Spacer(1, 4),
+        Paragraph("<b>5.2 Asumsi Aktuaria</b>", intro_subhead_style_11),
+        Paragraph("Berdasarkan PSAK 219, asumsi aktuaria tidak boleh bias dan harus cocok satu dengan yang lain. Asumsi aktuaria adalah estimasi terbaik entitas mengenai variabel yang akan menentukan hasil Valuasi.", intro_body_style_11),
+        Spacer(1, 4),
+        Paragraph("<b>6. RINGKASAN HASIL VALUASI</b>", intro_head_style_11),
+        Paragraph("Berdasarkan Data, Metode dan Asumsi yang digunakan, berikut ini ringkasan hasil valuasi.", intro_body_style_11)
+    ]
+
+    meth_col_right = [
+        Paragraph("<b>5. ACTUARIAL METHODS AND ASSUMPTIONS</b>", intro_head_style_11),
+        Spacer(1, 4),
+        Paragraph("<b>5.1 Actuarial Valuation Method</b>", intro_subhead_style_11),
+        Paragraph("The actuarial valuation method used is <b>“Projected Unit Credit”</b>. Under this method, benefits/rewards are accrued pro rata according to services; or, in other words, benefits/rewards are divided by service years, assuming each service period would produce one additional unit of benefits/rewards and measuring each unit separately to produce final obligations.", intro_body_style_11),
+        Spacer(1, 4),
+        Paragraph("<b>5.2 Actuarial Assumptions</b>", intro_subhead_style_11),
+        Paragraph("Under PSAK 219, actuarial assumptions must be unbiased and mutually compatible. Actuarial assumptions are the entity's best estimates of the variables that would determine the valuation results.", intro_body_style_11),
+        Spacer(1, 4),
+        Paragraph("<b>6. SUMMARY OF VALUATION RESULTS</b>", intro_head_style_11),
+        Paragraph("Based on the Data, Methods and Assumptions used, here is the summary of valuation results.", intro_body_style_11)
+    ]
+
+    meth_table = Table([[meth_col_left, meth_col_right]], colWidths=[col_w_half, col_w_half])
+    meth_table.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('LEFTPADDING', (0,0), (-1,-1), 0),
+        ('RIGHTPADDING', (0,0), (-1,-1), 10),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+        ('TOPPADDING', (0,0), (-1,-1), 0),
+    ]))
+    elements.append(meth_table)
     elements.append(PageBreak())
 
     for vkey in sorted(val_keys, reverse=True):
@@ -712,7 +756,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
         tot_csc = df_yr['CSC'].sum()
         num_emp = len(df_yr)
 
-        elements.append(Paragraph(f"<b>5. RINGKASAN HASIL VALUASI (PER {vkey.upper()})</b>", h_style))
+        elements.append(Paragraph(f"<b>7. RINGKASAN HASIL VALUASI (PER {vkey.upper()})</b>", h_style))
         t1_data = [
             ["URAIAN (EXPLANATION)", f"Per {vkey} (Pasca Kerja)", f"Per {vkey} (Jangka Panjang Lainnya)"],
             ["1. Jumlah Karyawan (Number of Employees)", str(num_emp), "0"],
@@ -773,7 +817,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
         elements.append(t_detail)
         elements.append(PageBreak())
 
-    elements.append(Paragraph("<b>6. PENUTUP / CLOSING</b>", h_style))
+    elements.append(Paragraph("<b>8. PENUTUP / CLOSING</b>", h_style))
     elements.append(Paragraph(f"Demikian laporan aktuaria ini disusun secara independen oleh KKA Setya Gunawan untuk dipergunakan sebagaimana mestinya oleh manajemen <b>PT {company_name.upper()}</b> dan pihak Auditor independen.", body_style))
     elements.append(Spacer(1, 20))
     elements.append(Paragraph(f"Jakarta, {formatted_date}<br/><b>KANTOR KONSULTAN AKTUARIA SETYA GUNAWAN</b><br/><br/><br/><br/><b>Setya Gunawan, FSAI</b>", ParagraphStyle('SignBlock', parent=styles['Normal'], fontSize=9, alignment=2)))
