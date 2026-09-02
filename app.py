@@ -365,7 +365,6 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
             if self.page > 8: self.pagesize = landscape(A4)
             super().handle_pageBegin()
 
-    # Margin disesuaikan (left/right = 36 pt / 0.5 inch) agar tabel dua kolom berdampingan tidak bertabrakan / berdempetan
     doc_mixed = MixedPageDocTemplate(pdf_buffer, pagesize=A4, rightMargin=36, leftMargin=36, topMargin=54, bottomMargin=54)
     elements = []
     styles = getSampleStyleSheet()
@@ -419,7 +418,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
     info_text_style = ParagraphStyle('InfoText', parent=styles['Normal'], fontName='Calibri', fontSize=11, textColor=colors.black, alignment=4, spaceAfter=4, leading=15)
     info_header_table_style = ParagraphStyle('InfoHeaderTable', parent=styles['Normal'], fontName='Calibri-Bold', fontSize=11, textColor=colors.black, alignment=0, leading=15)
 
-    content_width_portrait = 595.27 - 72  # 523.27 pt (lebar A4 dikurangi total margin kiri & kanan 36 pt x 2)
+    content_width_portrait = 595.27 - 72 
     col_w_half = content_width_portrait / 2.0
 
     info_col_left = [
@@ -542,7 +541,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
     elements.append(PageBreak())
 
     # ==========================================
-    # HALAMAN PENDAHULUAN & MANFAAT KARYAWAN (FONT SIZE 11 & RATA KANAN-KIRI / JUSTIFIED)
+    # HALAMAN PENDAHULUAN & MANFAAT KARYAWAN
     # ==========================================
     intro_head_style_11 = ParagraphStyle('IntroHead11', parent=styles['Normal'], fontName='Calibri-Bold', fontSize=11, textColor=colors.black, leading=15, spaceAfter=4, keepWithNext=True)
     intro_subhead_style_11 = ParagraphStyle('IntroSubHead11', parent=styles['Normal'], fontName='Calibri-Bold', fontSize=11, textColor=colors.black, leading=15, spaceAfter=2, keepWithNext=True)
@@ -602,7 +601,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
     elements.append(PageBreak())
 
     # ==========================================
-    # HALAMAN LANJUTAN PENDAHULUAN & MANFAAT (FONT SIZE 11 & RATA KANAN-KIRI)
+    # HALAMAN LANJUTAN PENDAHULUAN & MANFAAT
     # ==========================================
     intro_col_left_p2 = [
         Paragraph("<b>2.3 Manfaat Mengundurkan Diri</b><br/>Manfaat yang dibayarkan kepada Karyawan yang Mengundurkan Diri secara sukarela. Besaran manfaat adalah sebesar 0,3P + 0,15PMK. (Pasal 50)", intro_body_style_11),
@@ -650,7 +649,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
     elements.append(PageBreak())
 
     # ==========================================
-    # HALAMAN DATA KEUANGAN & METODOLOGI (FONT SIZE 11 & RATA KANAN-KIRI)
+    # HALAMAN DATA KEUANGAN & METODOLOGI
     # ==========================================
     fin_col_left = [
         Paragraph("Berikut adalah ringkasan data yang kami terima dari Entitas terdapat pada tabel 1", intro_body_style_11),
@@ -707,7 +706,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
     elements.append(PageBreak())
 
     # ==========================================
-    # HALAMAN: METODE DAN ASUMSI AKTUARIA (FONT SIZE 11 & RATA KANAN-KIRI)
+    # HALAMAN: METODE DAN ASUMSI AKTUARIA
     # ==========================================
     meth_col_left = [
         Paragraph("<b>5. METODE DAN ASUMSI AKTUARIA</b>", intro_head_style_11),
@@ -747,7 +746,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
     elements.append(PageBreak())
 
     # ==========================================
-    # HALAMAN BARU: PENUTUP / CLOSING (FONT SIZE 11 & RATA KANAN-KIRI)
+    # HALAMAN BARU: PENUTUP / CLOSING
     # ==========================================
     closing_style_11 = ParagraphStyle('ClosingStyle11', parent=styles['Normal'], fontName='Calibri', fontSize=11, textColor=colors.black, leading=15, spaceAfter=4, alignment=4, keepWithNext=False)
     closing_head_11 = ParagraphStyle('ClosingHead11', parent=styles['Normal'], fontName='Calibri-Bold', fontSize=11, textColor=colors.black, leading=15, spaceAfter=4, keepWithNext=True)
@@ -1258,25 +1257,60 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
                     results_dict[vkey] = df_res_yr
                     dplk_dict[vkey] = total_dplk_yr
 
-                    cursor.execute('''
-                        CREATE TABLE IF NOT EXISTS calculation_results (
-                            company_name TEXT,
-                            valuation_year INTEGER,
-                            result_csv TEXT,
-                            parameters TEXT,
-                            timestamp TEXT,
-                            PRIMARY KEY (company_name, valuation_year)
-                        )
-                    ''')
+                    # Penanganan tabel database yang aman dan anti-OperationalError
+                    try:
+                        cursor.execute('''
+                            CREATE TABLE IF NOT EXISTS calculation_results (
+                                company_name TEXT,
+                                valuation_year INTEGER,
+                                result_csv TEXT,
+                                parameters TEXT,
+                                timestamp TEXT,
+                                PRIMARY KEY (company_name, valuation_year)
+                            )
+                        ''')
+                    except sqlite3.OperationalError:
+                        cursor.execute('DROP TABLE IF EXISTS calculation_results')
+                        cursor.execute('''
+                            CREATE TABLE calculation_results (
+                                company_name TEXT,
+                                valuation_year INTEGER,
+                                result_csv TEXT,
+                                parameters TEXT,
+                                timestamp TEXT,
+                                PRIMARY KEY (company_name, valuation_year)
+                            )
+                        ''')
 
-                    cursor.execute('''
-                        INSERT OR REPLACE INTO calculation_results (company_name, valuation_year, result_csv, parameters, timestamp)
-                        VALUES (?, ?, ?, ?, ?)
-                    ''', (
-                        input_perusahaan, yr, df_res_yr.to_csv(index=False),
-                        f"Period:{vkey},SalaryInc:{asumsi_gaji},RetAge:{usia_pensiun},Resign:{asumsi_resign}",
-                        datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    ))
+                    try:
+                        cursor.execute('''
+                            INSERT OR REPLACE INTO calculation_results (company_name, valuation_year, result_csv, parameters, timestamp)
+                            VALUES (?, ?, ?, ?, ?)
+                        ''', (
+                            input_perusahaan, yr, df_res_yr.to_csv(index=False),
+                            f"Period:{vkey},SalaryInc:{asumsi_gaji},RetAge:{usia_pensiun},Resign:{asumsi_resign}",
+                            datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        ))
+                    except sqlite3.OperationalError:
+                        cursor.execute('DROP TABLE IF EXISTS calculation_results')
+                        cursor.execute('''
+                            CREATE TABLE calculation_results (
+                                company_name TEXT,
+                                valuation_year INTEGER,
+                                result_csv TEXT,
+                                parameters TEXT,
+                                timestamp TEXT,
+                                PRIMARY KEY (company_name, valuation_year)
+                            )
+                        ''')
+                        cursor.execute('''
+                            INSERT OR REPLACE INTO calculation_results (company_name, valuation_year, result_csv, parameters, timestamp)
+                            VALUES (?, ?, ?, ?, ?)
+                        ''', (
+                            input_perusahaan, yr, df_res_yr.to_csv(index=False),
+                            f"Period:{vkey},SalaryInc:{asumsi_gaji},RetAge:{usia_pensiun},Resign:{asumsi_resign}",
+                            datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        ))
 
                 temp_pdf_buffer = generate_detailed_report(
                     results_dict=results_dict, 
@@ -1289,14 +1323,25 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
                 )
                 pdf_filename_str = f"LAPORAN_AKTUARIA_PSAK219_{input_perusahaan.replace(' ', '_')}.pdf"
                 
-                cursor.execute('''
-                    CREATE TABLE IF NOT EXISTS report_pdfs (
-                        company_name TEXT PRIMARY KEY,
-                        pdf_bytes BLOB,
-                        filename TEXT,
-                        timestamp TEXT
-                    )
-                ''')
+                try:
+                    cursor.execute('''
+                        CREATE TABLE IF NOT EXISTS report_pdfs (
+                            company_name TEXT PRIMARY KEY,
+                            pdf_bytes BLOB,
+                            filename TEXT,
+                            timestamp TEXT
+                        )
+                    ''')
+                except sqlite3.OperationalError:
+                    cursor.execute('DROP TABLE IF EXISTS report_pdfs')
+                    cursor.execute('''
+                        CREATE TABLE report_pdfs (
+                            company_name TEXT PRIMARY KEY,
+                            pdf_bytes BLOB,
+                            filename TEXT,
+                            timestamp TEXT
+                        )
+                    ''')
 
                 cursor.execute('''
                     INSERT OR REPLACE INTO report_pdfs (company_name, pdf_bytes, filename, timestamp)
