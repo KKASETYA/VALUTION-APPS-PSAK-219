@@ -44,11 +44,6 @@ except Exception:
 # KONFIGURASI HALAMAN & IDENTITAS KKA SETYA GUNAWAN
 # ==========================================
 st.set_page_config(
-
-# ==========================================
-# KONFIGURASI HALAMAN & IDENTITAS KKA SETYA GUNAWAN
-# ==========================================
-st.set_page_config(
     page_title="KKA Setya Gunawan | Kantor Konsultan Aktuaria",
     page_icon="📐",
     layout="wide",
