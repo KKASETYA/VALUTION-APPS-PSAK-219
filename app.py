@@ -18,6 +18,32 @@ from reportlab.lib.units import inch
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from streamlit_option_menu import option_menu
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.lib.fonts import addMapping
+from streamlit_option_menu import option_menu
+
+# ==========================================
+# FIX ERROR FONT (TANPA MENGUBAH KODE PDF)
+# ==========================================
+try:
+    if os.path.exists("Calibri.ttf") and os.path.exists("Calibri-Bold.ttf"):
+        pdfmetrics.registerFont(TTFont('Calibri', 'Calibri.ttf'))
+        pdfmetrics.registerFont(TTFont('Calibri-Bold', 'Calibri-Bold.ttf'))
+        addMapping('Calibri', 0, 0, 'Calibri')
+        addMapping('Calibri', 1, 0, 'Calibri-Bold')
+    else:
+        # Fallback ke font standar (Helvetica) jika file .ttf tidak ada di Streamlit Cloud
+        pdfmetrics._fonts['Calibri'] = pdfmetrics.getFont('Helvetica')
+        pdfmetrics._fonts['Calibri-Bold'] = pdfmetrics.getFont('Helvetica-Bold')
+        addMapping('Calibri', 0, 0, 'Calibri')
+        addMapping('Calibri', 1, 0, 'Calibri-Bold')
+except Exception:
+    pass
+
+# ==========================================
+# KONFIGURASI HALAMAN & IDENTITAS KKA SETYA GUNAWAN
+# ==========================================
+st.set_page_config(
 
 # ==========================================
 # KONFIGURASI HALAMAN & IDENTITAS KKA SETYA GUNAWAN
