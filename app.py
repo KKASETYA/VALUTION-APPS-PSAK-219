@@ -17,26 +17,32 @@ from reportlab.lib import colors
 from reportlab.lib.units import inch
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
-from streamlit_option_menu import option_menu
-from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.fonts import addMapping
 from streamlit_option_menu import option_menu
 
 # ==========================================
-# FIX ERROR FONT (TANPA MENGUBAH KODE PDF)
+# FIX ERROR FONT (MAPPING LENGKAP: REGULAR, BOLD, ITALIC, BOLD-ITALIC)
 # ==========================================
 try:
-    if os.path.exists("Calibri.ttf") and os.path.exists("Calibri-Bold.ttf"):
+    if os.path.exists("Calibri.ttf") and os.path.exists("Calibri-Bold.ttf") and os.path.exists("Calibri-Italic.ttf") and os.path.exists("Calibri-BoldItalic.ttf"):
         pdfmetrics.registerFont(TTFont('Calibri', 'Calibri.ttf'))
         pdfmetrics.registerFont(TTFont('Calibri-Bold', 'Calibri-Bold.ttf'))
+        pdfmetrics.registerFont(TTFont('Calibri-Italic', 'Calibri-Italic.ttf'))
+        pdfmetrics.registerFont(TTFont('Calibri-BoldItalic', 'Calibri-BoldItalic.ttf'))
         addMapping('Calibri', 0, 0, 'Calibri')
         addMapping('Calibri', 1, 0, 'Calibri-Bold')
+        addMapping('Calibri', 0, 1, 'Calibri-Italic')
+        addMapping('Calibri', 1, 1, 'Calibri-BoldItalic')
     else:
-        # Fallback ke font standar (Helvetica) jika file .ttf tidak ada di Streamlit Cloud
+        # Fallback ke font standar (Helvetica) jika file .ttf tidak ada
         pdfmetrics._fonts['Calibri'] = pdfmetrics.getFont('Helvetica')
         pdfmetrics._fonts['Calibri-Bold'] = pdfmetrics.getFont('Helvetica-Bold')
+        pdfmetrics._fonts['Calibri-Italic'] = pdfmetrics.getFont('Helvetica-Oblique')
+        pdfmetrics._fonts['Calibri-BoldItalic'] = pdfmetrics.getFont('Helvetica-BoldOblique')
         addMapping('Calibri', 0, 0, 'Calibri')
         addMapping('Calibri', 1, 0, 'Calibri-Bold')
+        addMapping('Calibri', 0, 1, 'Calibri-Italic')
+        addMapping('Calibri', 1, 1, 'Calibri-BoldItalic')
 except Exception:
     pass
 
