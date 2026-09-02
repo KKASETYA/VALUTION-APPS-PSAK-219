@@ -21,9 +21,16 @@ from reportlab.lib.fonts import addMapping
 from streamlit_option_menu import option_menu
 
 # ==========================================
-# FIX ERROR FONT (MAPPING LENGKAP: REGULAR, BOLD, ITALIC, BOLD-ITALIC)
+# FIX ERROR FONT (DYNAMIC FONT VARIABLES)
 # ==========================================
+# Default ke font standar ReportLab yang 100% aman di Cloud manapun
+FONT_REGULAR = 'Helvetica'
+FONT_BOLD = 'Helvetica-Bold'
+FONT_ITALIC = 'Helvetica-Oblique'
+FONT_BOLDITALIC = 'Helvetica-BoldOblique'
+
 try:
+    # Jika file font kustom tersedia, daftarkan dan gunakan font kustom
     if os.path.exists("Calibri.ttf") and os.path.exists("Calibri-Bold.ttf") and os.path.exists("Calibri-Italic.ttf") and os.path.exists("Calibri-BoldItalic.ttf"):
         pdfmetrics.registerFont(TTFont('Calibri', 'Calibri.ttf'))
         pdfmetrics.registerFont(TTFont('Calibri-Bold', 'Calibri-Bold.ttf'))
@@ -33,16 +40,11 @@ try:
         addMapping('Calibri', 1, 0, 'Calibri-Bold')
         addMapping('Calibri', 0, 1, 'Calibri-Italic')
         addMapping('Calibri', 1, 1, 'Calibri-BoldItalic')
-    else:
-        # Fallback ke font standar (Helvetica) jika file .ttf tidak ada
-        pdfmetrics._fonts['Calibri'] = pdfmetrics.getFont('Helvetica')
-        pdfmetrics._fonts['Calibri-Bold'] = pdfmetrics.getFont('Helvetica-Bold')
-        pdfmetrics._fonts['Calibri-Italic'] = pdfmetrics.getFont('Helvetica-Oblique')
-        pdfmetrics._fonts['Calibri-BoldItalic'] = pdfmetrics.getFont('Helvetica-BoldOblique')
-        addMapping('Calibri', 0, 0, 'Calibri')
-        addMapping('Calibri', 1, 0, 'Calibri-Bold')
-        addMapping('Calibri', 0, 1, 'Calibri-Italic')
-        addMapping('Calibri', 1, 1, 'Calibri-BoldItalic')
+        
+        FONT_REGULAR = 'Calibri'
+        FONT_BOLD = 'Calibri-Bold'
+        FONT_ITALIC = 'Calibri-Italic'
+        FONT_BOLDITALIC = 'Calibri-BoldItalic'
 except Exception:
     pass
 
@@ -378,9 +380,9 @@ def draw_footer_landscape(canvas, doc):
     canvas.setStrokeColor(colors.HexColor('#3A0C08'))
     canvas.setLineWidth(1)
     canvas.line(56.7, 45, landscape(A4)[0] - 56.7, 45) 
-    canvas.setFont('Calibri', 9)
+    canvas.setFont(FONT_REGULAR, 9)
     canvas.drawCentredString(landscape(A4)[0]/2.0, 30, "Kantor Konsultan Aktuaria Setya Gunawan (KKA Setya Gunawan)")
-    canvas.setFont('Calibri', 8)
+    canvas.setFont(FONT_REGULAR, 8)
     canvas.drawCentredString(landscape(A4)[0]/2.0, 20, "Izin Badan Usaha No. 4.21.0007 | Keputusan Kemenkeu RI No. 590/KM.1/2021 | STTD-OJK: STTD-039/NB.122/STTD-KA/2021 | AKKAI: AKKAI-21043")
     canvas.restoreState()
 
@@ -402,8 +404,8 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
     cover_date_style = ParagraphStyle('CoverDate', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=9.5, textColor=colors.HexColor('#E67E22'), alignment=2, spaceAfter=65, leading=14)
     cover_address_style = ParagraphStyle('CoverAddressRight', parent=styles['Normal'], fontName='Helvetica', fontSize=8.5, textColor=colors.HexColor('#2980B9'), alignment=2, leading=13.5)
     
-    h_style = ParagraphStyle('SecH', parent=styles['Heading2'], fontName='Calibri-Bold', fontSize=11, textColor=colors.HexColor('#C2382D'), spaceBefore=12, spaceAfter=6)
-    body_style = ParagraphStyle('BodyCustom', parent=styles['Normal'], fontName='Calibri', fontSize=11, textColor=colors.HexColor('#222222'), spaceBefore=4, spaceAfter=8, leading=15, alignment=4, keepWithNext=False)
+    h_style = ParagraphStyle('SecH', parent=styles['Heading2'], fontName=FONT_BOLD, fontSize=11, textColor=colors.HexColor('#C2382D'), spaceBefore=12, spaceAfter=6)
+    body_style = ParagraphStyle('BodyCustom', parent=styles['Normal'], fontName=FONT_REGULAR, fontSize=11, textColor=colors.HexColor('#222222'), spaceBefore=4, spaceAfter=8, leading=15, alignment=4, keepWithNext=False)
 
     formatted_date = report_date.strftime('%d %B %Y') if hasattr(report_date, 'strftime') else str(report_date)
 
@@ -442,8 +444,8 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
     # ==========================================
     # HALAMAN INFORMASI UMUM / GENERAL INFORMATION
     # ==========================================
-    info_text_style = ParagraphStyle('InfoText', parent=styles['Normal'], fontName='Calibri', fontSize=11, textColor=colors.black, alignment=4, spaceAfter=4, leading=15)
-    info_header_table_style = ParagraphStyle('InfoHeaderTable', parent=styles['Normal'], fontName='Calibri-Bold', fontSize=11, textColor=colors.black, alignment=0, leading=15)
+    info_text_style = ParagraphStyle('InfoText', parent=styles['Normal'], fontName=FONT_REGULAR, fontSize=11, textColor=colors.black, alignment=4, spaceAfter=4, leading=15)
+    info_header_table_style = ParagraphStyle('InfoHeaderTable', parent=styles['Normal'], fontName=FONT_BOLD, fontSize=11, textColor=colors.black, alignment=0, leading=15)
 
     content_width_portrait = 595.27 - 72 
     col_w_half = content_width_portrait / 2.0
@@ -484,9 +486,9 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
     # ==========================================
     # HALAMAN DAFTAR ISI / TABLE OF CONTENTS
     # ==========================================
-    toc_head_style = ParagraphStyle('TOCHead', parent=styles['Normal'], fontName='Calibri-Bold', fontSize=11, textColor=colors.black, leading=15)
-    toc_item_style = ParagraphStyle('TOCItem', parent=styles['Normal'], fontName='Calibri', fontSize=11, textColor=colors.black, leading=15, alignment=4)
-    toc_subitem_style = ParagraphStyle('TOCSubItem', parent=styles['Normal'], fontName='Calibri', fontSize=11, textColor=colors.black, leading=15, leftIndent=12, alignment=4)
+    toc_head_style = ParagraphStyle('TOCHead', parent=styles['Normal'], fontName=FONT_BOLD, fontSize=11, textColor=colors.black, leading=15)
+    toc_item_style = ParagraphStyle('TOCItem', parent=styles['Normal'], fontName=FONT_REGULAR, fontSize=11, textColor=colors.black, leading=15, alignment=4)
+    toc_subitem_style = ParagraphStyle('TOCSubItem', parent=styles['Normal'], fontName=FONT_REGULAR, fontSize=11, textColor=colors.black, leading=15, leftIndent=12, alignment=4)
 
     toc_left_content = [
         Paragraph("<b>DAFTAR ISI &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; HAL &nbsp;&nbsp; PAGES</b>", toc_head_style),
@@ -570,9 +572,9 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
     # ==========================================
     # HALAMAN PENDAHULUAN & MANFAAT KARYAWAN
     # ==========================================
-    intro_head_style_11 = ParagraphStyle('IntroHead11', parent=styles['Normal'], fontName='Calibri-Bold', fontSize=11, textColor=colors.black, leading=15, spaceAfter=4, keepWithNext=True)
-    intro_subhead_style_11 = ParagraphStyle('IntroSubHead11', parent=styles['Normal'], fontName='Calibri-Bold', fontSize=11, textColor=colors.black, leading=15, spaceAfter=2, keepWithNext=True)
-    intro_body_style_11 = ParagraphStyle('IntroBody11', parent=styles['Normal'], fontName='Calibri', fontSize=11, textColor=colors.black, leading=15, spaceAfter=3, alignment=4, keepWithNext=False)
+    intro_head_style_11 = ParagraphStyle('IntroHead11', parent=styles['Normal'], fontName=FONT_BOLD, fontSize=11, textColor=colors.black, leading=15, spaceAfter=4, keepWithNext=True)
+    intro_subhead_style_11 = ParagraphStyle('IntroSubHead11', parent=styles['Normal'], fontName=FONT_BOLD, fontSize=11, textColor=colors.black, leading=15, spaceAfter=2, keepWithNext=True)
+    intro_body_style_11 = ParagraphStyle('IntroBody11', parent=styles['Normal'], fontName=FONT_REGULAR, fontSize=11, textColor=colors.black, leading=15, spaceAfter=3, alignment=4, keepWithNext=False)
 
     intro_col_left_p1 = [
         Paragraph("<b>1. PENDAHULUAN</b>", intro_head_style_11),
@@ -775,9 +777,9 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
     # ==========================================
     # HALAMAN BARU: PENUTUP / CLOSING
     # ==========================================
-    closing_style_11 = ParagraphStyle('ClosingStyle11', parent=styles['Normal'], fontName='Calibri', fontSize=11, textColor=colors.black, leading=15, spaceAfter=4, alignment=4, keepWithNext=False)
-    closing_head_11 = ParagraphStyle('ClosingHead11', parent=styles['Normal'], fontName='Calibri-Bold', fontSize=11, textColor=colors.black, leading=15, spaceAfter=4, keepWithNext=True)
-    closing_center_style = ParagraphStyle('ClosingCenter', parent=styles['Normal'], fontName='Calibri', fontSize=11, textColor=colors.black, leading=15, alignment=1, keepWithNext=True)
+    closing_style_11 = ParagraphStyle('ClosingStyle11', parent=styles['Normal'], fontName=FONT_REGULAR, fontSize=11, textColor=colors.black, leading=15, spaceAfter=4, alignment=4, keepWithNext=False)
+    closing_head_11 = ParagraphStyle('ClosingHead11', parent=styles['Normal'], fontName=FONT_BOLD, fontSize=11, textColor=colors.black, leading=15, spaceAfter=4, keepWithNext=True)
+    closing_center_style = ParagraphStyle('ClosingCenter', parent=styles['Normal'], fontName=FONT_REGULAR, fontSize=11, textColor=colors.black, leading=15, alignment=1, keepWithNext=True)
 
     closing_col_left = [
         Paragraph("<b>7. PENUTUP</b>", closing_head_11),
@@ -785,18 +787,18 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
         Spacer(1, 10),
         Paragraph(f"Jakarta, {formatted_date}", closing_center_style),
         Spacer(1, 8),
-        Paragraph("<b>KKA SETYA GUNAWAN</b>", ParagraphStyle('SignHeadLeft', parent=styles['Normal'], fontName='Calibri-Bold', fontSize=11, alignment=0, keepWithNext=True)),
+        Paragraph("<b>KKA SETYA GUNAWAN</b>", ParagraphStyle('SignHeadLeft', parent=styles['Normal'], fontName=FONT_BOLD, fontSize=11, alignment=0, keepWithNext=True)),
         Spacer(1, 2),
-        Paragraph("Aktuaris Publik<br/>(Public Actuary)<br/>Lisensi Aktuaris Publik<br/>(Public Actuary Licence)<br/>Konsultan<br/>(Consultant Office)<br/>Alamat Kantor", ParagraphStyle('SignDescLeft', parent=styles['Normal'], fontName='Calibri', fontSize=11, leading=15, alignment=0))
+        Paragraph("Aktuaris Publik<br/>(Public Actuary)<br/>Lisensi Aktuaris Publik<br/>(Public Actuary Licence)<br/>Konsultan<br/>(Consultant Office)<br/>Alamat Kantor", ParagraphStyle('SignDescLeft', parent=styles['Normal'], fontName=FONT_REGULAR, fontSize=11, leading=15, alignment=0))
     ]
 
     closing_col_right = [
         Paragraph("<b>7. CLOSING</b>", closing_head_11),
         Paragraph(f"We hope that the information we provide can be useful for the management of <b>PT {company_name.upper()}</b> and the Auditor to recognize the entity's liabilities and expenses in accordance with the provisions of PSAK 219 for the period of {first_key}.", closing_style_11),
         Spacer(1, 45), 
-        Paragraph("<b>Setya Gunawan, S.E., AAAIJ, AIIS, FSAI</b>", ParagraphStyle('SignHeadRight', parent=styles['Normal'], fontName='Calibri-Bold', fontSize=11, alignment=0, keepWithNext=True)),
+        Paragraph("<b>Setya Gunawan, S.E., AAAIJ, AIIS, FSAI</b>", ParagraphStyle('SignHeadRight', parent=styles['Normal'], fontName=FONT_BOLD, fontSize=11, alignment=0, keepWithNext=True)),
         Spacer(1, 2),
-        Paragraph("<b>:</b> Aktuaris Publik<br/><b>:</b> Act-1.17.00026<br/><b>:</b> KKA SETYA GUNAWAN<br/><b>:</b> Cilandak 88 Condominium Unit D-1<br/>Jl. Margasatwa Barat No.88<br/>Cilandak Timur<br/>Pasar Minggu<br/>Jakarta Selatan,<br/>12560", ParagraphStyle('SignDescRight', parent=styles['Normal'], fontName='Calibri', fontSize=11, leading=15, alignment=0))
+        Paragraph("<b>:</b> Aktuaris Publik<br/><b>:</b> Act-1.17.00026<br/><b>:</b> KKA SETYA GUNAWAN<br/><b>:</b> Cilandak 88 Condominium Unit D-1<br/>Jl. Margasatwa Barat No.88<br/>Cilandak Timur<br/>Pasar Minggu<br/>Jakarta Selatan,<br/>12560", ParagraphStyle('SignDescRight', parent=styles['Normal'], fontName=FONT_REGULAR, fontSize=11, leading=15, alignment=0))
     ]
 
     closing_table = Table([[closing_col_left, closing_col_right]], colWidths=[col_w_half, col_w_half])
@@ -811,10 +813,10 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
     elements.append(Spacer(1, 5))
 
     contact_col_left = [
-        Paragraph("(Office Adress)<br/>Telepon<br/>(Phone)<br/>Surat Elektronik<br/>(Email)", ParagraphStyle('ContactDescLeft', parent=styles['Normal'], fontName='Calibri', fontSize=11, leading=15, alignment=0))
+        Paragraph("(Office Adress)<br/>Telepon<br/>(Phone)<br/>Surat Elektronik<br/>(Email)", ParagraphStyle('ContactDescLeft', parent=styles['Normal'], fontName=FONT_REGULAR, fontSize=11, leading=15, alignment=0))
     ]
     contact_col_right = [
-        Paragraph("<b>:</b> +62 21 781 7718 / +62 812 9090 9019<br/><b>:</b> <a href='mailto:aktuaris@actuarial-kas.com'>aktuaris@actuarial-kas.com</a>; <a href='mailto:kka_setyagunawan@yahoo.com'>kka_setyagunawan@yahoo.com</a>", ParagraphStyle('ContactDescRight', parent=styles['Normal'], fontName='Calibri', fontSize=11, leading=15, alignment=0))
+        Paragraph("<b>:</b> +62 21 781 7718 / +62 812 9090 9019<br/><b>:</b> <a href='mailto:aktuaris@actuarial-kas.com'>aktuaris@actuarial-kas.com</a>; <a href='mailto:kka_setyagunawan@yahoo.com'>kka_setyagunawan@yahoo.com</a>", ParagraphStyle('ContactDescRight', parent=styles['Normal'], fontName=FONT_REGULAR, fontSize=11, leading=15, alignment=0))
     ]
     contact_table = Table([[contact_col_left, contact_col_right]], colWidths=[col_w_half, col_w_half])
     contact_table.setStyle(TableStyle([
@@ -853,7 +855,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
         t1.setStyle(TableStyle([
             ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#3A0C08')),
             ('TEXTCOLOR', (0,0), (-1,0), colors.white),
-            ('FONTNAME', (0,0), (-1,0), 'Calibri-Bold'),
+            ('FONTNAME', (0,0), (-1,0), FONT_BOLD),
             ('FONTSIZE', (0,0), (-1,-1), 11),
             ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#D3C1BE')),
             ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
@@ -885,7 +887,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
             ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#3A0C08')),
             ('TEXTCOLOR', (0,0), (-1,0), colors.white),
             ('ALIGN', (0,0), (-1,0), 'CENTER'),
-            ('FONTNAME', (0,0), (-1,0), 'Calibri-Bold'),
+            ('FONTNAME', (0,0), (-1,0), FONT_BOLD),
             ('FONTSIZE', (0,0), (-1,-1), 11),
             ('BOTTOMPADDING', (0,0), (-1,0), 5),
             ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#D3C1BE')),
@@ -893,7 +895,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
             ('ALIGN', (1,1), (3,-1), 'LEFT'),
             ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
             ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#EADCDA')),
-            ('FONTNAME', (0, -1), (-1, -1), 'Calibri-Bold')
+            ('FONTNAME', (0, -1), (-1, -1), FONT_BOLD)
         ]))
         elements.append(t_detail)
         elements.append(PageBreak())
@@ -901,7 +903,7 @@ def generate_detailed_report(results_dict, salary_inc, ret_age, val_keys, compan
     elements.append(Paragraph("<b>9. PENUTUP / CLOSING</b>", h_style))
     elements.append(Paragraph(f"Demikian laporan aktuaria ini disusun secara independen oleh KKA Setya Gunawan untuk dipergunakan sebagaimana mestinya oleh manajemen <b>PT {company_name.upper()}</b> dan pihak Auditor independen.", body_style))
     elements.append(Spacer(1, 20))
-    elements.append(Paragraph(f"Jakarta, {formatted_date}<br/><b>KANTOR KONSULTAN AKTUARIA SETYA GUNAWAN</b><br/><br/><br/><br/><b>Setya Gunawan, S.E., AAAIJ, AIIS, FSAI</b>", ParagraphStyle('SignBlock', parent=styles['Normal'], fontName='Calibri', fontSize=11, alignment=2)))
+    elements.append(Paragraph(f"Jakarta, {formatted_date}<br/><b>KANTOR KONSULTAN AKTUARIA SETYA GUNAWAN</b><br/><br/><br/><br/><b>Setya Gunawan, S.E., AAAIJ, AIIS, FSAI</b>", ParagraphStyle('SignBlock', parent=styles['Normal'], fontName=FONT_REGULAR, fontSize=11, alignment=2)))
         
     doc_mixed.build(elements, onFirstPage=draw_cover_background, onLaterPages=draw_footer_landscape)
     pdf_buffer.seek(0)
