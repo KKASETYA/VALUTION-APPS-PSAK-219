@@ -1,6 +1,3 @@
-import base64
-
-code = """\
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -69,7 +66,7 @@ def load_mortality_table(path: str) -> dict:
     while True:
         name = ws.cell(row=header_row, column=col).value
         if name is None: break
-        clean_name = str(name).replace("\\n", " ").strip()
+        clean_name = str(name).replace("\n", " ").strip()
         tables[clean_name] = {}
         for r in range(7, 119):
             age_val = ws.cell(row=r, column=ages_col).value
@@ -367,7 +364,7 @@ def init_db():
 
 init_db()
 
-st.markdown(\"""
+st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
 
@@ -418,7 +415,7 @@ header[data-testid="stHeader"] { background: transparent; }
     font-weight: 700;
 }
 </style>
-\""", unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
 if 'payment_verified' not in st.session_state: st.session_state.payment_verified = False
 if 'admin_logged_in' not in st.session_state: st.session_state.admin_logged_in = False
@@ -495,7 +492,7 @@ def parse_excel_dataset(file_or_buffer, sheet_name=0):
     def safe_float(val, default=0.0):
         try:
             if pd.isna(val): return default
-            cleaned = re.sub(r'[^0-9.\\-]', '', str(val))
+            cleaned = re.sub(r'[^0-9.\-]', '', str(val))
             if cleaned == '' or cleaned == '-': return default
             return float(cleaned)
         except: return default
@@ -772,12 +769,12 @@ if is_url_admin:
 
 with st.container():
     if LOGO_B64:
-        st.markdown(f\"""
+        st.markdown(f"""
         <div style="text-align: center; margin-bottom: 5px;">
             <img src="data:image/png;base64,{LOGO_B64}" style="height: 45px; vertical-align: middle;"/>
             <span style="font-family:'Poppins',sans-serif; font-weight:800; font-size:1.1rem; margin-left:10px; vertical-align: middle; color:#3A0C08;">KKA Setya Gunawan</span>
         </div>
-        \""", unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
 
     selected_nav = option_menu(
         menu_title=None, options=nav_options, icons=nav_icons, menu_icon="cast",
@@ -796,7 +793,7 @@ st.session_state["menu"] = selected_nav
 if menu == "🏠 Beranda" or menu == "Beranda":
     with st.container():
         st.success(f"✓ TERDAFTAR OJK & KEMENKEU — {COMPANY_MENKEU}")
-        st.title(f"Kantor Konsultan Aktuaria Setya Gunawan\\nSolusi Profesional PSAK 219")
+        st.title(f"Kantor Konsultan Aktuaria Setya Gunawan\nSolusi Profesional PSAK 219")
         st.write("Menyediakan jasa valuasi aktuaria imbalan kerja dan konsultasi sesuai standar **PSAK 219 & IFRIC AD**.")
     st.markdown("---")
     c1, c2 = st.columns([1, 1])
@@ -1067,7 +1064,3 @@ elif menu == "🧮 Kalkulator Valuasi Aktuaria" or menu == "Kalkulator Valuasi A
                 mime="application/pdf",
                 type="primary"
             )
-"""
-with open("/home/claude/deliverable/engine/app.py", "w") as f:
-    f.write(code)
-print("File app.py updated successfully!")
